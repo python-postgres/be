@@ -76,12 +76,16 @@ void PyErr_EmitPgErrorAsWarning(const char *msg);
 /*
  * Sets a RuntimeError indicating that the database was accessed at an
  * inappropriate time.
+ *
+ * Always returns true.
  */
 bool PyErr_SetDatabaseAccessDenied(void);
 
 /*
  * Should be called when Postgres interfaces are accessed via Python while
  * inside a failed transaction.
+ *
+ * Always returns true.
  */
 bool PyErr_SetInFailedTransaction(void);
 
