@@ -1,0 +1,1377 @@
+===============
+Postgres Module
+===============
+
+The ``Postgres`` module reference.
+
+Data
+====
+
+Information objects available in the *Postgres* module.
+
+**Attributes:**
+
+ ``Postgres.backend_start``
+  The `Postgres.types.timestamptz`_ specifying when the backend was started.
+  Shorthand for getting the backend start time from ``pg_stat_activity``.
+
+  ``None`` if not available.
+
+ ``Postgres.client_addr``
+  The client's address as a Python ``str``.
+
+  ``None`` if not available.
+
+ ``Postgres.client_port``
+  The client's port as a Python ``str``.
+
+  ``None`` if not available.
+
+ ``Postgres.current_database``
+  The name of the current database as a Python ``str``.
+
+ ``Postgres.encoding``
+  The server encoding as a *Python* encoding name.
+
+ ``Postgres.version``
+  The version of PostgreSQL as a Python ``str``.
+
+ ``Postgres.version_info``
+  The version of PostgreSQL as a Python ``tuple``.
+  The tuple's items are ``(major, minor, patch, state, level)``.
+
+ ``Postgres.CONST``
+  A dictionary object providing many compile-time constants.
+  This is primarily used to support the pure-Python parts of the
+  ``Postgres`` module.
+
+  **Functions should not depend on this object.**
+
+
+.. _pg_array:
+
+Postgres.Array
+==============
+
+``Postgres.Array`` is the base type of all Postgres array types in Python.
+When an uninitialized array type is referenced, a subclass of this type
+is created to represent the array type.
+
+**Constructors**:
+
+ ``Array(string_or_nested_lists)``
+  If given a string, an array will be created using the type input
+  function. If given a list, the objects contained in the list will make
+  up the elements in the array. Multi-dimensional arrays can be built
+  using lists by nesting them::
+
+   from Postgres import WARNING
+   from Postgres.types import int4
+   a = int4.Array([
+       [[1,2],[4,3]],
+       [[12,14],[16,18]],
+       [[-18,-14],[-15,-20]],
+   ])
+
+   WARNING(str(a))
+
+ ``Array.from_elements(iter [, dimensions = (N,) [, lowerbounds = (1,)]])``
+  Build an array from an iterator producing coercable elements and the
+  specified dimensions and lower bounds. The iterator is the only required
+  argument.
+
+  The ``dimensions`` and ``lowerbounds``
+  keywords must be sequences of the same length if provided at all.
+  If no ``lowerbounds`` are given, a default will be
+  provided: all the lower bounds will be ``1``.
+  If no ``dimensions`` are given, a default will be
+  generated based on the length of the iterable.
+
+**Properties**:
+
+ ``Array.dimensions``
+  A tuple containing numbers that represent the dimensions of the array.
+
+ ``Array.has_null``
+  Whether the array has NULLs.
+
+ ``Array.lowerbounds``
+  A tuple of numbers representing the lowerbounds of the array.
+
+ ``Array.ndim``
+  The number of dimenions in the array.
+
+ ``Array.nelements``
+  The number of elements in the array.
+
+ ``Array.Element``
+  `Postgres.Type` instance of the array's element type.
+
+**Methods**:
+
+ ``Array.elements()``
+  Return an iterator that produces all the elements of the array.
+  The elements are produced in physical order.
+
+ ``Array.get_element(sequence)``
+  Return the element addressed by the ``sequence`` argument.
+  This method takes a sequence of zero-based indexes that are adjusted by
+  the array's configured lower bounds. Indexes that are out-of-bounds cause
+  index errors. ``ValueError`` is raised when too many or too few indexes
+  are given in the sequence::
+
+   from Postgres.types import int4
+   _int4 = int4.Array
+   A = _int4([[1,2],[3,4])
+   assert A.sql_get_element((0,0)) == 1 # In SQL: SELECT (ARRAY[[1,2],[3,4]]::int4)[1][1]
+
+ ``Array.sql_get_element(sequence_of_indexes)``
+  Return the element addressed by the *sequence_of_indexes* argument.
+  The method is consistent with how array elements are accessed in SQL.
+  Slicing is *not* supported by this method.
+  *Indexes that are out-of-bounds result in ``None`` being returned.*::
+
+   from Postgres.types import int4
+   _int4 = int4.Array
+   A = _int4([[1,2],[3,4])
+   assert A.sql_get_element((1,1)) == 1 # In SQL: SELECT (ARRAY[[1,2],[3,4]]::int4)[1][1]
+
+ ``Array.__getitem__(index_or_slice), Array[index_or_slice]``
+  Get a slice, sub-array, or element from the array. If given an index,
+  the sub-array or element at that index will be returned.
+
+  .. note:: Slices only support steps of one.
+  .. note:: This interface expects zero-based indexes.
+
+ ``Array.__len__(), len(Array)``
+  The upper bounds of the first axis minus the lower bounds of the first
+  axis plus one. The natural length of the first axis.
+
+
+.. _pg_cursor:
+
+Postgres.Cursor
+===============
+
+Cursor objects provide a Python interface to Postgres Portals. Primarily,
+cursors are iterators that yield rows produced by the Portal. However, the
+execution method used on the statement object ultimately determines how the
+cursor operates. For instance, the ``chunks()`` method will
+cause ``next()`` to return sequences of rows instead of
+individual rows. See `Postgres.Statement` for more information about
+the execution methods that create cursor objects.
+
+**Properties:**
+
+ ``Cursor.statement``
+  The `Postgres.Statement`_ object that created the cursor.
+
+ ``Cursor.parameters``
+  The *original* arguments given to the statement
+  that created the cursor.
+
+ ``Cursor.column_types``
+  A tuple of `Postgres.Type`_ instances of the columns produced by the cursor.
+
+ ``Cursor.column_names``
+  A tuple of strings naming the columns produced by the statement.
+
+ ``Cursor.pg_column_types``
+  A tuple of type Oids of the columns produced by the cursor.
+
+ ``Cursor.output``
+  A fully anonymous `Postgres.types.record`_
+  used to create record objects produced by the statement.
+
+  Normally, this is the same object as ``Cursor.statement.output``.
+
+ ``Cursor.direction``
+  For scrollable cursors, this is a modifiable property used to
+  control the direction of seek and read operations.
+  ``True`` for forward, the default. ``False`` for backwards. The
+  configured direction affects seek, read, and next methods.
+
+ ``Cursor.chunksize``
+  For NO SCROLL cursors, this property is used to control the
+  size of the chunks read from the Portal. For row cursors, the chunksize
+  effects how many rows should be internally buffered for subsequent
+  consumption via ``__next__``.
+
+  This property is immutable for SCROLL cursors; cursors created using the
+  ``declare()`` method. For such cursors, ``__next__`` only reads a single row at a time.
+
+**Methods:**
+
+ ``Cursor.close()``
+  Close the cursor, inhibiting further use. Returns
+  ``None``. Nothing happens if it is already closed.
+
+ ``Cursor.clone()``
+  Create a replica of the cursor using the same statement, method, and
+  parameters. The new cursor is returned.
+
+ ``Cursor.seek(offset[, whence = 0])``
+  Move the cursor's position to the specified offset according to the
+  ``whence`` keyword argument. Whence behaves consistently
+  with seek operations on file objects. ``0`` for absolute,
+  ``1`` for relative, and ``2`` for absolute
+  from the end.
+
+ ``Cursor.read([quantity[, direction = None]])``
+  Read the requested number of rows in the resolved direction. If no
+  quantity is specified, all of the remaining rows will be returned.
+
+ ``next(Cursor), Cursor.__next__()``
+  Get the next item from the cursor. For cursors created by the
+  ``chunks`` execution method, this will return a list of
+  row objects. Any other cursors will return the next row according to its
+  current position--and direction for scrollable cursors.
+
+  In compliance with the iterator protocol, this method will raise
+  ``StopIteration`` when the cursor is exhausted.
+
+
+.. _pg_errordata:
+
+Postgres.ErrorData
+==================
+
+When a database error occurs, this type is used to provide a Python
+interface to the information collected about the error. Normally, instances
+of this type are associated with an `Postgres.Exception` instance using the
+``pg_errordata`` attribute.
+
+**Properties:**
+
+ ``ErrorData.message``
+  Error 'message' field as a Python ``str`` object.
+
+ ``ErrorData.elevel``
+  Error-level as a Python ``int`` object. Usually,
+  ``Postgres.CONST["ERROR"]``.
+
+ ``ErrorData.severity``
+  Error-level as a Python ``str`` object. Usually,
+  ``"ERROR"``.
+
+ ``ErrorData.code``
+  Error code field as a Python ``str`` object.
+
+ ``ErrorData.sqlerrcode``
+  Encoded error code field as a Python ``int`` object.
+
+ ``ErrorData.detail``
+  Error detail field as a Python ``str`` object.
+
+ ``ErrorData.context``
+  Error 'context' field as a Python ``str`` object.
+
+ ``ErrorData.domain``
+  Error domain field as a Python ``str`` object.
+
+ ``ErrorData.hint``
+  Error 'hint' field as a Python ``str`` object.
+
+ ``ErrorData.filename``
+  Error 'filename' field as a Python ``str`` object.
+
+ ``ErrorData.function``
+  Error 'function' field as a Python ``str`` object.
+
+ ``ErrorData.line``
+  Error 'line' (number) field as a Python ``int`` object.
+
+ ``ErrorData.internal_position``
+  The 'internalpos' field as a Python ``int`` object.
+
+ ``ErrorData.cursorpos``
+  The cursor position field as a Python ``int`` object.
+
+ ``ErrorData.saved_errno``
+  'saved_errno' field as a Python ``int`` object. This
+  represents the system errno that caused the database error.
+
+
+.. _pg_exception:
+
+Postgres.Exception
+==================
+
+The exception raised when a Postgres database error occurs::
+
+ import Postgres
+ try:
+     with xact():
+         Postgres.ERROR(message = 'internal error', code = 'XX000')
+ except Postgres.Exception as dberr:
+     if dberr.code == 'XX000':
+         pass
+     else:
+         raise
+
+**Constructors:**
+
+ ``Exception([pg_errordata = None])``
+  Create the exception using the given `Postgres.ErrorData` object.
+
+  The `Postgres.ERROR` wrapper to `Postgres.ereport` is the preferable way to
+  construct and throw this exception.
+
+**Properties:**
+
+ ``Exception.code``
+  The error code as a string.
+
+ ``Exception.details``
+  A dictionary object consisting of a subset of the attributes on the
+  assigned ``pg_errordata`` attribute.
+
+ ``Exception.errno``
+  The ``errno`` attribute on ``pg_errordata``.
+
+ ``Exception.message``
+
+  The error message.
+
+ ``Exception.severity``
+  The severity of the error as a string.
+  Almost always, ``'ERROR'``.
+
+ ``Exception.pg_errordata``
+  The `Postgres.ErrorData` instance describing the database error.
+
+
+.. _pg_function:
+
+Postgres.Function
+=================
+
+Function objects are used to provide access to a Postgres function's
+functionality and basic metadata. These objects are used to work with any
+Postgres function, not just Python functions.
+
+**Constructors:**
+
+ ``Function(oid)``
+  Create an instance using the given Oid. The Oid will be used to lookup the
+  function's information in ``pg_catalog.pg_proc``.
+
+**Properties:**
+
+ ``Function.oid``
+  The function's oid as a Python ``int`` object.
+
+ ``Function.oidstr``
+  The function's Oid as a Python ``str`` object.
+
+ ``Function.namespace``
+  The function's namespace Oid as a Python ``int``.
+
+ ``Function.nspname``
+  The *name* of the function's namespace as a Python ``str``.
+
+ ``Function.filename``
+  The function's qualified ``regprocedure`` representation.
+
+ ``Function.language``
+  The language Oid of the function as a Python ``int``.
+
+ ``Function.input``
+  A `Postgres.TupleDesc` describing the function's arguments.
+
+ ``Function.output``
+  The return type, a `Postgres.Type` instance.
+
+**Methods:**
+
+ ``Function.__call__(*args)``
+  Call the Postgres function with the given arguments.
+
+  The arguments that the function takes depend on the signature of the
+  Postgres function itself. The given arguments will be coerced to the
+  Postgres argument types, then the function will be invoked with those
+  created Datums. The ``input`` attribute describes the
+  parameters taken by the function.
+
+  *Direct function invocation cannot be used with set*
+  *returning, trigger returning, or polymorphic functions.*
+
+**PEP-302 Methods:**
+
+These methods should only be used with Python FUNCTIONs.
+
+ ``Function.is_package([fullname])``
+  Always returns ``False``.
+
+ ``Function.get_source([fullname])``
+  Get the function's source code.
+
+  The ``fullname`` parameter is optional, but if it is
+  provided it *must* be a string that equals string
+  form of the function's Oid.
+
+ ``Function.get_code([fullname])``
+  Get the code object that the function's source code compiles into.
+
+  The ``fullname`` parameter is optional, but if it is
+  provided it *must* be a string that equals string
+  form of the function's Oid.
+
+ ``Function.load_module([fullname])``
+  Load the function module. If the module doesn't already exist
+  in ``sys.modules``, a new module will be created and the
+  function's code will be executed. This will not invoke any entry
+  points.
+
+  The ``fullname`` parameter is optional, but if it is
+  provided it *must* be a string that equals string
+  form of the function's Oid.
+
+ ``Function.find_module(fullname[, path])``
+
+  Create a function object from the given ``fullname``.
+  The fullname must be a function Oid.
+
+  ``find_module`` is a class method.
+
+
+Postgres.LargeObject
+====================
+
+A file-like interface to large objects.
+
+.. warning::
+   Using large objects in conjunction with subtransactions can lead to internal
+   errors.
+
+**Constructors:**
+
+ ``LargeObject.create()``
+  Create a new large object.
+
+ ``LargeObject.tmp()``
+  Create a new large object that is unlinked after its closed.
+
+ ``LargeObject(oid[, mode = 'r'])``
+  The instance constructor.
+
+  Open the large object at the given Oid.
+
+**Properties:**
+
+ ``LargeObject.oid``
+  The large object's oid.
+
+**Methods:**
+
+ ``LargeObject.unlink()``
+  Close and remove the large object.
+
+ ``LargeObject.close()``
+  Close the large object.
+
+ ``LargeObject.read(nbytes)``
+  Read data from the large object.
+
+ ``LargeObject.write(data)``
+  Read data from the large object.
+
+ ``LargeObject.seek(offset[, whence = 0])``
+  Seek to the target offset.
+
+
+Postgres.Object
+===============
+
+``Postgres.Object`` is the base type of all Postgres types. Instances are,
+effectively, a Postgres `Datum` associated with the respective type.
+Postgres.Object instances are a Python interface to Postgres data.
+See :ref:`data` for more information.
+
+The interfaces described here are applicable to *instances of subclasses*.
+``Postgres.Object`` itself is abstract, so the described constructors,
+properties, and methods *only apply to subclasses* of ``Postgres.Object``.
+
+Default Operator Mapping
+------------------------
+
+The Python operator methods are mapped to Postgres operators. Most are
+mapped to syntactically identical operators, but some are mapped
+semantically identical operators. This table shows the default mapping, but
+some types override this in order provide the expected
+functionality--notably, string types will map ``__add__`` to
+``"||"``.
+
+Binary Operators:
+
+================== ==================
+Python Operators   Postgres Operators
+================== ==================
+``+``, __add__     ``+``
+``-``, __sub__     ``-``
+``*``, __mul__     ``*``
+``/``, __div__     ``/``
+``%``, __mod__     ``%``
+``**``, __pow__    ``^``
+``&``, __and__     ``&``
+``|``, __or__      ``|``
+``^``, __xor__     ``#``
+``<<``, __lshift__ ``<<``
+``>>``, __rshift__ ``>>``
+================== ==================
+
+Unary Operators:
+
+================== ==================
+Python Operators   Postgres Operators
+================== ==================
+``-``, __neg__     ``-``
+``~``, __invert__  ``~``
+================== ==================
+
+All comparison operators are syntactically mapped. Although, ``==`` is reduced
+to ``=``.
+
+**Constructors:**
+
+ ``Object(pystr[, mod = strseq])``
+
+  Create a new data object using the given Python string. For many
+  built-in subclasses, this is specialized to accept other kinds of
+  Python objects. However, when a Python ``str`` is given, the type's
+  input function is always used.
+
+  The ``mod`` keyword is optional and can be used to specify the typmod
+  for the data. The given object is coerced to a
+  ``Postgres.types.cstring.Array`` and given to the type's typmodin
+  function. If ``mod`` is ``None``, the default, ``-1`` will
+  ultimately be used.
+
+**Properties:**
+
+ ``Object.datum``
+  The raw Datum as a Python long. Read-only. Do *not* use this.
+
+**Methods:**
+
+ ``Object.__str__(), str(Object)``
+  Return the data object's string representation as a Python
+  ``str``. The string is created by the type's output
+  function.
+
+ ``Object.__int__(), int(Object)``
+  Attempt to instantiate a Python ``int`` from the string
+  representation of the object. ``int(str(o))``
+
+  Numeric subclasses normally override this default functionality.
+
+ ``Object.__bool__(), bool(Object)``
+  Cast the data object to a Postgres BOOL, and return the truth as a
+  Python bool.
+
+ ``Object.__abs__(), abs(Object)``
+
+  Execute the ``abs(Object::<pg_type.typname>)`` function that takes the type as its
+  sole parameter.
+
+
+Postgres.Stateful
+=================
+
+The decorator for managing the call state of an entry point. If a given entry
+point is decorated with ``Postgres.Stateful``, the callable is expected to
+return a state object to be used when the function is executed in the future.
+The state object is normally a generator that can receive objects via the
+``send`` method::
+
+ from Postgres import Stateful
+ 
+ @Stateful
+ def main(*args):
+ 	args = (yield object)
+	while 1:
+		args = (yield object)
+
+See `Stateful Functions`_ for more information.
+
+**Constructors:**
+
+ ``Stateful(ob)``
+  Create an instance using ``ob`` as the source of state.
+
+**Properties:**
+
+ ``stateful.source``
+  The object that will be called to get the state object.
+
+**Methods:**
+
+ ``stateful.__call__(*args, **kw)``, ``stateful(*args, **kw)``
+  If the call has no pre-existing state, the given parameters will be given
+  directly to the ``stateful.source`` object. The object returned by that call
+  will have its ``__next__`` method immediately invoked in order to extract the
+  return object.
+
+  If the call has pre-existing state, the given parameters will be given to the
+  state object's ``send`` method. If ``StopIteration`` is raised, the state
+  object will be created again as if there was no pre-existing state.
+
+Postgres.Statement
+==================
+
+Statement objects provide an interface to fully-planned, single,
+statements. Statements are the primary interface for accessing the database in
+Python.
+
+A statement object is created by calling
+``Postgres.Statement`` with an SQL string as the first
+argument. Subsequent arguments can be given to specify constant parameters,
+but when this is done, all of the statement's parameters must be provided.
+
+When a statement is invoked, a `Postgres.Cursor` object is created and used to
+manage the Portal. The chosen statement execution method determines how the
+cursor behaves or if a cursor is even returned.
+
+**Properties**:
+
+ ``Statement.parameter_types``
+  A tuple of `Postgres.Type` instances. The index of
+  each item corresponds to the parameter required by the statement.
+
+ ``Statement.column_types``
+  A tuple of `Postgres.Type` instances. The index of
+  each item corresponds to the columns produced by the statement.
+
+ ``Statement.column_names``
+  A tuple of strings naming the columns produced by the statement.
+
+ ``Statement.pg_parameter_types``
+  A tuple of type Oid's specifying the parameter types.
+
+ ``Statement.pg_column_types``
+  A tuple of type Oid's specifying the column types.
+
+ ``Statement.input``
+  A `Postgres.TupleDesc` object describing the statement's parameters.
+
+ ``Statement.output``
+  An anonymous composite type used to create row objects produced by the
+  statement.
+
+ ``Statement.string``
+  The original object given as the statement's SQL source.
+
+ ``Statement.command``
+  The command tag of the statement.
+
+ ``Statement.parameters``
+  The constant parameters given to the statement's constructor.
+  ``None`` if none.
+
+**Methods**:
+
+ ``Statement.clone()``
+  Create a new statement using the same parameters that created the
+  statement that method is being called on.
+
+ ``Statement.rows(*args)``
+  Execute the statement and return a `Postgres.Cursor` configured to yield
+  individual rows fetched from the cursor.
+
+  The returned cursor is to be used to iterate over the rows produced by
+  the statement.
+
+ ``Statement.column(*args)``
+  Execute the statement and return a `Postgres.Cursor` configured to yield
+  the first column of each row fetched from the cursor.
+
+ ``Statement.chunks(*args)``
+  Execute the statement and return a `Postgres.Cursor`
+  configured to yield chunks of rows fetched from the cursor.
+
+ ``Statement.first(*args)``
+  Execute the statement and return either the first column of the first
+  row, or the first row when multiple columns are present.
+
+ ``Statement.declare(*args)``
+  Execute the statement and return a `Postgres.Cursor`
+  configured with SCROLL. This
+  execution method provides a cursor whose ``seek`` and
+  ``read`` methods are usable.
+
+ ``Statement.load_rows(iterable)``
+  Repeatedly execute the statement for each item produced by the iterator.
+  Each item will be given as the parameters for the statement.
+
+ ``Statement.load_chunks(iterable)``
+  Repeatedly execute the statement for each item in the iterable
+  produced by the iterator.
+  Each item is expected to be a iterable producing parameters to be given
+  to the statement::
+
+   sqlexec("CREATE TABLE t (i int, t text)")
+
+   chunk1 = [(1, 'hello'), (None, 'world')]
+   chunk2 = [(5, 'more'), (6, 'data')]
+
+   ins = prepare("INSERT INTO t VALUES ($1, $2)")
+   ins.load_chunks([chunk1, chunk2])
+
+
+Postgres.StopEvent
+==================
+
+A flow-control exception used by trigger returning functions to stop a
+manipulation.
+
+This exception is treated specially when raised by the
+``before_insert``, ``before_update``, and
+``before_delete`` entry points in `Trigger Returning Functions`_.
+In all other cases, the exception will thrown as a Postgres error::
+
+ from Postgres import StopEvent
+
+ def before_insert(td, new):
+ 	if new["value"] == 0xDEADBEEF:
+		raise StopEvent
+
+Postgres.String
+===============
+
+Postgres.String is an abstract base type. It is used as the base type for
+all built-in string types and for any dynamically created type that is in
+the string category: ``pg_type.typcategory = 'S'``
+
+Postgres.Transaction
+====================
+
+Transaction objects are simple context managers that start, commit or
+rollback an internal subtransaction. The local transaction state kept by
+these objects are used to validate that transactions are committed or
+aborted in the appropriate order. When transactions objects are used
+improperly, a `Postgres.Exception` is normally raised. ``Postgres.Transaction``
+is also available in `Builtins`_ as ``xact``::
+
+ with xact():
+ 	...
+
+**Methods:**
+
+ ``Transaction.__enter__()``
+  Context manager interface that starts the internal subtransaction. A
+  `RuntimeError` will be raised if called more than
+  once on the same instance.
+
+ ``Transaction.__exit__(exc, val, tb)``
+  Aborts or commits the transaction depending on the given arguments and
+  the identified transaction state.
+
+  If an exception is noted by the arguments or the transaction failed
+  due to database error, the subtransaction will be rolled back. A
+  ``False`` value will always be returned indicating that
+  the exception, if any, should be raised.
+
+  If no exception is noted and no database error occurred, the
+  subtransaction will be committed.
+
+Postgres.TriggerData
+====================
+
+When a TRIGGER returning function is executed by an event, instances of
+this type are given as the first argument to the selected entry point. This
+object provides the basic information about the trigger that executed the
+procedure, the target table, and the event's details.
+
+Some of the provided information is redundant as the entry point selected
+by the procedural language determines the timing, orientation, and
+manipulation. However, for generalized triggers, identifying the execution
+context using the trigger data can be appropriate.
+
+See `Trigger Returning Functions`_ for further information.
+
+**Properties:**
+
+ ``TriggerData.args``
+  Python tuple of trigger arguments specified by ``CREATE TRIGGER``.
+  The items in the tuple are ``str`` objects.
+
+ ``TriggerData.type``
+  The `Postgres.types.record`_ subclass representing
+  the target table. For row triggers, it is also the type of the
+  ``old`` and ``new`` parameters.
+
+ ``TriggerData.relation_id``
+  The ``Oid`` of the target table.
+
+ ``TriggerData.table_schema``
+  The schema name that holds the target table.
+
+ ``TriggerData.table_name``
+  The table name of the target table.
+
+ ``TriggerData.trigger_schema``
+  The schema name that holds the trigger.
+
+ ``TriggerData.trigger_name``
+  The name of the trigger. Defined by the ``CREATE TRIGGER`` statement that
+  originally created the ``TRIGGER``.
+
+ ``TriggerData.manipulation``
+  The operation that caused the trigger to execute the procedure. Always
+  one of:
+  
+  - ``'INSERT'``
+  - ``'UPDATE'``
+  - ``'DELETE'``
+  - ``'TRUNCATE'``
+
+ ``TriggerData.orientation``
+  Identifies if the trigger was fired at the row level or the statement
+  level. Always one of:
+  
+  - ``'ROW'``
+  - ``'STATEMENT'``
+
+ ``TriggerData.timing``
+  When the trigger executed the procedure.
+  Always one of:
+  
+  - ``'BEFORE'``
+  - ``'AFTER'``
+
+ ``TriggerData.table_catalog``
+  The name of the current database.
+
+ ``TriggerData.trigger_catalog``
+  The name of the current database.
+
+
+Postgres.TupleDesc
+==================
+
+The Python interface to the TupleDesc structures. This is essentially a
+sequence of ``pg_attribute`` instances. Normally,
+these objects are used to support composite types and do not need to be
+used directly.
+
+**Properties:**
+
+ ``TupleDesc.column_count``
+  Number of attributes in the descriptor.
+
+  This count does *not* include dropped columns.
+
+ ``TupleDesc.column_names``
+  A tuple of strings naming the attributes in the descriptor.
+
+  This sequence does *not* include dropped columns.
+
+ ``TupleDesc.column_types``
+  A tuple of `Postgres.Type` instances of the attributes in
+  the descriptor.
+
+  This sequence does *not* include dropped columns.
+
+ ``TupleDesc.pg_column_types``
+  A tuple of type Oids of the attributes in the descriptor.
+
+  This sequence does *not* include dropped columns.
+
+**Methods:**
+
+ ``TupleDesc.__getitem__(index), TupleDesc[index]``
+  Get the ``pg_attribute`` instance of the index.
+
+  *The returned record may be for a dropped attribute.*
+
+ ``TupleDesc.__len__(), len(TupleDesc)``
+  The total number of attributes in the descriptor.
+
+  *This count will include dropped attributes.*
+
+
+Postgres.Type
+=============
+
+Postgres.Type is Postgres.Object's type. Instances of this type, Postgres.Object
+and subclasses thereof, are used to represent Postgres
+types. These objects provide access to type metadata and instantiation
+methods to create :ref:`data`.
+
+**Constructors:**
+
+ ``Postgres.Type(oid)``
+  A Postgres.Type instance can be created by calling
+  ``Postgres.Type`` with a type oid as it's sole argument.
+  If the type exists, a Postgres.Object *subclass* is
+  returned.
+
+  The given Oid can be a Python int, Postgres.types.oid, or a
+  Postgres.types.regtype instance.
+
+**Properties:**
+
+ ``Type.Array``
+  The array type of the element type. If the instance is an array type,
+  this property will be the same object as the instance. `Postgres.Array`.
+
+ ``Type.Base``
+  The ultimate base type of the domain type. If the instance is not a
+  domain, this property will be the same object as the instance.
+
+ ``Type.Element``
+  The element type of the array type. If the instance is not an array
+  type, this property will be the same object as the instance.
+
+ ``Type.oid``
+  The type's Oid as a Python ``int``.
+
+ ``Type.oidstr``
+  The type's Oid as a Python ``str``.
+
+ ``Type.typname``
+  The type's name as a Python ``str``.
+
+ ``Type.nspname``
+  The type's namespace name as a Python ``str``.
+
+ ``Type.typnamespace``
+  The type's namespace Oid as a Python ``int``.
+
+ ``Type.descriptor``
+  The type's `Postgres.TupleDesc`. ``None``, if the type is not a composite type.
+
+ ``Type.column_names``
+  The attribute names of the type's TupleDesc in a Python tuple.
+  Ordered by the attribute's index.
+
+  This does *not* include dropped attributes.
+
+ ``Type.column_types``
+  The attribute types, ``Postgres.Type`` instances, of
+  the type's TupleDesc in a Python tuple. Ordered by the attribute's
+  index.
+
+  This does not include dropped attributes.
+
+ ``Type.pg_column_types``
+  The attribute type Oids of the type's TupleDesc in a Python tuple. 
+  Ordered by the attribute's index.
+
+  This does not include dropped attributes.
+
+**Methods:**
+
+ ``Type.typoutput(ob)``
+  Call the type's typoutput routine. The given object must be an instance
+  of this type. Usually, ``str(ob)`` suffices.
+
+ ``Type.typsend(ob)``
+  Call the type's binary send routine. The given object must be an
+  instance of this type.
+
+ ``Type.typinput(strob[, mod = pyint])``
+  Call the type's string input routine. This is different from
+  instantiation as the typmod is *not* passed through
+  the type's modin.
+
+ ``Type.typreceive(bufob[, mod = pyint])``
+  Call the type's typreceive routine. The given object,
+  ``bufob``, must support the Python buffer protocol.
+
+ ``Type.typmodin(sequence)``
+  Call the type's modin routine. Takes a sequence of strings,
+  ``cstring[]`` and returns an ``int4``.
+
+ ``Type.typmodout(num)``
+  Call the type's modout routine. Takes an integer and returns a
+  ``cstring``.
+
+ ``Type.check(ob)``
+  Validate that the domain adheres to its constraints. The given object
+  must be an instance of this type.
+
+Postgres.cancel_backend
+=======================
+
+Cancel the query of another backend process, alias to the pg_cancel_backend
+function. Returns a Python ``bool``, and takes a number as it's sole argument::
+
+ from Postgres import cancel_backend
+ cancel_backend(procpid)
+
+
+Postgres.clearcache
+===================
+
+Releases `Postgres.Type`_ and `Postgres.Function`_ objects from the cache. It
+also clears the Python ``linecache`` if the module is available::
+
+ from Postgres import clearcache
+ clearcache()
+
+Normally, it is not necessary to ever call this function. When a function
+or type is looked up in the cache, its entry is checked to validate that
+it is up-to-date. If it needs to be refreshed, a new object reflecting
+the latest version will be created to replace the existing cache entry.
+
+.. note:: This function has no effect on built-in types.
+
+Postgres.clock_timestamp
+========================
+
+Get the current clock timestamp. Takes no arguments and returns a
+`Postgres.types.timestamptz`_::
+
+ from Postgres import clock_timestamp
+
+ curtime = clock_timestamp()
+
+Postgres.convert_postgres_objects
+=================================
+
+Convert the `Postgres.Object`_ instances in the given iterable
+into standard Python types. A tuple with the converted objects is returned::
+
+ from Postgres import convert_postgres_object
+ from Postgres.types import int4, text
+
+ pg_data = [int4(123), text('foo'), set([1,2,3])]
+ py_data = convert_postgres_objects(pg_data)
+
+ assert py_data[0].__class__ is int
+ assert py_data[1].__class__ is str
+
+ # ignores unidentified types
+ assert py_data[1].__class__ is set
+
+*Data objects whose type is not listed in the table below are not converted*.
+
+=============== =============
+Postgres Types  Python Types
+=============== =============
+bool            bool
+int2            int
+int4            int
+int8            int
+float4          float
+float8          float
+char            str
+bpchar          str
+varchar         str
+cstring         str
+text            str
+=============== =============
+
+**Arguments:**
+
+ ``iterable``
+  An iterable containing the objects to convert.
+
+Postgres.current_schemas
+========================
+
+``Postgres.current_schemas`` provides a structured version of
+the ``search_path`` setting. Like ``pg_catalog.current_schemas``,
+but returns a Python tuple of Python strings::
+ 
+ import Postgres
+ schemas = Postgres.current_schemas()
+ all_schemas = Postgres.current_schemas(True)
+
+
+**Arguments:**
+
+ ``include_temps``
+  *Optional keyword. Defaults to ``False``.*
+  Include the temporary schemas in the returned tuple.
+
+Postgres.current_schemas_oid
+============================
+
+``Postgres.current_schemas_oid`` provides a tuple of
+namespace Oids based on the ``search_path`` setting::
+
+ import Postgres
+ schemas = Postgres.current_schemas_oid()
+ all_schemas = Postgres.current_schemas_oid(True)
+
+.. warning::
+   The Oids may refer to namespaces that no longer exist.
+
+**Arguments:**
+
+ ``include_temps``
+  *Optional keyword. Defaults to ``False``.*
+  Include the temporary schemas in the returned tuple.
+
+Postgres.ereport
+================
+
+.. _`Postgres.DEBUG`:
+.. _`Postgres.LOG`:
+.. _`Postgres.INFO`:
+.. _`Postgres.NOTICE`:
+.. _`Postgres.WARNING`:
+.. _`Postgres.ERROR`:
+.. _`Postgres.FATAL`:
+
+``Postgres.ereport([severity[, message[, detail[, hint[, context[, sqlerrcode[, inhibit_pl_context]]]]]]])``
+
+:func:`Postgres.ereport` is an interface to the ``ereport`` facility.
+Direct use is not recommended as the aliases provide some added convenience
+over the raw function:
+
+ - ``Postgres.DEBUG``
+ - ``Postgres.LOG``
+ - ``Postgres.INFO``
+ - ``Postgres.NOTICE``
+ - ``Postgres.WARNING``
+ - ``Postgres.ERROR``
+ - ``Postgres.FATAL``
+
+In addition to the severity being implied by the name, the aliases can
+accept an additional ``code`` argument which is converted
+to an SQL-state code. This is in contrast to ``ereport``,
+which can *only* take the ``sqlerrcode`` keyword as an
+integer::
+
+ import Postgres
+ def main(...):
+ 	Postgres.WARNING("unexpected event")
+ 	Postgres.WARNING("extra info", code = '01001')
+ 	Postgres.LOG("additional information about the event", detail = event_details)
+ 	Postgres.ereport(Postgres.severities['DEBUG4'], "direct report")
+
+
+**Keyword Arguments:**
+
+ ``severity``
+  The first, required keyword parameter. This is expected to be the integer form of
+  the error level. The mapping of severity names to error level integers
+  is available at ``Postgres.severities``.
+
+ ``message``
+  The second, required keyword parameter. This is the primary message
+  portion of the report. This string is given to ``errmsg``
+
+ ``detail``
+  String given to ``errdetail``.
+
+ ``hint``
+  String given to ``errhint``.
+
+ ``context``
+  String given to ``errcontext``.
+
+ ``sqlerrcode``
+  SQL-state integer given to ``errcode``.
+
+ ``code``
+  The SQL-state string. This is converted to an SQL-state integer and
+  given as the ``sqlerrcode`` keyword.
+
+  *This keyword is not accepted by Postgres.ereport. See the aliases listed above.*
+
+ ``inhibit_pl_context``
+  If given ``True``, the traceback and function identity
+  will *not* be included in the CONTEXT portion of the report.
+
+
+Postgres.eval
+=============
+
+``Postgres.eval`` is a function that uses `Postgres.Statement`_ to execute an
+SQL-expression::
+
+ import Postgres
+ 
+ def main(...):
+ 	r = Postgres.eval("now()::date - 10")
+
+It is also available in `Builtins`_ as ``sqleval``.
+
+
+.. _pg_execute:
+Postgres.execute
+================
+
+Execute multiple SQL statements in the given string. This function takes a
+single argument, a string containing the SQL statements to execute. This
+function always returns ``None``::
+
+ import Postgres
+ Postgres.execute("""
+ 	CREATE TEMP TABLE t (i int);
+ 	INSERT INTO t VALUES (321);
+ """)
+
+Also available in `Builtins`_ as ``sqlexec``.
+
+**Arguments:**
+
+ ``sql_statements_string``
+  A string object containing the SQL statements to execute.
+
+Postgres.iterpytypes
+====================
+
+A callable that produces an iterator that uses
+`Postgres.convert_postgres_objects`_ to convert the sequences produced by the
+given iterable into Python types::
+
+ from Postgres import iterpytypes
+
+ stmt = prepare("SELECT i FROM generate_series(1, 100) AS g(i)")
+
+ # process the rows() cursor with iterpytypes
+ results = iterpytypes(stmt.rows())
+ 
+ # iterate over the results as Python types
+ for row in results:
+ 	i = row[0]
+ 	...
+
+*iterpytypes yields Python tuples.*
+
+**Arguments:**
+
+ ``iter``
+  An iterable producing *sequences* of `Postgres.Object` instances.
+
+Postgres.notify
+===============
+
+``Postgres.notify`` is an alias to the ``NOTIFY`` command. It only
+takes a single argument, the notification name::
+
+ import Postgres
+ 
+ Postgres.notify("relid")
+
+**Arguments:**
+
+ ``relname``
+  The notification channel to use.
+
+Postgres.preload
+================
+
+Preload provides a means to load a set of functions
+before they are actually used. The arguments accepted by the function are
+schema identifiers. The Python functions in each schema are collected and
+loaded. If no schemas are given, all Python functions in the database are loaded::
+
+ import Postgres
+ 
+ Postgres.preload("schema1", "schema2")
+
+Essentially, ``pg_proc`` is queried for all Python function Oids,
+`Postgres.Function`_ instances are created from
+each Oid, and the ``load_module`` method is called on each
+instance to ready the function's code.
+
+.. tip::
+   Using preload in conjunction with a pooler helps to make sure that the
+   initialization overhead will not impact the performance of the function's
+   first call.
+
+Postgres.pytypes
+================
+
+A decorator that uses `Postgres.convert_postgres_objects`_
+to convert the arguments given to the decorated function into standard Python
+objects::
+ 
+ @pytypes
+ def main(...):
+ 	...
+
+The decorator only converts objects to Python primitives.
+
+Postgres.quote_ident
+====================
+
+``Postgres.quote_ident`` is an alias to the ``quote_ident`` function. It only
+takes a single argument, the identifer string to quote::
+
+ from Postgres import quote_ident
+ 
+ id = quote_ident('an"identifier')
+ 
+ assert id == '"an""identifier"'
+
+Postgres.quote_literal
+======================
+
+``Postgres.quote_literal`` is an alias to the ``pg_catalog.quote_literal`` function.
+It only takes a single argument, the string to quote::
+
+ from Postgres import quote_literal
+
+ x = quote_literal('an"literal\'string')
+
+ assert x == """'an"literal''string'"""
+
+Postgres.quote_nullable
+=======================
+
+``Postgres.quote_nullable`` is an alias to the
+``pg_catalog.quote_nullable`` function. It only
+takes a single argument, the string to quote. If given
+``None``, the string ``'NULL'`` will be returned::
+
+ from Postgres import quote_nullable
+
+ x = quote_nullable('an"literal\'string')
+ 
+ assert quote_nullable(None) == 'NULL'
+ assert x == """'an"literal''string'"""
+
+Postgres.sleep
+==============
+
+``sleep(seconds_to_sleep : float)``
+
+Alias to the ``pg_sleep`` function. Takes a single argument, the amount of time
+to sleep and always returns ``None``::
+
+ from Postgres import sleep
+ 
+ sleep(0.5)
+
+Postgres.statement_timestamp
+============================
+
+Get the statement start time--an alias to the ``statement_timestamp`` function.
+Takes no arguments and returns a `Postgres.types.timestamptz`_::
+
+ from Postgres import statement_timestamp
+ 
+ assert sqleval('pg_catalog.statement_timestamp()') == statement_timestamp()
+
+Postgres.transaction_timestamp
+==============================
+
+``transaction_timestamp()``
+
+Get the transaction start time--an alias to the ``transaction_timestamp`` function.
+Takes no arguments and returns a `Postgres.types.timestamptz`_::
+
+ from Postgres import transaction_timestamp
+ 
+ assert sqleval('now()') == transaction_timestamp()
+
+Postgres.terminate_backend
+==========================
+
+``terminate_backend(process_pid)``
+
+Terminate another backend process--alias to the ``pg_catalog.pg_terminate_backend``
+function. Takes a single argument, the process id to terminate, and returns
+``bool`` indicating whether the specified backend was successfully terminated::
+
+ from Postgres import terminate_backend
+ 
+ terminate_backend(proc_pid)
+

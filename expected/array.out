@@ -1,0 +1,767 @@
+-- This first test is used to validate the Array type's ability
+-- to handle different typlen elements. text and bytea are redundant in that
+-- fashion, but keep both to cover extra bases...
+CREATE OR REPLACE FUNCTION py_check_array() RETURNS SETOF text LANGUAGE python AS
+$python$
+import Postgres
+import operator
+import itertools
+import random
+
+def get_n_samples(n, s):
+	'get "n" number of random objects from "s" (dups are likely)'
+	return list(itertools.islice((
+		x for x in itertools.cycle(s)
+		if random.random() > 0.6
+	), n))
+
+# sample types and data
+#
+# yes, random is bad, but we're not actually testing
+# for transient failures. this is just an easy (lazy) way to
+# collect N samples for any given need.
+etypes = [
+	(Postgres.types.int2, set([
+		-1, 0, 1, 0x7FF, -0xFF, None
+	])),
+	(Postgres.types.int4, set([
+		-1, 0, 1, 0x7FFFFF, -0xFFFFF, None
+	])),
+	(Postgres.types.int8, set([
+		-1, 0, 1, 0x7FFFFFFFFF, -0xFFFFFFFFF, None
+	])),
+	(Postgres.types.text, set([
+		"some text", "some more text",
+		"less text", "that text", "meh",
+		"element", "sample", "a"*50,
+		"z"*100, None
+	])),
+	(Postgres.types.bytea, set([
+		b'foobar\x00', r"\000foobar",
+		b'FFF'*100, b'\x01'*20, None
+	])),
+	(Postgres.types.bpchar, set([
+		'x', 'Y', 'a', 'b', 'n', None
+	])),
+	(Postgres.types.bool, set([
+		None, 't', 'f', True, False, 1, 0
+	]))
+]
+
+# Test all the array interfaces
+def test_array(etyp, samples):
+	at = etyp.Array
+	E = at([])
+	assert len(E) == 0
+	assert E.ndim == 1
+	assert E.dimensions[0] == 0
+	assert E.lowerbounds[0] == 1
+	try:
+		E[0]
+	except IndexError:
+		pass
+	else:
+		assert False and "failed to raise IndexError"
+	#
+	one_d = get_n_samples(20, samples)
+	A = at(one_d)
+	assert len(one_d) == 20
+	assert len(A) == 20
+	assert A.Element is etyp
+	assert type(A).Element is etyp
+	assert type(A).Element.Array is at
+	# Only works for single dimensions, ATM
+	assert list(A) == A
+	assert A.ndim == 1
+	assert A.dimensions[0] == 20
+	assert A.nelements == 20
+	assert A.lowerbounds[0] == 1
+	assert len(A.dimensions) == 1
+	assert len(A.lowerbounds) == 1
+	# Considering the way the elements are generated,
+	# this could give a false positive, but it's not likely
+	# for all of the types to fail.
+	assert A[-1] == A[len(A)-1]
+	assert A[-len(A)] == A[0]
+	assert A[:] is A
+	assert A[0:] is A
+	# check slicing
+	assert (A[:10] + A[11:]) == A
+
+def main():
+	for et, samples in etypes:
+		yield 'checking ' + et.__name__
+		test_array(et, samples)
+	yield 'success'
+$python$;
+SELECT py_check_array();
+ py_check_array  
+-----------------
+ checking int2
+ checking int4
+ checking int8
+ checking text
+ checking bytea
+ checking bpchar
+ checking bool
+ success
+(8 rows)
+
+CREATE OR REPLACE FUNCTION py_array_len(anyarray) RETURNS int LANGUAGE python AS
+$python$
+main = len
+$python$;
+SELECT py_array_len(ARRAY[1,2,3,4]::int[]);
+ py_array_len 
+--------------
+            4
+(1 row)
+
+SELECT py_array_len(ARRAY[[1,2],[3,4]]::int[]);
+ py_array_len 
+--------------
+            2
+(1 row)
+
+SELECT py_array_len('[2:4]={1,2,3}'::int[]);
+ py_array_len 
+--------------
+            3
+(1 row)
+
+SELECT py_array_len('[2:4][3:4]={{1,2},{3,4},{5,6}}'::int[]);
+ py_array_len 
+--------------
+            3
+(1 row)
+
+-- When the limitation of steps of 1 no longer exists,
+-- this should be removed and additional checks should be added
+-- to the test above.
+CREATE OR REPLACE FUNCTION cant_use_not1_step(int[]) RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+
+def main(x):
+	x[0:10:2]
+$python$;
+SELECT cant_use_not1_step('{1,2,3,4,5}'::int[]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.cant_use_not1_step(integer[])", line 5, in main
+    x[0:10:2]
+ NotImplementedError: unsupported step value in array subscript
+
+[public.cant_use_not1_step(integer[])]
+-- The Array constructor requires a string or a list.
+CREATE OR REPLACE FUNCTION array_type_error() RETURNS text LANGUAGE python AS
+$python$
+from Postgres.types import int4
+AT = int4.Array
+
+def main():
+	AT((1,2,3))
+$python$;
+SELECT array_type_error();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.array_type_error()", line 6, in main
+    AT((1,2,3))
+ TypeError: array constructor requires a list or string object
+
+[public.array_type_error()]
+-- Build arrays from lists with varying dimensions
+CREATE OR REPLACE FUNCTION try_deep_arrays() RETURNS text LANGUAGE python AS
+$python$
+from Postgres.types import int4
+AT = int4.Array
+
+def main():
+	a0 = AT([])
+	a1 = AT([0])
+	a2 = AT([[0],[1]])
+	a3 = AT([[0,1],[2,3]])
+	a4 = AT([[[0,1],[2,3]], [[4,5],[6,7]]])
+	a5 = AT([[[0,1,2],[3,4,5]], [[6,7,8],[9,10,11]]])
+	a6 = AT([
+		[[0,1,2],[3,4,5]], [[6,7,8],[8,9,10]],
+		[[11,12,13],[14,15,16]], [[17,18,19],[20,21,22]]
+	])
+	a7 = AT([
+		[
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+		]
+	])
+	a8 = AT([
+		[
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+		],
+		[
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+		],
+		[
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+		],
+	])
+	a9 = AT([
+		[
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+		],
+		[
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+			[
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+			],
+		],
+	])
+	a10 = AT([
+		[
+			[
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+			],
+			[
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,111,2]], [[1,2,3],[2,1333,0]],
+					[[100,1,2],[0,1,2]], [[1,222,3],[2,1,0]],
+				],
+				[
+					[[0,1212121,2],[0,1,2]], [[1,20202,3],[2,1,110]],
+					[[0,1,2],[102220,1,2]], [[1,2,30303],[2,10101,0]],
+				],
+			],
+		],
+		[
+			[
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,15,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+			],
+			[
+				[
+					[[0,1,2],[0,1,2]], [[1,22,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,27,3],[2,1,0]],
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+				[
+					[[0,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+					[[19,1,2],[0,1,2]], [[1,2,3],[2,1,0]],
+				],
+			],
+		],
+
+	])
+	return '\n'.join(str(x) for x in [
+		a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10
+	])
+$python$;
+SELECT try_deep_arrays();
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                               try_deep_arrays                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         +
+ {0}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        +
+ {{0},{1}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  +
+ {{0,1},{2,3}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              +
+ {{{0,1},{2,3}},{{4,5},{6,7}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              +
+ {{{0,1,2},{3,4,5}},{{6,7,8},{9,10,11}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    +
+ {{{0,1,2},{3,4,5}},{{6,7,8},{8,9,10}},{{11,12,13},{14,15,16}},{{17,18,19},{20,21,22}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     +
+ {{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                +
+ {{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            +
+ {{{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}},{{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}}}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          +
+ {{{{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}},{{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,111,2}},{{1,2,3},{2,1333,0}},{{100,1,2},{0,1,2}},{{1,222,3},{2,1,0}}},{{{0,1212121,2},{0,1,2}},{{1,20202,3},{2,1,110}},{{0,1,2},{102220,1,2}},{{1,2,30303},{2,10101,0}}}}},{{{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,15,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}},{{{{0,1,2},{0,1,2}},{{1,22,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,27,3},{2,1,0}},{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}}},{{{0,1,2},{0,1,2}},{{1,2,3},{2,1,0}},{{19,1,2},{0,1,2}},{{1,2,3},{2,1,0}}}}}}
+(1 row)
+
+CREATE OR REPLACE FUNCTION string_array_elements(anyarray) RETURNS text LANGUAGE python AS
+$python$
+def main(array):
+	return str(list(array.elements()))
+$python$;
+SELECT string_array_elements(ARRAY[1::int2,5]);
+ string_array_elements  
+------------------------
+ [int4('1'), int4('5')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[1::int4,5]);
+ string_array_elements  
+------------------------
+ [int4('1'), int4('5')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[1::int8,5]);
+ string_array_elements  
+------------------------
+ [int8('1'), int8('5')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[3::float8,18.0123]);
+      string_array_elements       
+----------------------------------
+ [float8('3'), float8('18.0123')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[['key','val'],['key2','val2']]::text[]);
+                 string_array_elements                  
+--------------------------------------------------------
+ [text('key'), text('val'), text('key2'), text('val2')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[[NULL,'val'],['key2','val2']]::text[]);
+              string_array_elements              
+-------------------------------------------------
+ [None, text('val'), text('key2'), text('val2')]
+(1 row)
+
+SELECT string_array_elements(ARRAY[[[NULL,'val']],[['key2',NULL]]]::text[]);
+          string_array_elements          
+-----------------------------------------
+ [None, text('val'), text('key2'), None]
+(1 row)
+
+-- test Array.from_elements constructor
+CREATE OR REPLACE FUNCTION construct_array_from_elements(dims int[], lbs int[]) RETURNS text[] LANGUAGE python AS
+$python$
+def main(dims, lbs):
+	return __func__.output.from_elements(
+		["first","second","third","fourth"],
+		dimensions = dims,
+		lowerbounds = lbs)
+$python$;
+-- Working with a simple array, apply different dimensions and lowerbounds.
+SELECT construct_array_from_elements(NULL, NULL);
+ construct_array_from_elements 
+-------------------------------
+ {first,second,third,fourth}
+(1 row)
+
+SELECT construct_array_from_elements(ARRAY[4], ARRAY[2]);
+   construct_array_from_elements   
+-----------------------------------
+ [2:5]={first,second,third,fourth}
+(1 row)
+
+SELECT (construct_array_from_elements(ARRAY[4], ARRAY[2]))[1] IS NULL AS out_of_bounds;
+ out_of_bounds 
+---------------
+ t
+(1 row)
+
+SELECT (construct_array_from_elements(ARRAY[4], ARRAY[2]))[5];
+ construct_array_from_elements 
+-------------------------------
+ fourth
+(1 row)
+
+SELECT construct_array_from_elements(ARRAY[2,2], ARRAY[1,1]);
+  construct_array_from_elements  
+---------------------------------
+ {{first,second},{third,fourth}}
+(1 row)
+
+-- same, but (1,1) lowerbounds are implied
+SELECT construct_array_from_elements(ARRAY[2,2], NULL);
+  construct_array_from_elements  
+---------------------------------
+ {{first,second},{third,fourth}}
+(1 row)
+
+SELECT construct_array_from_elements(ARRAY[1,1,1,4], NULL);
+   construct_array_from_elements   
+-----------------------------------
+ {{{{first,second,third,fourth}}}}
+(1 row)
+
+SELECT i[1][1][1][1] AS i1, i[1][1][1][2] AS i2, i[1][1][1][3] AS i3, i[1][1][1][4] AS i4 FROM construct_array_from_elements(ARRAY[1,1,1,4], NULL) AS A(i);
+  i1   |   i2   |  i3   |   i4   
+-------+--------+-------+--------
+ first | second | third | fourth
+(1 row)
+
+SELECT construct_array_from_elements(ARRAY[1,1,4,1], NULL);
+      construct_array_from_elements      
+-----------------------------------------
+ {{{{first},{second},{third},{fourth}}}}
+(1 row)
+
+SELECT construct_array_from_elements(ARRAY[1,2,2,1], NULL);
+       construct_array_from_elements       
+-------------------------------------------
+ {{{{first},{second}},{{third},{fourth}}}}
+(1 row)
+
+-- some errors
+SELECT construct_array_from_elements(NULL, ARRAY[1,1]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.construct_array_from_elements(integer[],integer[])", line 6, in main
+    lowerbounds = lbs)
+ ValueError: number of lower bounds (2) is inconsistent with dimensions (1)
+
+[public.construct_array_from_elements(integer[],integer[])]
+SELECT construct_array_from_elements(ARRAY[1,1], ARRAY[2,2,2]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.construct_array_from_elements(integer[],integer[])", line 6, in main
+    lowerbounds = lbs)
+ ValueError: dimension capacity (1) does not accommodate the given elements (4)
+
+[public.construct_array_from_elements(integer[],integer[])]
+SELECT construct_array_from_elements(ARRAY[0,0,0], ARRAY[0,0,0]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.construct_array_from_elements(integer[],integer[])", line 6, in main
+    lowerbounds = lbs)
+ ValueError: dimension capacity (0) does not accommodate the given elements (4)
+
+[public.construct_array_from_elements(integer[],integer[])]
+-- Create a new array using the components of the original
+CREATE OR REPLACE FUNCTION reconstruct_array(anyarray) RETURNS text LANGUAGE python AS
+$python$
+def main(A):
+	original = str(A)
+	return 'original: %s --- reconstructed: %s' %(
+		original, str(type(A).from_elements(
+			A.elements(),
+			dimensions = A.dimensions,
+			lowerbounds = A.lowerbounds
+		))
+	)
+$python$;
+SELECT reconstruct_array(ARRAY[]::int[]);
+         reconstruct_array          
+------------------------------------
+ original: {} --- reconstructed: {}
+(1 row)
+
+SELECT reconstruct_array(ARRAY[0,1,2,3,4,5,6,7,8,9]::int[]);
+                            reconstruct_array                             
+--------------------------------------------------------------------------
+ original: {0,1,2,3,4,5,6,7,8,9} --- reconstructed: {0,1,2,3,4,5,6,7,8,9}
+(1 row)
+
+SELECT reconstruct_array('[3:5]={1,2,3}'::int[]);
+                    reconstruct_array                     
+----------------------------------------------------------
+ original: [3:5]={1,2,3} --- reconstructed: [3:5]={1,2,3}
+(1 row)
+
+SELECT reconstruct_array('[3:5]={1,2,3}'::text[]);
+                    reconstruct_array                     
+----------------------------------------------------------
+ original: [3:5]={1,2,3} --- reconstructed: [3:5]={1,2,3}
+(1 row)
+
+SELECT reconstruct_array('[1:2][1:2]={{t1,t2},{t3,t4}}'::text[]);
+                        reconstruct_array                         
+------------------------------------------------------------------
+ original: {{t1,t2},{t3,t4}} --- reconstructed: {{t1,t2},{t3,t4}}
+(1 row)
+
+SELECT reconstruct_array('[2:5][1:2]={{x,y},{t1,t2},{t3,t4},{a,b}}'::text[]);
+                                               reconstruct_array                                                
+----------------------------------------------------------------------------------------------------------------
+ original: [2:5][1:2]={{x,y},{t1,t2},{t3,t4},{a,b}} --- reconstructed: [2:5][1:2]={{x,y},{t1,t2},{t3,t4},{a,b}}
+(1 row)
+
+-- And a NULL case.
+SELECT reconstruct_array(ARRAY[NULL,'foo',NULL]::text[]);
+                      reconstruct_array                       
+--------------------------------------------------------------
+ original: {NULL,foo,NULL} --- reconstructed: {NULL,foo,NULL}
+(1 row)
+
+-- And a composite case..
+DROP TYPE IF EXISTS array_composite;
+NOTICE:  type "array_composite" does not exist, skipping
+CREATE TYPE array_composite AS (i int, t text, c "char");
+SELECT reconstruct_array(ARRAY[ROW(1,'t','c'), NULL, ROW(100,'text','z')]::array_composite[]);
+                                      reconstruct_array                                       
+----------------------------------------------------------------------------------------------
+ original: {"(1,t,c)",NULL,"(100,text,z)"} --- reconstructed: {"(1,t,c)",NULL,"(100,text,z)"}
+(1 row)
+
+-- Attempt to create an array using invalid elements
+CREATE OR REPLACE FUNCTION invalid_elements(text) RETURNS text LANGUAGE python AS
+$python$
+from Postgres.types import int8
+
+def main(x):
+	int8.Array.from_elements([x])
+	return 'failed'
+$python$;
+SELECT invalid_elements('foo');
+ERROR:  invalid input syntax for integer: "foo"
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.invalid_elements(text)", line 5, in main
+    int8.Array.from_elements([x])
+ Postgres.Exception
+
+[public.invalid_elements(text)]
+-- Test sql_get_element() method
+CREATE OR REPLACE FUNCTION py_array_sql_get_element(anyarray, int[]) RETURNS anyelement LANGUAGE python AS
+$python$
+def main(arr, ind):
+	return arr.sql_get_element(ind)
+$python$;
+SELECT py_array_sql_get_element(ARRAY[1,2,3,4]::int[], ARRAY[1]);
+ py_array_sql_get_element 
+--------------------------
+                        1
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[1,2,3,4]::int[], ARRAY[2]);
+ py_array_sql_get_element 
+--------------------------
+                        2
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[2,1]);
+ py_array_sql_get_element 
+--------------------------
+                        3
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[1,1]);
+ py_array_sql_get_element 
+--------------------------
+                        1
+(1 row)
+
+-- NULLs
+SELECT py_array_sql_get_element(ARRAY[1,2,3,4]::int[], ARRAY[5]); -- out of bounds
+ py_array_sql_get_element 
+--------------------------
+                         
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[2]); -- too few
+ py_array_sql_get_element 
+--------------------------
+                         
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[1,2,3,4,5,6,7,8,9,10]); -- too many
+ py_array_sql_get_element 
+--------------------------
+                         
+(1 row)
+
+-- Some repetition.
+SELECT py_array_sql_get_element(ARRAY[[[[[['deep']]]]]]::text[], ARRAY[1,1,1,1,1,1]);
+ py_array_sql_get_element 
+--------------------------
+ deep
+(1 row)
+
+SELECT py_array_sql_get_element(ARRAY[[[[[['deep']]]]]]::text[], ARRAY[1,1,1,1,1]);
+ py_array_sql_get_element 
+--------------------------
+ 
+(1 row)
+
+-- won't even get into plpython (too many dimensions)
+SELECT py_array_sql_get_element(ARRAY[[[[[[['deep']]]]]]]::text[], ARRAY[1,1,1,1,1,1,1]);
+ERROR:  number of array dimensions (7) exceeds the maximum allowed (6)
+-- Test get_element() method *zero*-based.
+CREATE OR REPLACE FUNCTION py_array_get_element(anyarray, int[]) RETURNS anyelement LANGUAGE python AS
+$python$
+def main(arr, ind):
+	return arr.get_element(ind)
+$python$;
+-- index error, no elements
+SELECT py_array_get_element(ARRAY[]::int[], ARRAY[0]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ IndexError: no elements in array
+
+[public.py_array_get_element(anyarray,integer[])]
+-- value error, empty index tuple
+SELECT py_array_get_element(ARRAY[]::int[], '{}'::int[]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ ValueError: empty index tuple
+
+[public.py_array_get_element(anyarray,integer[])]
+-- success
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[1]);
+ py_array_get_element 
+----------------------
+                    2
+(1 row)
+
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[3]);
+ py_array_get_element 
+----------------------
+                    4
+(1 row)
+
+-- negative indexes
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[-1]);
+ py_array_get_element 
+----------------------
+                    4
+(1 row)
+
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[-2]);
+ py_array_get_element 
+----------------------
+                    3
+(1 row)
+
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[-3]);
+ py_array_get_element 
+----------------------
+                    2
+(1 row)
+
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[-4]);
+ py_array_get_element 
+----------------------
+                    1
+(1 row)
+
+-- IndexError's
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[-5]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ IndexError: index -5 out of range 4 for axis 0
+
+[public.py_array_get_element(anyarray,integer[])]
+SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[4]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ IndexError: index 4 out of range 4 for axis 0
+
+[public.py_array_get_element(anyarray,integer[])]
+-- MD access
+SELECT py_array_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[1,0]);
+ py_array_get_element 
+----------------------
+                    3
+(1 row)
+
+SELECT py_array_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[-1,-1]);
+ py_array_get_element 
+----------------------
+                    4
+(1 row)
+
+-- ValueError, too few
+SELECT py_array_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[2]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ ValueError: element access requires exactly 2 indexes, given 1
+
+[public.py_array_get_element(anyarray,integer[])]
+-- ValueError, too many
+SELECT py_array_get_element(ARRAY[[1,2],[3,4]]::int[], ARRAY[1,2,3,4,5,6,7,8,9,10]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ ValueError: element access requires exactly 2 indexes, given 10
+
+[public.py_array_get_element(anyarray,integer[])]
+-- Deep access
+SELECT py_array_get_element(ARRAY[[[[[['deep']]]]]]::text[], ARRAY[0,0,0,0,0,0]);
+ py_array_get_element 
+----------------------
+ deep
+(1 row)
+
+SELECT py_array_get_element(ARRAY[[[[[['deep'],['deeper']]]]]]::text[], ARRAY[0,0,0,0,1,0]);
+ py_array_get_element 
+----------------------
+ deeper
+(1 row)
+
+-- and a couple more errors
+SELECT py_array_get_element(ARRAY[[[[[['deep']]]]]]::text[], ARRAY[0,0,0,0,0,1]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ IndexError: index 1 out of range 1 for axis 5
+
+[public.py_array_get_element(anyarray,integer[])]
+SELECT py_array_get_element(ARRAY[[[[[['deep']]]]]]::text[], ARRAY[0,0,0,0,0]);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_array_get_element(anyarray,integer[])", line 3, in main
+    return arr.get_element(ind)
+ ValueError: element access requires exactly 6 indexes, given 5
+
+[public.py_array_get_element(anyarray,integer[])]

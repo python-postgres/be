@@ -1,0 +1,3 @@
+pg-python is a Python procedural language extension for PostgreSQL.
+
+See src/documentation/admin.txt for installation information.

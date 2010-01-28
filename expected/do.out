@@ -1,0 +1,86 @@
+DO $$
+import Postgres
+sqlexec("""
+	CREATE TABLE created_from_do (i int);
+	INSERT INTO created_from_do VALUES (1004);
+""")
+$$ LANGUAGE python;
+SELECT * FROM created_from_do;
+  i   
+------
+ 1004
+(1 row)
+
+DO $$
+import Postgres
+Postgres.ERROR("do-raised-error")
+$$ LANGUAGE python;
+ERROR:  do-raised-error
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "<string>", line 100, in main
+   File "<string>", line 94, in load_module
+   File "[do-block-2]", line 3, in <module>
+    Postgres.ERROR("do-raised-error")
+   File "<string>", line 49, in ERROR
+ Postgres.Exception
+
+[__inline_executor__]
+DO $$
+import Postgres
+x = xact()
+x.__enter__()
+$$ LANGUAGE python;
+ERROR:  function failed to exit all subtransactions
+DETAIL:  The 1 remaining subtransactions have been aborted.
+-- Now for something more interesting...
+DO $$
+prepare("""
+DO $more$
+import Postgres
+Postgres.WARNING("sub-do")
+$more$ LANGUAGE python;
+""")()
+$$ LANGUAGE python;
+WARNING:  sub-do
+CONTEXT:  SQL statement "
+DO $more$
+import Postgres
+Postgres.WARNING("sub-do")
+$more$ LANGUAGE python;
+"
+-- Now for something even more interesting...
+DO $$
+prepare("""
+DO $more$
+import Postgres
+Postgres.ERROR("how does the traceback look?")
+$more$ LANGUAGE python;
+""")()
+$$ LANGUAGE python;
+ERROR:  how does the traceback look?
+CONTEXT:  SQL statement "
+DO $more$
+import Postgres
+Postgres.ERROR("how does the traceback look?")
+$more$ LANGUAGE python;
+"
+[exception from Python]
+Traceback (most recent call last):
+   File "<string>", line 100, in main
+   File "<string>", line 94, in load_module
+   File "[do-block-7]", line 3, in <module>
+    Postgres.ERROR("how does the traceback look?")
+   File "<string>", line 49, in ERROR
+ Postgres.Exception
+
+[__inline_executor__]
+[exception from Python]
+Traceback (most recent call last):
+   File "<string>", line 100, in main
+   File "<string>", line 94, in load_module
+   File "[do-block-6]", line 7, in <module>
+    """)()
+ Postgres.Exception
+
+[__inline_executor__]

@@ -1,0 +1,8 @@
+^^^^^^^^^
+pg-python
+^^^^^^^^^
+
+pg-python is a Python 3 procedural language extension for PostgreSQL.
+
+Procedural language extensions are dynamically loaded libraries that can enable
+the use of a language within PostgreSQL, normally by creating SQL FUNCTIONs.
