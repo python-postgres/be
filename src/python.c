@@ -4,7 +4,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <pypg/python.h>
+#include "pypg/python.h"
 
 /*
  * The reference owner stack. Used to manage DECREFs on objects.

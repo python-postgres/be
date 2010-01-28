@@ -33,7 +33,6 @@
 #include "utils/relcache.h"
 #include "utils/typcache.h"
 
-#include "pypg/environment.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/pl.h"

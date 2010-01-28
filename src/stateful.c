@@ -14,7 +14,6 @@
 #include "access/tupdesc.h"
 #include "utils/memutils.h"
 
-#include "pypg/environment.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/strings.h"

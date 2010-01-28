@@ -20,7 +20,6 @@
 #include "mb/pg_wchar.h"
 #include "catalog/pg_type.h"
 
-#include "pypg/environment.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/pl.h"

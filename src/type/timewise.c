@@ -37,7 +37,6 @@
 #include "utils/datetime.h"
 #include "utils/timestamp.h"
 
-#include "pypg/environment.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/pl.h"

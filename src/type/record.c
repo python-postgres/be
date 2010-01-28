@@ -34,7 +34,6 @@
 #include "lib/stringinfo.h"
 #include "funcapi.h"
 
-#include "pypg/environment.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/pl.h"
