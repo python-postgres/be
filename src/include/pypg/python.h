@@ -16,8 +16,6 @@ PyObj PyObject_AsASCIIString(PyObj stringable_ob);
 
 /* New References */
 /* Avoids exception on absence */
-#define Py_ITEMSTR(ob,str)	(PyMapping_HasKeyString(ob,str)? \
-									 PyMapping_GetItemString(ob,str):(PyObj)NULL)
 #define Py_ATTR(ob,str)	(PyObject_HasAttrString(ob,str)? \
 								PyObject_GetAttrString(ob,str):(PyObj) NULL)
 
