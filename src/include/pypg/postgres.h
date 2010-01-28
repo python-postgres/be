@@ -43,7 +43,7 @@ extern PyObj py_my_datname_str_ob;
 extern MemoryContext PythonMemoryContext, PythonWorkMemoryContext;
 
 #undef TEXTDOMAIN
-#define TEXTDOMAIN PG_TEXTDOMAIN("plpython3")
+#define TEXTDOMAIN PG_TEXTDOMAIN("python")
 
 /*
  * Used by type/ to initialize statically allocated PyPgType's.
