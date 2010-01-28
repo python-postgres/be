@@ -37,11 +37,9 @@ source_suffix = '.txt'
 master_doc = 'index'
 
 # General substitutions.
-__author__ = 'James William Pye'
-__project__ = 'pg-python'
-__date__ = '2010-01-20 18:06:00-MST'
-project = __project__
-copyright = __date__ + ', ' + __author__
+import __meta__ as meta
+project = meta.__project__
+copyright = meta.__date__ + ', ' + meta.__author__
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -145,9 +143,6 @@ html_last_updated_fmt = '%b %d, %Y'
 
 # If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = ''
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = __project__
 
 
 # Options for LaTeX output

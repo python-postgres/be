@@ -2,6 +2,7 @@
 # Meta data source.
 #
 # This is separated from module.py in order to allow 2.x to import it.
+__project__ = 'pg-python'
 __date__ = '2010-02-01'
 __target__ = 'PostgreSQL 9.0'
 __target_id__ = 'pg90'
