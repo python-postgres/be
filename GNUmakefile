@@ -41,7 +41,7 @@ override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 # Convert the characters in the file into a comma separated list of
 # ASCII character codes. (See src/module.c for where it's included)
 src/module.py.cfrag: src/module.py
-	$(python) src/module.py.cfrag.py <$? >$@
+	$(python) build/tools/mkdigits.py <$? >$@
 
 .PHONY: html
 
