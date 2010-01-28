@@ -30,7 +30,7 @@ typedef struct PyPgCursor {
 	Py_ssize_t cur_chunksize;
 
 	/*
-	 * The transaction id that the cursor was created in.
+	 * The pl transaction id that the cursor was created in.
 	 * Used to identify the validity of cur_portal.
 	 */
 	unsigned long cur_xid, cur_subxid;
