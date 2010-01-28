@@ -35,7 +35,7 @@ ifeq ($(PLPY_STRANGE_THINGS), 1)
 override CPPFLAGS := -DPLPY_STRANGE_THINGS $(CPPFLAGS)
 endif
 
-override CPPFLAGS := '-DPL_UUID="$(uuid)"' $(python_cflags) $(CPPFLAGS) -I./include
+override CPPFLAGS := '-DPL_UUID="$(uuid)"' $(python_cflags) $(CPPFLAGS) -I./src/include
 override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 
 # Convert the characters in the file into a comma separated list of
