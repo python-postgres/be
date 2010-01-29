@@ -479,14 +479,13 @@ A file-like interface to large objects.
  ``LargeObject.seek(offset[, whence = 0])``
   Seek to the target offset.
 
-
 Postgres.Object
 ===============
 
 ``Postgres.Object`` is the base type of all Postgres types. Instances are,
 effectively, a Postgres `Datum` associated with the respective type.
 Postgres.Object instances are a Python interface to Postgres data.
-See :ref:`data` for more information.
+See `Data`_ for more information.
 
 The interfaces described here are applicable to *instances of subclasses*.
 ``Postgres.Object`` itself is abstract, so the described constructors,
@@ -893,10 +892,10 @@ used directly.
 Postgres.Type
 =============
 
-Postgres.Type is Postgres.Object's type. Instances of this type, Postgres.Object
+``Postgres.Type`` is `Postgres.Object`_'s type. Instances of this type, Postgres.Object
 and subclasses thereof, are used to represent Postgres
 types. These objects provide access to type metadata and instantiation
-methods to create :ref:`data`.
+methods to create `Data`_.
 
 **Constructors:**
 

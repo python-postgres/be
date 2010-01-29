@@ -9,6 +9,7 @@ Contents
 
    admin
    programming
+   changes
 
 ^^^^^^^^^
 Reference

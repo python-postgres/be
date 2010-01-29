@@ -1,0 +1,15 @@
+.. include:: intro.txt
+
+^^^^^^^^
+Contents
+^^^^^^^^
+
+.. include:: admin.txt
+.. include:: programming.txt
+
+^^^^^^^^^
+Reference
+^^^^^^^^^
+
+.. include:: postgres.txt
+.. include:: postgres_types.txt
