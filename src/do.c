@@ -1,12 +1,16 @@
 /*
  * do.c - inline handler implementation
  *
- * Feature found in PG 8.5 and greater.
+ * Feature found in PG 8.5/9.0 and greater.
  */
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #include "postgres.h"
+/*
+ * DO statements exist in 8.5 and greater.
+ * FIXME: This should probably be an ifdef determined by a probe.
+ */
 #if (PG_VERSION_NUM >= 80500)
 #include "fmgr.h"
 #include "access/htup.h"
