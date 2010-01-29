@@ -7,6 +7,7 @@
 #include <Python.h>
 
 #include "postgres.h"
+#if (PG_VERSION_NUM >= 80500)
 #include "fmgr.h"
 #include "access/htup.h"
 #include "access/tupdesc.h"
@@ -192,3 +193,4 @@ pl_inline(PG_FUNCTION_ARGS)
 
 	return(rd);
 }
+#endif
