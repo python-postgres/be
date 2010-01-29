@@ -9,10 +9,16 @@ RETURNS LANGUAGE_HANDLER LANGUAGE C AS 'python', 'pl_handler';
 CREATE FUNCTION
  "validator"(oid)
 RETURNS VOID LANGUAGE C AS 'python', 'pl_validator';
+COMMIT;
 
+BEGIN;
+SET search_path = __python__;
 CREATE FUNCTION
  "inline"(INTERNAL)
 RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
 
 CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
 COMMIT;
+
+-- Expected to fail if the one above does not succeed.
+CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";

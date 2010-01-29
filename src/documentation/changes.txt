@@ -18,4 +18,5 @@ pg-python marks a significant deviation from the original PL/Py direction.
  - Improved Database Access interface (some consistency with py-postgresql)
  - Internal Subtransactions are tracked and ensured complete on handler exit
  - Improved native typing: arrays, composites, composite arrays.
+ - Removed HeapTuple interface type in favor of DatumTuples/Postgres.types.record
  - PGXS based build

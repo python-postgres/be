@@ -65,10 +65,22 @@ commands::
   LANGUAGE C AS 'python', 'pl_handler';
  CREATE FUNCTION validator(oid) RETURNS VOID
   LANGUAGE C AS 'python', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater.
+ BEGIN;
+ SET search_path TO __python__;
  CREATE FUNCTION inline(INTERNAL) RETURNS VOID
   LANGUAGE C AS 'python', 'pl_inline';
  CREATE LANGUAGE python
   HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0.
+ BEGIN;
+ SET search_path TO __python__;
+ CREATE LANGUAGE python
+  HANDLER handler VALIDATOR validator;
  COMMIT;
 
 The distinct schema is used hold the functions and for future expansion.
@@ -82,18 +94,12 @@ PostgreSQL's library directory. Normally, ``$PREFIX/lib/postgresql``. In cases
 where the extension does not exist in the default location, a full path to the
 library will need to be given to the ``CREATE FUNCTION`` commands::
 
- BEGIN;
- CREATE SCHEMA __python__;
- SET search_path TO __python__;
  CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
   LANGUAGE C AS '/full/path/to/python', 'pl_handler';
  CREATE FUNCTION validator(oid) RETURNS VOID
   LANGUAGE C AS '/full/path/to/python', 'pl_validator';
  CREATE FUNCTION inline(INTERNAL) RETURNS VOID
   LANGUAGE C AS '/full/path/to/python', 'pl_inline';
- CREATE LANGUAGE python
-  HANDLER handler INLINE inline VALIDATOR validator;
- COMMIT;
 
 Configuration
 =============
@@ -144,7 +150,8 @@ Renaming the Existing Language
 
 Renaming the existing language is the proper choice when there is an
 incompatibility between the existing language and the new *target* language.
-Functions can then be incrementally ported to the new version as time permits.
+This situation demands that functions be incrementally ported to the new
+version as time permits.
 
 .. note::
    Renaming the existing language may require restart of the cluster.
@@ -154,7 +161,7 @@ original ``python.so`` so that it's name is distinct from the
 one that is going to be installed. This can be done while the cluster is
 running::
 
- cd /pgprefix/lib/postgresql/
+ cd $PREFIX/lib/postgresql/
  cp python.so python31.so
 
 The second step is to create the new language object. It is recommended to name
@@ -167,10 +174,22 @@ it after the specific version of Python being used::
   LANGUAGE C AS 'python31', 'pl_handler';
  CREATE FUNCTION validator(oid) RETURNS VOID
   LANGUAGE C AS 'python31', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater.
+ BEGIN;
+ SET search_path = __python31__;
  CREATE FUNCTION inline(INTERNAL) RETURNS VOID
   LANGUAGE C AS 'python31', 'pl_inline';
  CREATE LANGUAGE python31
   HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0.
+ BEGIN;
+ SET search_path = __python31__;
+ CREATE LANGUAGE python31
+  HANDLER handler VALIDATOR validator;
  COMMIT;
 
 Next, the existing functions need to have their language updated::
@@ -217,14 +236,25 @@ modification::
 
  BEGIN;
  CREATE SCHEMA __python31__;
+ SET search_path = __python31__;
  CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
   LANGUAGE C AS 'python31', 'pl_handler';
  CREATE FUNCTION validator(oid) RETURNS VOID
   LANGUAGE C AS 'python31', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater
+ BEGIN;
  CREATE FUNCTION inline(INTERNAL) RETURNS VOID
   LANGUAGE C AS 'python31', 'pl_inline';
  CREATE LANGUAGE python31
   HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0
+ BEGIN;
+ CREATE LANGUAGE python31
+  HANDLER handler VALIDATOR validator;
  COMMIT;
 
 Complete. The ``python31`` language will be ready for use alongside any others.
