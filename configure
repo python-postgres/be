@@ -1,8 +1,11 @@
 #!/bin/sh
 ##
-# configure the pg_python build. This script builds the build/cache for
-# the GNUmakefile.
+# configure the pg-python build.
+# This script constructs the build/cache for the PGXS GNUmakefile.
 ##
+
+pg_config 2>/dev/null >/dev/null || ! echo >&2 "ERROR: could not find 'pg_config' executable" || exit 1
+python3 -c 'pass' || ! echo >&2 "ERROR: could not find 'python3' executable" || exit 1
 
 if test -e build/cache
 then
@@ -22,14 +25,18 @@ fi
 mkdir -p build/cache
 touch build/cache/__pg_python_build_cache__
 
-echo >&2 "building Makefile includes for PGXS build"
-pg_config 2>/dev/null >/dev/null || ! echo >&2 "ERROR: could not find 'pg_config' executable" || exit 1
+echo >&2 "identifying requirements from environment"
 
+system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
+
+cat build/systems/$system >build/cache/system.mk
+echo "__system__ = $system" >>build/cache/system.mk
+
+echo >&2 "building Makefile includes for PGXS build"
 echo >&2 "LOG: caching postgres.mk. derived from $(pg_config --bindir)/pg_config"
 echo "PGXS := $(pg_config --pgxs)" >build/cache/postgres.mk
 cat "$(pg_config --pgxs)" >>build/cache/postgres.mk
 echo "pg_bindir := $(pg_config --bindir)" >>build/cache/postgres.mk
 
-python3 -c 'pass' || ! echo >&2 "ERROR: could not find 'python3' executable" || exit 1
 echo >&2 "LOG: caching python.mk. derived from $(python3 -c 'import sys; print(sys.executable)')"
 python3 build/tools/config.py >build/cache/python.mk

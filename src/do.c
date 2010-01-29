@@ -3,76 +3,34 @@
  *
  * Feature found in PG 8.5 and greater.
  */
-#include <setjmp.h>
-
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <compile.h>
-#include <structmember.h>
 
 #include "postgres.h"
 #include "fmgr.h"
-#include "funcapi.h"
-#include "libpq/libpq-be.h"
-#include "miscadmin.h"
 #include "access/htup.h"
-#include "access/heapam.h"
-#include "access/xact.h"
+#include "access/tupdesc.h"
 #include "access/transam.h"
-#include "catalog/namespace.h"
-#include "catalog/pg_class.h"
-#include "catalog/pg_database.h"
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
-#include "catalog/pg_language.h"
-#include "catalog/indexing.h"
-#include "storage/block.h"
-#include "storage/off.h"
-#include "commands/trigger.h"
-#include "executor/spi.h"
-#include "nodes/memnodes.h"
-#include "tcop/tcopprot.h"
-#include "utils/memutils.h"
-#include "utils/array.h"
-#include "utils/datum.h"
-#include "utils/elog.h"
-#include "utils/builtins.h"
-#include "utils/hsearch.h"
-#include "utils/syscache.h"
-#include "utils/relcache.h"
-#include "utils/typcache.h"
-#include "mb/pg_wchar.h"
+#include "storage/itemptr.h"
+#include "nodes/parsenodes.h"
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/strings.h"
 #include "pypg/externs.h"
 #include "pypg/pl.h"
-#include "pypg/do.h"
-#include "pypg/errordata.h"
-#include "pypg/triggerdata.h"
-#include "pypg/errcodes.h"
 #include "pypg/error.h"
 #include "pypg/ist.h"
 #include "pypg/type/type.h"
-#include "pypg/type/object.h"
-#include "pypg/type/record.h"
-#include "pypg/type/array.h"
-#include "pypg/type/bitwise.h"
-#include "pypg/type/numeric.h"
-#include "pypg/type/string.h"
-#include "pypg/type/system.h"
-#include "pypg/type/timewise.h"
 #include "pypg/function.h"
 #include "pypg/tupledesc.h"
-#include "pypg/statement.h"
-#include "pypg/cursor.h"
-#include "pypg/module.h"
-#include "pypg/xact.h"
 
+#include "pypg/do.h"
 
 /*
- * The sub-executor for inline functions: DO '...' LANGUAGE plpython3u;
+ * The sub-executor for inline functions: DO '...' LANGUAGE python;
  *
  * Fake fcinfo, flinfo, and fn_info. Inline execution goes through
  * the pl_handler.
@@ -88,7 +46,7 @@ FunctionCallInfoData pl_inline_executor_fcinfo = {NULL,};
  *
  * By taking this route, we execute inline statements in the same context as
  * other functions, which allows us to leverage the PL-state checking already
- * available in plpython3_handler().
+ * available in pl_handler().
  */
 static void
 initialize_inline_executor(Oid langOid)

@@ -439,17 +439,18 @@ parameters. With generators, these new parameters are provided by the
  --                 4 |                15
  --(3 rows)
 
-
-Stateful can be used with `Trigger Returning Functions`_ entry points and
+Stateful can be used with entry points in `Trigger Returning Functions`_ and
 `Set Returning Functions`_. However, in the case of SRFs, it's very unlikely to
 offer useful functionality as state is already managed. In the case of TRFs,
-it's primarily useful in generic triggers where data and routines specialized
-for the target relation can be easily re-used.
-
-
+it's primarily useful in generic triggers where data and routines are
+specialized for the target relation can be easily re-used.
 
 Inline Execution
 ================
+
+.. note::
+   DO-statements were introduced in PostgreSQL 9.0, earlier versions
+   will not support this feature.
 
 pg-python supports ``DO`` statements by executing the code in
 a temporary module object. Unlike functions, no entry points are used::

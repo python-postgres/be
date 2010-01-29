@@ -45,9 +45,9 @@ copyright = meta.__date__ + ', ' + meta.__author__
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '9.0:1'
+version = '.'.join(map(str,meta.__version_info__[:2]))
 # The full version, including alpha/beta/rc tags.
-release = '9.0:1'
+release = meta.__version__
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -143,37 +143,3 @@ html_last_updated_fmt = '%b %d, %Y'
 
 # If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = ''
-
-
-# Options for LaTeX output
-# ------------------------
-
-# The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
-
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, document class [howto/manual]).
-latex_documents = [
-  ('index', 'pg-python.tex', 'pg-python documentation',
-   'James William Pye', 'manual'),
-]
-
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-#latex_logo = None
-
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-#latex_use_parts = False
-
-# Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
-
-# Documents to append as an appendix to all manuals.
-#latex_appendices = []
-
-# If false, no module index is generated.
-#latex_use_modindex = True
