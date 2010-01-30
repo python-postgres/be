@@ -2,18 +2,39 @@ BEGIN;
 CREATE SCHEMA __python__;
 SET search_path = __python__;
 CREATE FUNCTION
- handler()
+ "handler"()
 RETURNS LANGUAGE_HANDLER LANGUAGE C AS 'python', 'pl_handler';
 CREATE FUNCTION
- validator(oid)
+ "validator"(oid)
 RETURNS VOID LANGUAGE C AS 'python', 'pl_validator';
 COMMIT;
 BEGIN;
 SET search_path = __python__;
+-- It's okay if this fails on versions before 9.0.
 CREATE FUNCTION
- inline(INTERNAL)
+ "inline"(INTERNAL)
 RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
 CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
 COMMIT;
+BEGIN;
+-- This should not fail if the one above does.
 CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";
 ERROR:  language "python" already exists
+COMMIT;
+-- Finish with an explicit check.
+BEGIN;
+CREATE OR REPLACE FUNCTION test_python() RETURNS text LANGUAGE 'python' AS
+$$
+import Postgres
+import sys
+def main():
+	return "python language installed successfully"
+$$;
+SELECT test_python();
+              test_python               
+----------------------------------------
+ python language installed successfully
+(1 row)
+
+-- Don't want these changes.
+ABORT;

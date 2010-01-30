@@ -13,6 +13,7 @@ COMMIT;
 
 BEGIN;
 SET search_path = __python__;
+-- It's okay if this fails on versions before 9.0.
 CREATE FUNCTION
  "inline"(INTERNAL)
 RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
@@ -20,5 +21,20 @@ RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
 CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
 COMMIT;
 
--- Expected to fail if the one above does not succeed.
+BEGIN;
+-- This should not fail if the one above does.
 CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";
+COMMIT;
+
+-- Finish with an explicit check.
+BEGIN;
+CREATE OR REPLACE FUNCTION test_python() RETURNS text LANGUAGE 'python' AS
+$$
+import Postgres
+import sys
+def main():
+	return "python language installed successfully"
+$$;
+SELECT test_python();
+-- Don't want these changes.
+ABORT;
