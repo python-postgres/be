@@ -1275,8 +1275,8 @@ instance to ready the function's code.
    initialization overhead will not impact the performance of the function's
    first call.
 
-:func:`Postgres.pytypes`
-========================
+Postgres.pytypes
+================
 
 A decorator that uses `Postgres.convert_postgres_objects`_
 to convert the arguments given to the decorated function into standard Python
