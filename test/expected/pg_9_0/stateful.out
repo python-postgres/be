@@ -173,3 +173,147 @@ SELECT * FROM mat_stateful();
  should be seen
 (1 row)
 
+CREATE OR REPLACE FUNCTION yay_stateful() RETURNS text language python as
+$$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield 'foo'
+$$;
+CREATE OR REPLACE FUNCTION load_yay_stateful() RETURNS text language python as
+$$
+def main():
+	fn = proc('yay_stateful()')
+	fn.load_module()
+	return 'fail'
+$$;
+-- should bomb out; invalid context
+SELECT load_yay_stateful();
+ load_yay_stateful 
+-------------------
+ fail
+(1 row)
+
+CREATE OR REPLACE FUNCTION call_yay_stateful() RETURNS text language python as
+$$
+import sys
+def main():
+	fn = proc('yay_stateful()')
+	assert fn() == 'foo'
+	fn_mod = sys.modules[fn.oidstr]
+	fn_mod.main()
+	return 'fail'
+$$;
+-- should bomb out; invalid context again
+SELECT call_yay_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+RuntimeError: cannot call Stateful in from distinct contexts
+
+[public.yay_stateful()]
+[exception from Python]
+Traceback (most recent call last):
+   File "public.call_yay_stateful()", line 5, in main
+    assert fn() == 'foo'
+ Postgres.Exception
+
+[public.call_yay_stateful()]
+-- CORNERS --
+-- not really stateful
+CREATE OR REPLACE FUNCTION not_stateful() RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	return "it lied"
+$python$;
+SELECT not_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: state source did not return an iterator
+
+[public.not_stateful()]
+-- not really stateful, but it is an iterator
+CREATE OR REPLACE FUNCTION kinda_stateful() RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	return iter("it lied")
+$python$;
+SELECT kinda_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: stateful source did not produce an object with a 'send' method
+
+[public.kinda_stateful()]
+-- SRFs --
+-- Not that I would recommend it.
+CREATE OR REPLACE FUNCTION stateful_srf() RETURNS SETOF text LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield ("foo","bar")
+	yield ("fluffy","bunnies")
+$python$;
+SELECT stateful_srf() FROM generate_series(1, 2) AS g(i);
+ stateful_srf 
+--------------
+ foo
+ bar
+ fluffy
+ bunnies
+(4 rows)
+
+-- TRFs --
+-- Scary. I know.
+CREATE OR REPLACE FUNCTION stateful_trigger() RETURNS TRIGGER LANGUAGE python AS
+$python$
+from Postgres import NOTICE, Stateful
+
+@Stateful
+def before_insert(td, new):
+	assert new[0] == 'fluffy'
+	td, new = (yield ('foo',))
+	assert new[0] == 'bunnies'
+	yield ('bar',)
+	assert "fail" is True
+
+@Stateful
+def before_update(td, old, new):
+	NOTICE('foo')
+	td, old, new = yield new
+	NOTICE('bar')
+	yield new
+$python$;
+DROP TABLE IF EXISTS stateful_trigger_table CASCADE;
+NOTICE:  table "stateful_trigger_table" does not exist, skipping
+CREATE TABLE stateful_trigger_table(t text);
+CREATE TRIGGER stateful_trigger_trigger
+ BEFORE INSERT OR UPDATE ON stateful_trigger_table
+ FOR EACH ROW
+ EXECUTE PROCEDURE stateful_trigger();
+BEGIN;
+INSERT INTO stateful_trigger_table VALUES ('fluffy'), ('bunnies');
+SELECT * FROM stateful_trigger_table;
+  t  
+-----
+ foo
+ bar
+(2 rows)
+
+UPDATE stateful_trigger_table SET t = NULL;
+NOTICE:  foo
+NOTICE:  bar
+SELECT COUNT(t IS NULL) AS count FROM stateful_trigger_table;
+ count 
+-------
+     2
+(1 row)
+
+COMMIT;

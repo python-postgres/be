@@ -194,4 +194,5 @@ BEGIN;
 INSERT INTO stateful_trigger_table VALUES ('fluffy'), ('bunnies');
 SELECT * FROM stateful_trigger_table;
 UPDATE stateful_trigger_table SET t = NULL;
+SELECT COUNT(t IS NULL) AS count FROM stateful_trigger_table;
 COMMIT;
