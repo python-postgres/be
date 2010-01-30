@@ -1,4 +1,5 @@
 SET TIMEZONE TO MST;
+SHOW integer_datetimes;
 
 CREATE OR REPLACE FUNCTION date_properties(d date) RETURNS setof text LANGUAGE python AS
 $python$

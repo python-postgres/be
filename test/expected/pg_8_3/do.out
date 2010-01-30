@@ -1,0 +1,51 @@
+DO $$
+import Postgres
+sqlexec("""
+	CREATE TABLE created_from_do (i int);
+	INSERT INTO created_from_do VALUES (1004);
+""")
+$$ LANGUAGE python;
+ERROR:  syntax error at or near "DO"
+LINE 1: DO $$
+        ^
+SELECT * FROM created_from_do;
+ERROR:  relation "created_from_do" does not exist
+DO $$
+import Postgres
+Postgres.ERROR("do-raised-error")
+$$ LANGUAGE python;
+ERROR:  syntax error at or near "DO"
+LINE 1: DO $$
+        ^
+DO $$
+import Postgres
+x = xact()
+x.__enter__()
+$$ LANGUAGE python;
+ERROR:  syntax error at or near "DO"
+LINE 1: DO $$
+        ^
+-- Now for something more interesting...
+DO $$
+prepare("""
+DO $more$
+import Postgres
+Postgres.WARNING("sub-do")
+$more$ LANGUAGE python;
+""")()
+$$ LANGUAGE python;
+ERROR:  syntax error at or near "DO"
+LINE 1: DO $$
+        ^
+-- Now for something even more interesting...
+DO $$
+prepare("""
+DO $more$
+import Postgres
+Postgres.ERROR("how does the traceback look?")
+$more$ LANGUAGE python;
+""")()
+$$ LANGUAGE python;
+ERROR:  syntax error at or near "DO"
+LINE 1: DO $$
+        ^

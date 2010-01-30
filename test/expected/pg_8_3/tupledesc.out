@@ -1,0 +1,66 @@
+DROP TABLE IF EXISTS tupdtest;
+NOTICE:  table "tupdtest" does not exist, skipping
+CREATE TABLE tupdtest (i int, t text, c circle);
+CREATE OR REPLACE FUNCTION describe_tupd(table_name text) RETURNS text
+LANGUAGE python AS
+$python$
+from Postgres.types import regtype
+from Postgres import Type
+
+formatting = """
+column_names: %s
+column_types: %s
+pg_column_types: %s
+column_count: %d
+len(): %d
+"""
+
+@pytypes
+def main(table_name):
+	td = Type(regtype(table_name)).descriptor
+	return formatting %(
+		td.column_names,
+		td.column_types,
+		td.pg_column_types,
+		td.column_count,
+		len(td),
+	)
+$python$;
+SELECT describe_tupd('tupdtest');
+                                               describe_tupd                                               
+-----------------------------------------------------------------------------------------------------------
+ 
+ column_names: ('i', 't', 'c')
+ column_types: (<class 'Postgres.types.int4'>, <class 'Postgres.types.text'>, <class 'pg_catalog.circle'>)
+ pg_column_types: (23, 25, 718)
+ column_count: 3
+ len(): 3
+ 
+(1 row)
+
+ALTER TABLE tupdtest DROP COLUMN t;
+SELECT describe_tupd('tupdtest');
+                               describe_tupd                                
+----------------------------------------------------------------------------
+ 
+ column_names: ('i', 'c')
+ column_types: (<class 'Postgres.types.int4'>, <class 'pg_catalog.circle'>)
+ pg_column_types: (23, 718)
+ column_count: 2
+ len(): 3
+ 
+(1 row)
+
+ALTER TABLE tupdtest ADD COLUMN t2 text;
+SELECT describe_tupd('tupdtest');
+                                               describe_tupd                                               
+-----------------------------------------------------------------------------------------------------------
+ 
+ column_names: ('i', 'c', 't2')
+ column_types: (<class 'Postgres.types.int4'>, <class 'pg_catalog.circle'>, <class 'Postgres.types.text'>)
+ pg_column_types: (23, 718, 25)
+ column_count: 3
+ len(): 4
+ 
+(1 row)
+

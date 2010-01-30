@@ -1,34 +1,36 @@
 --
 -- Test various corner cases.
 --
-
 --- COERCION ---
-
 -- This attempts to validate that _handler is properly handling relayed exceptions
 CREATE OR REPLACE FUNCTION check_failed_srf_coercion() RETURNS setof int LANGUAGE python AS
 $python$
 def main():
 	return ((),(),())
 $python$;
-
 SELECT check_failed_srf_coercion();
+ERROR:  function raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: int() argument must be a string or a number, not 'tuple'
+
+[public.check_failed_srf_coercion() while creating result]
 SELECT * FROM check_failed_srf_coercion();
+ERROR:  function raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: int() argument must be a string or a number, not 'tuple'
 
-
+[public.check_failed_srf_coercion() while creating result]
 -- This will trigger a failure from int's typinput [due to str()]
 CREATE OR REPLACE FUNCTION check_failed_srf_coercion2() RETURNS setof int LANGUAGE python AS
 $python$
 def main():
 	return "foobar"
 $python$;
-
 SELECT check_failed_srf_coercion2();
+ERROR:  invalid input syntax for integer: "f"
 SELECT * FROM check_failed_srf_coercion2();
-
-
-
+ERROR:  invalid input syntax for integer: "f"
 --- EXCEPTIONS ---
-
 -- The 'selekt 2' exception is the one represented on exit.
 -- However, the 'selekt 1' exception *must* be printed in the context.
 CREATE OR REPLACE FUNCTION check_proper_pg_exc_printing() RETURNS setof int LANGUAGE python AS
@@ -40,11 +42,27 @@ def main():
 	except:
 		prepare('selekt 2')
 $python$;
-
 SELECT check_proper_pg_exc_printing();
+ERROR:  syntax error at or near "selekt"
+LINE 1: selekt 2
+        ^
+QUERY:  selekt 2
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.check_proper_pg_exc_printing()", line 5, in main
+    prepare('selekt 1')
+ Postgres.Exception: syntax error at or near "selekt"
+CODE: 42601
+ 
+During handling of the above exception, another exception occurred:
 
+ Traceback (most recent call last):
+   File "public.check_proper_pg_exc_printing()", line 7, in main
+    prepare('selekt 2')
+ Postgres.Exception
+
+[public.check_proper_pg_exc_printing()]
 --- numeric boundaries ---
-
 CREATE OR REPLACE FUNCTION check_numeric_edges() RETURNS text LANGUAGE python AS
 $python$
 import Postgres
@@ -73,9 +91,11 @@ def main():
 	assert int(int8(int8_max)) == int8_max
 	return 'success'
 $python$;
-
 SELECT check_numeric_edges();
-
+ check_numeric_edges 
+---------------------
+ success
+(1 row)
 
 CREATE OR REPLACE FUNCTION check_numeric_outside_edges() RETURNS text LANGUAGE python AS
 $python$
@@ -117,11 +137,13 @@ def main():
 			pass
 	return 'success'
 $python$;
-
 SELECT check_numeric_outside_edges();
+ check_numeric_outside_edges 
+-----------------------------
+ success
+(1 row)
 
 -- CURSORS --
-
 CREATE OR REPLACE FUNCTION whence_overflow() RETURNS text LANGUAGE python AS
 $python$
 def main():
@@ -134,12 +156,16 @@ def main():
 		pass
 	return 'success'
 $python$;
-
 SELECT whence_overflow();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.whence_overflow()", line 7, in main
+    c.seek(0, 2**128 + 1)
+ ValueError: invalid whence
 
-
+[public.whence_overflow()]
 -- SRFs --
-
 -- validate key errors
 CREATE OR REPLACE FUNCTION cause_key_error_srf(OUT i int, OUT t text) RETURNS record LANGUAGE python AS
 $python$
@@ -148,12 +174,19 @@ def main():
 		{'f': 'NOOOOOO'},
 	)
 $python$;
-
 SELECT cause_key_error_srf();
+ERROR:  function raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: descriptor requires exactly 2 attributes, given sequence has 1 items
+
+[public.cause_key_error_srf() while creating result]
 SELECT * FROM cause_key_error_srf();
+ERROR:  function raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: descriptor requires exactly 2 attributes, given sequence has 1 items
 
+[public.cause_key_error_srf() while creating result]
 --- between transaction deallocation ---
-
 CREATE OR REPLACE FUNCTION check_between_xact_deallocs() RETURNS text LANGUAGE python AS
 $python$
 # we want the state to be cleared when
@@ -166,15 +199,21 @@ def main():
 	c = p.rows()
 	yield 'setup refs'
 $python$;
-
 -- can't validate deallocation without weakref support
 -- I manually validated that dealloc (via elog) was getting called -jwp@2009
 SELECT check_between_xact_deallocs();
-SELECT check_between_xact_deallocs();
+ check_between_xact_deallocs 
+-----------------------------
+ setup refs
+(1 row)
 
+SELECT check_between_xact_deallocs();
+ check_between_xact_deallocs 
+-----------------------------
+ setup refs
+(1 row)
 
 --- Direct Function Calls ---
-
 -- This varchar_cast will return it's *exact* argument Datum.
 -- This is validating that Postgres.Function is operating properly in these conditions.
 CREATE OR REPLACE FUNCTION check_dont_free_params() RETURNS text LANGUAGE python AS
@@ -195,15 +234,16 @@ def main():
 	gc.collect()
 	return 'success'
 $python$;
-
 SELECT check_dont_free_params();
-
+ check_dont_free_params 
+------------------------
+ success
+(1 row)
 
 --- Array Type Invalidation ---
-
 DROP TABLE IF EXISTS array_element_t;
+NOTICE:  table "array_element_t" does not exist, skipping
 CREATE TABLE array_element_t (i int, t text);
-
 CREATE OR REPLACE FUNCTION check_new_array_type() RETURNS text LANGUAGE python AS
 $python$
 import Postgres
@@ -222,9 +262,11 @@ def main():
 	assert new_array.Element is not array_element_t
 	return 'success'
 $python$;
-
 SELECT check_new_array_type();
-
+ check_new_array_type 
+----------------------
+ success
+(1 row)
 
 --- Held Cursors ---
 --
@@ -245,20 +287,39 @@ $python$
 def main(i):
 	return 'foo'
 $python$;
-
 DECLARE held SCROLL CURSOR WITH HOLD FOR SELECT replace_while_held(i) FROM generate_series(1, 11) AS g(i) WHERE random() >= 0;
-
 FETCH 5 IN held;
+ replace_while_held 
+--------------------
+ foo
+ foo
+ foo
+ foo
+ foo
+(5 rows)
 
 CREATE OR REPLACE FUNCTION replace_while_held(i int) RETURNS text VOLATILE LANGUAGE python AS
 $python$
 def main(i):
 	return 'bar'
 $python$;
-
 -- show that it's bar.
 SELECT replace_while_held(1);
+ replace_while_held 
+--------------------
+ bar
+(1 row)
 
 -- things are "fine", it's still foo. (because it was already materialized)
 FETCH ALL IN held;
+ replace_while_held 
+--------------------
+ foo
+ foo
+ foo
+ foo
+ foo
+ foo
+(6 rows)
+
 CLOSE held;

@@ -1,0 +1,22 @@
+BEGIN;
+CREATE SCHEMA __python__;
+SET search_path = __python__;
+CREATE FUNCTION
+ handler()
+RETURNS LANGUAGE_HANDLER LANGUAGE C AS 'python', 'pl_handler';
+CREATE FUNCTION
+ validator(oid)
+RETURNS VOID LANGUAGE C AS 'python', 'pl_validator';
+COMMIT;
+BEGIN;
+SET search_path = __python__;
+CREATE FUNCTION
+ inline(INTERNAL)
+RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
+ERROR:  could not find function "pl_inline" in file "/src/build/pg83/lib/postgresql/python.so"
+CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
+ERROR:  syntax error at or near "INLINE"
+LINE 1: CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VAL...
+                                                 ^
+COMMIT;
+CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";
