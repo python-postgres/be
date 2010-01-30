@@ -45,8 +45,8 @@ samples = [
 	text('meh'), text('feh'),
 	bytea(b'(\x00)'), bytea(b'\x00\x01'),
 	domain(200), domain(10),
-	composite((123, 'foo')), composite((321, 'bar')),
 	enum('foo'), enum('bar'),
+	composite((123, 'foo')), composite((321, 'bar')),
 ]
 
 def main():
