@@ -29,7 +29,6 @@ echo >&2 "identifying requirements from environment"
 
 system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
 
-cat build/systems/$system >build/cache/system.mk
 echo "__system__ = $system" >>build/cache/system.mk
 
 echo >&2 "building Makefile includes for PGXS build"
