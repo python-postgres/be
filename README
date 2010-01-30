@@ -8,7 +8,7 @@ should work::
  sudo make install
  psql -f src/install.sql
 
-However, it assumes the target pg_config and python3 are in $PATH.
+However, it assumes the target pg_config and python3 executables are in $PATH.
 
 See src/documentation/admin.txt for detailed instructions on
 compilation and database installation.
