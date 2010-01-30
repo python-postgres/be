@@ -1,0 +1,427 @@
+CREATE OR REPLACE FUNCTION a_first(a anyarray) RETURNS anyelement LANGUAGE python AS
+$python$
+def main(a):
+	return a[0]
+$python$;
+SELECT a_first(ARRAY[1]::int[]);
+ a_first 
+---------
+       1
+(1 row)
+
+SELECT a_first(ARRAY[2]::int[]);
+ a_first 
+---------
+       2
+(1 row)
+
+SELECT a_first(ARRAY[3]::text[]);
+ a_first 
+---------
+ 3
+(1 row)
+
+SELECT a_first(ARRAY['foo','bar']::text[]);
+ a_first 
+---------
+ foo
+(1 row)
+
+CREATE OR REPLACE FUNCTION concat_arrays(a anyarray, b anyarray) RETURNS anyarray LANGUAGE python AS
+$python$
+def main(a, b):
+	return a + b
+$python$;
+SELECT concat_arrays(ARRAY[1]::int[], '{321,123}');
+ concat_arrays 
+---------------
+ {1,321,123}
+(1 row)
+
+SELECT concat_arrays(ARRAY[2]::bigint[], '{2334343434,3213123,232123,23123}');
+            concat_arrays            
+-------------------------------------
+ {2,2334343434,3213123,232123,23123}
+(1 row)
+
+SELECT concat_arrays(ARRAY[['foo'],['bar']]::text[], '{{foo},{bar}}');
+       concat_arrays       
+---------------------------
+ {{foo},{bar},{foo},{bar}}
+(1 row)
+
+CREATE OR REPLACE FUNCTION wrap_element(a anyelement) RETURNS anyarray LANGUAGE python AS
+$python$
+def main(a):
+	return type(a).Array([a])
+$python$;
+SELECT wrap_element('foo'::text);
+ wrap_element 
+--------------
+ {foo}
+(1 row)
+
+SELECT wrap_element(2::int);
+ wrap_element 
+--------------
+ {2}
+(1 row)
+
+SELECT wrap_element(3::bigint);
+ wrap_element 
+--------------
+ {3}
+(1 row)
+
+CREATE OR REPLACE FUNCTION object_type(ob ANYNONARRAY) RETURNS text LANGUAGE python AS
+$python$
+def main(ob):
+	return type(ob).typname
+$python$;
+SELECT object_type('foo'::text);
+ object_type 
+-------------
+ text
+(1 row)
+
+SELECT object_type('foo'::cstring);
+ object_type 
+-------------
+ cstring
+(1 row)
+
+SELECT object_type(123);
+ object_type 
+-------------
+ int4
+(1 row)
+
+SELECT object_type(123::bigint);
+ object_type 
+-------------
+ int8
+(1 row)
+
+SELECT object_type(123::smallint);
+ object_type 
+-------------
+ int2
+(1 row)
+
+SELECT object_type(123::numeric);
+ object_type 
+-------------
+ numeric
+(1 row)
+
+CREATE OR REPLACE FUNCTION object_type(ob ANYARRAY) RETURNS text LANGUAGE python AS
+$python$
+def main(ob):
+	return type(ob).Element.typname
+$python$;
+SELECT object_type('{foo}'::text[]);
+ object_type 
+-------------
+ text
+(1 row)
+
+SELECT object_type('{foo}'::cstring[]);
+ object_type 
+-------------
+ cstring
+(1 row)
+
+SELECT object_type(ARRAY[123]);
+ object_type 
+-------------
+ int4
+(1 row)
+
+SELECT object_type('{123}'::bigint[]);
+ object_type 
+-------------
+ int8
+(1 row)
+
+SELECT object_type('{123}'::smallint[]);
+ object_type 
+-------------
+ int2
+(1 row)
+
+SELECT object_type('{123}'::numeric[]);
+ object_type 
+-------------
+ numeric
+(1 row)
+
+DROP TYPE IF EXISTS aa_enum;
+NOTICE:  type "aa_enum" does not exist, skipping
+DROP TYPE IF EXISTS bb_enum;
+NOTICE:  type "bb_enum" does not exist, skipping
+CREATE TYPE aa_enum AS ENUM ('ugh', 'feh', 'bleh');
+CREATE TYPE bb_enum AS ENUM ('bleh', 'feh', 'ugh');
+CREATE OR REPLACE FUNCTION enumpoly(ANYENUM) RETURNS BOOLEAN LANGUAGE python AS
+$python$
+def main(e):
+	t = type(e)
+	return t('ugh') > t('bleh')
+$python$;
+-- ugh is less than bleh in bb_enum (should be false)
+SELECT enumpoly('feh'::aa_enum);
+ enumpoly 
+----------
+ f
+(1 row)
+
+-- ugh is greater than bleh in bb_enum (should be true)
+SELECT enumpoly('feh'::bb_enum);
+ enumpoly 
+----------
+ t
+(1 row)
+
+CREATE OR REPLACE FUNCTION first_and_type(ob ANYARRAY, OUT first ANYELEMENT, OUT typname text)
+RETURNS RECORD LANGUAGE python AS
+$python$
+def main(array):
+	return (array[0], type(array).Element.typname)
+$python$;
+SELECT first_and_type('{foo,bar}'::text[]);
+ first_and_type 
+----------------
+ (foo,text)
+(1 row)
+
+SELECT first_and_type('{foo,bar}'::cstring[]);
+ first_and_type 
+----------------
+ (foo,cstring)
+(1 row)
+
+SELECT first_and_type('{1023,123,4232,423}'::smallint[]);
+ first_and_type 
+----------------
+ (1023,int2)
+(1 row)
+
+SELECT * FROM first_and_type('{foo,bar}'::text[]);
+ first | typname 
+-------+---------
+ foo   | text
+(1 row)
+
+SELECT * FROM first_and_type('{foo,bar}'::cstring[]);
+ first | typname 
+-------+---------
+ foo   | cstring
+(1 row)
+
+SELECT * FROM first_and_type('{1023,123,4232,423}'::smallint[]);
+ first | typname 
+-------+---------
+  1023 | int2
+(1 row)
+
+-- polymorphic srfs
+CREATE OR REPLACE FUNCTION unroll_the_array(ob ANYARRAY) RETURNS SETOF ANYELEMENT
+LANGUAGE python AS
+$python$
+def main(array):
+	for x in array:
+		if type(x) is type(array):
+			for y in x:
+				yield y
+		else:
+			yield x
+$python$;
+SELECT unroll_the_array(ARRAY[1,2,34,5,6,7]::int[]);
+ unroll_the_array 
+------------------
+                1
+                2
+               34
+                5
+                6
+                7
+(6 rows)
+
+SELECT * FROM unroll_the_array(ARRAY[1,2,34,5,6,7]::int[]);
+ unroll_the_array 
+------------------
+                1
+                2
+               34
+                5
+                6
+                7
+(6 rows)
+
+SELECT unroll_the_array(ARRAY[1,2,34,5,6,7]::text[]);
+ unroll_the_array 
+------------------
+ 1
+ 2
+ 34
+ 5
+ 6
+ 7
+(6 rows)
+
+SELECT * FROM unroll_the_array(ARRAY[1,2,34,5,6,7]::text[]);
+ unroll_the_array 
+------------------
+ 1
+ 2
+ 34
+ 5
+ 6
+ 7
+(6 rows)
+
+SELECT unroll_the_array(ARRAY[1,2,3,5,6,7]::"char"[]);
+ unroll_the_array 
+------------------
+ \x01
+ \x02
+ \x03
+ \x05
+ \x06
+ \x07
+(6 rows)
+
+SELECT * FROM unroll_the_array(ARRAY[1,2,3,5,6,7]::"char"[]);
+ unroll_the_array 
+------------------
+ \x01
+ \x02
+ \x03
+ \x05
+ \x06
+ \x07
+(6 rows)
+
+-- md action
+SELECT unroll_the_array(ARRAY[[1::smallint,2],[3,5],[6,7]]);
+ unroll_the_array 
+------------------
+                1
+                2
+                3
+                5
+                6
+                7
+(6 rows)
+
+SELECT * FROM unroll_the_array(ARRAY[[1::smallint,2],[3,5],[6,7]]);
+ unroll_the_array 
+------------------
+                1
+                2
+                3
+                5
+                6
+                7
+(6 rows)
+
+-- polymorphic composite srf (same as above, but with an additional typname)
+CREATE OR REPLACE FUNCTION unroll_the_array_more(ob ANYARRAY, OUT data ANYELEMENT, OUT typname text) RETURNS SETOF RECORD
+LANGUAGE python AS
+$python$
+def main(array):
+	for x in array:
+		if type(x) is type(array):
+			for y in x:
+				yield y, type(y).typname
+		else:
+			yield x, type(x).typname
+$python$;
+SELECT unroll_the_array_more(ARRAY[1,2,34,5,6,7]::int[]);
+ unroll_the_array_more 
+-----------------------
+ (1,int4)
+ (2,int4)
+ (34,int4)
+ (5,int4)
+ (6,int4)
+ (7,int4)
+(6 rows)
+
+SELECT * FROM unroll_the_array_more(ARRAY[1,2,34,5,6,7]::int[]);
+ data | typname 
+------+---------
+    1 | int4
+    2 | int4
+   34 | int4
+    5 | int4
+    6 | int4
+    7 | int4
+(6 rows)
+
+SELECT unroll_the_array_more(ARRAY[1,2,34,5,6,7]::text[]);
+ unroll_the_array_more 
+-----------------------
+ (1,text)
+ (2,text)
+ (34,text)
+ (5,text)
+ (6,text)
+ (7,text)
+(6 rows)
+
+SELECT * FROM unroll_the_array_more(ARRAY[1,2,34,5,6,7]::text[]);
+ data | typname 
+------+---------
+ 1    | text
+ 2    | text
+ 34   | text
+ 5    | text
+ 6    | text
+ 7    | text
+(6 rows)
+
+SELECT unroll_the_array_more(ARRAY[1,2,3,5,6,7]::"char"[]);
+ unroll_the_array_more 
+-----------------------
+ (\x01,char)
+ (\x02,char)
+ (\x03,char)
+ (\x05,char)
+ (\x06,char)
+ (\x07,char)
+(6 rows)
+
+SELECT * FROM unroll_the_array_more(ARRAY[1,2,3,5,6,7]::"char"[]);
+ data | typname 
+------+---------
+ \x01 | char
+ \x02 | char
+ \x03 | char
+ \x05 | char
+ \x06 | char
+ \x07 | char
+(6 rows)
+
+-- md action
+SELECT unroll_the_array_more(ARRAY[[1::smallint,2],[3,5],[6,7]]);
+ unroll_the_array_more 
+-----------------------
+ (1,int4)
+ (2,int4)
+ (3,int4)
+ (5,int4)
+ (6,int4)
+ (7,int4)
+(6 rows)
+
+SELECT * FROM unroll_the_array_more(ARRAY[[1::smallint,2],[3,5],[6,7]]);
+ data | typname 
+------+---------
+    1 | int4
+    2 | int4
+    3 | int4
+    5 | int4
+    6 | int4
+    7 | int4
+(6 rows)
+

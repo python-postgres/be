@@ -1,0 +1,124 @@
+CREATE OR REPLACE FUNCTION check_pytypes(b bool, bs bytea, i2 int2, i4 int4, i8 int8, f4 float4, f8 float8, txt text, vc varchar)
+RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+
+@pytypes
+def main(B, Bs, i2, i4, i8, f4, f8, txt, vc):
+	assert type(B) is bool
+	assert type(Bs) is bytes
+	assert type(i2) is int
+	assert type(i4) is int
+	assert type(i8) is int
+	assert type(f4) is float
+	assert type(f8) is float
+	assert type(txt) is str
+	assert type(vc) is str
+	assert B is True
+	assert Bs == b'bytes\x00'
+	assert i2 == -100
+	assert i4 == 100
+	assert i8 == 100**4
+	assert f4 == 100.25
+	assert f8 == 1000.50
+	assert txt == 'some text'
+	assert vc == 'some chars'
+	return 'success'
+$python$;
+SELECT check_pytypes('t'::bool, E'bytes\\000'::bytea, -100::int2, 100::int4, (100^4)::int8, 100.25::float4, 1000.50::float8, 'some text'::text, 'some chars'::varchar);
+ check_pytypes 
+---------------
+ success
+(1 row)
+
+CREATE OR REPLACE FUNCTION check_iterpytypes(b bool, bs bytea, i2 int2, i4 int4, i8 int8, f4 float4, f8 float8, txt text, vc varchar)
+RETURNS text LANGUAGE python AS
+$python$
+from Postgres import iterpytypes
+
+def main(*args):
+	args = list(iterpytypes([args]))[0]
+	B, Bs, i2, i4, i8, f4, f8, txt, vc = args
+	assert type(B) is bool
+	assert type(Bs) is bytes
+	assert type(i2) is int
+	assert type(i4) is int
+	assert type(i8) is int
+	assert type(f4) is float
+	assert type(f8) is float
+	assert type(txt) is str
+	assert type(vc) is str
+	assert B is False
+	assert Bs == b'\x00bytes\x00'
+	assert i2 == 100
+	assert i4 == -101
+	assert i8 == 100**4
+	assert f4 == 100.25
+	assert f8 == 1000.50
+	assert txt == 'some other text'
+	assert vc == 'chars'
+	return 'success'
+$python$;
+SELECT check_iterpytypes('f'::bool, E'\\000bytes\\000'::bytea, 100::int2, -101::int4, (100^4)::int8, 100.25::float4, 1000.50::float8, 'some other text'::text, 'chars'::varchar);
+ check_iterpytypes 
+-------------------
+ success
+(1 row)
+
+CREATE OR REPLACE FUNCTION check_non_pytypes(p point, n numeric, i2 int2, x oid) RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+
+@pytypes
+def main(p, n, i2, x):
+	assert type(p) is Postgres.types.point
+	assert type(n) is Postgres.types.numeric
+	assert type(i2) is int and i2 == 7
+	assert type(x) is Postgres.types.oid
+	return 'success'
+$python$;
+SELECT check_non_pytypes('(1,2.123)'::point, 123.32::numeric, 7::int2, 104::oid);
+ check_non_pytypes 
+-------------------
+ success
+(1 row)
+
+DROP DOMAIN IF EXISTS btr_i2 CASCADE;
+NOTICE:  type "btr_i2" does not exist, skipping
+DROP DOMAIN IF EXISTS btr_i1 CASCADE;
+NOTICE:  type "btr_i1" does not exist, skipping
+CREATE DOMAIN btr_i1 AS text;
+CREATE DOMAIN btr_i2 AS btr_i1;
+CREATE OR REPLACE FUNCTION pytypes_check_base_type_resolution(arg1 btr_i1, arg2 btr_i2) RETURNS text LANGUAGE python AS
+$python$
+@pytypes
+def main(arg1, arg2):
+	assert type(arg1) is str and arg1 == 'foo'
+	assert type(arg2) is str and arg2 == 'bar'
+	return 'success'
+$python$;
+SELECT pytypes_check_base_type_resolution('foo'::btr_i1, 'bar'::btr_i2);
+ pytypes_check_base_type_resolution 
+------------------------------------
+ success
+(1 row)
+
+CREATE OR REPLACE FUNCTION pytypes_ignore_non_pg_types() RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+
+@pytypes
+def itsnot_a_pg_type(arg1, arg2):
+	assert type(arg1) is str and arg1 == 'foo'
+	assert type(arg2) is int and arg2 == 102
+
+def main():
+	itsnot_a_pg_type('foo', Postgres.types.int2(102))
+	return 'success'
+$python$;
+SELECT pytypes_ignore_non_pg_types();
+ pytypes_ignore_non_pg_types 
+-----------------------------
+ success
+(1 row)
+

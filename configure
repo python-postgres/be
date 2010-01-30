@@ -31,10 +31,12 @@ system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
 echo "__system__ = $system" >>build/cache/system.mk
 
 echo >&2 "linking test directories for installcheck"
-echo >&2 LOG: ln -sf test/sql sql
-ln -sf test/sql sql
-echo >&2 LOG: ln -sf test/expected/$system expected
-ln -sf test/expected/$system expected
+echo >&2 LOG: rm -f sql expected
+rm -f sql expected || exit 1
+echo >&2 LOG: ln -s test/sql sql
+ln -s "test/sql" sql || exit 1
+echo >&2 LOG: ln -s test/expected/$system expected
+ln -s "test/expected/$system" expected || exit 1
 
 echo >&2 "LOG: building Makefile includes for PGXS build"
 echo >&2 "LOG: caching postgres.mk. derived from $(pg_config --bindir)/pg_config"
