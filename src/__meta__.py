@@ -20,7 +20,6 @@ __languages__ = {
 	'py_3_1': 'Python 3.1',
 }
 
-__version_info__ = (1, 0, 0, 'dev', 0)
-__version__ = '.'.join(map(str, __version_info__[:3])) + (
-	__version_info__[3] if __version_info__[3] != 'final' else ''
-)
+__version_info__ = (1, 0, 0)
+__release__ = False
+__version__ = '.'.join(map(str, __version_info__)) + (not __release__ and 'dev' or '')
