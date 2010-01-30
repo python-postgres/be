@@ -1798,7 +1798,7 @@ call_function(PG_FUNCTION_ARGS)
  *
  * If fn_extra is NULL or out-of-date, load a new Postgres.Function.
  *
- * In the worst case scenario, plpython3_handler will acquire two [python]
+ * In the worst case scenario, pl_handler will acquire two [python]
  * references to the same function.
  */
 static PyObj
@@ -1911,7 +1911,7 @@ initialize(PG_FUNCTION_ARGS)
 				PyErr_ThrowPostgresError("could not find Python function");
 
 			/*
-			 * plpython3_handler now owns the reference.
+			 * pl_handler now owns the reference.
 			 */
 			Py_ACQUIRE(func);
 			fn_info->fi_func = func;
@@ -1966,6 +1966,14 @@ initialize(PG_FUNCTION_ARGS)
 		fn_info->fi_module = module;
 		fn_info->fi_output = PyPgFunction_GetOutput(func);
 		fn_info->fi_input = PyPgFunction_GetInput(func);
+
+		/*
+		 * function module loader protocol, module is loaded, so return it.
+		 */
+		if (fcinfo->nargs == -1)
+		{
+			return(func);
+		}
 
 		if (!PyPgFunction_IsPolymorphic(func))
 		{
@@ -2137,7 +2145,7 @@ initialize(PG_FUNCTION_ARGS)
 }
 
 /*
- * plpython3_handler - execute a Python procedure with given arguments.
+ * pl_handler - execute a Python procedure with given arguments.
  */
 PG_FUNCTION_INFO_V1(pl_handler);
 Datum
@@ -2176,11 +2184,19 @@ pl_handler(PG_FUNCTION_ARGS)
 			 * setup fn_extra and get the PyPgFunction object for the call
 			 */
 			func = initialize(fcinfo);
-
 			/*
 			 * TODO: Cache the sub-handler in fn_info.
 			 */
-			if (CALLED_AS_TRIGGER(fcinfo))
+			if (fcinfo->nargs == -1)
+			{
+				/*
+				 * function preload protocol:
+				 *  Result is NULL and a pointer to the module.
+				 */
+				rd = PointerGetDatum(current_exec_state.fn_info->fi_module);
+				fcinfo->isnull = true;
+			}
+			else if (CALLED_AS_TRIGGER(fcinfo))
 				rd = pull_trigger(fcinfo);
 			else
 			{

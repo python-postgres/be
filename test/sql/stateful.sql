@@ -102,9 +102,8 @@ $$
 def main():
 	fn = proc('yay_stateful()')
 	fn.load_module()
-	return 'fail'
+	return 'success'
 $$;
--- should bomb out; invalid context
 SELECT load_yay_stateful();
 
 CREATE OR REPLACE FUNCTION call_yay_stateful() RETURNS text language python as
@@ -117,7 +116,7 @@ def main():
 	fn_mod.main()
 	return 'fail'
 $$;
--- should bomb out; invalid context again
+-- should bomb out; invalid context
 SELECT call_yay_stateful();
 
 -- CORNERS --

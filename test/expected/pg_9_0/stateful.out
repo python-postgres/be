@@ -186,13 +186,12 @@ $$
 def main():
 	fn = proc('yay_stateful()')
 	fn.load_module()
-	return 'fail'
+	return 'success'
 $$;
--- should bomb out; invalid context
 SELECT load_yay_stateful();
  load_yay_stateful 
 -------------------
- fail
+ success
 (1 row)
 
 CREATE OR REPLACE FUNCTION call_yay_stateful() RETURNS text language python as
@@ -205,18 +204,14 @@ def main():
 	fn_mod.main()
 	return 'fail'
 $$;
--- should bomb out; invalid context again
+-- should bomb out; invalid context
 SELECT call_yay_stateful();
 ERROR:  function's "main" raised a Python exception
 CONTEXT:  [exception from Python]
-RuntimeError: cannot call Stateful in from distinct contexts
-
-[public.yay_stateful()]
-[exception from Python]
 Traceback (most recent call last):
-   File "public.call_yay_stateful()", line 5, in main
-    assert fn() == 'foo'
- Postgres.Exception
+   File "public.call_yay_stateful()", line 7, in main
+    fn_mod.main()
+ RuntimeError: cannot call Stateful in from distinct contexts
 
 [public.call_yay_stateful()]
 -- CORNERS --

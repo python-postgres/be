@@ -407,14 +407,73 @@ get_code(PyObj self, PyObj args, PyObj kw)
  * Evaluate the function's code in a new module
  * or if the fullname exists in sys.modules, return
  * the existing module. [PEP302]
+ *
+ * This code must go through pl_handler in order to properly load the
+ * module. The execution context can dictate much about what happens during
+ * load time.
+ *
+ * i.e., tricky shit happens here. It may be preferrable to make the execution
+ * context rigging more accessible, but for now, it's the handler's job.
  */
 static PyObj
 load_module(PyObj self, PyObj args, PyObj kw)
 {
+	MemoryContext former = CurrentMemoryContext;
+	volatile PyObj rob = NULL;
+	FmgrInfo flinfo;
+	FunctionCallInfoData fcinfo;
+
 	if (invalid_fullname(self, args, kw))
 		return(NULL);
 
-	return(PyPgFunction_load_module(self));
+	/*
+	 * Disallow execution of "anonymous" functions.
+	 */
+	flinfo.fn_addr = PyPgFunction_GetPGFunction(self);
+	flinfo.fn_oid = PyPgFunction_GetOid(self);
+	flinfo.fn_retset = false;
+	if (flinfo.fn_addr == NULL || flinfo.fn_oid == InvalidOid)
+	{
+		PyErr_SetString(PyExc_TypeError, "internal functions cannot be preloaded");
+		return(NULL);
+	}
+
+	flinfo.fn_nargs = -1;
+	flinfo.fn_extra = NULL;
+	flinfo.fn_mcxt = CurrentMemoryContext;
+	flinfo.fn_expr = NULL;
+	fcinfo.nargs = -1;
+	fcinfo.flinfo = &flinfo;
+	fcinfo.context = NULL;
+	fcinfo.resultinfo = NULL;
+	/*
+	 * Better be true afterwards.
+	 */
+	fcinfo.isnull = false;
+
+	SPI_push();
+	PG_TRY();
+	{
+		rob = (PyObj) DatumGetPointer(FunctionCallInvoke(&fcinfo));
+	}
+	PG_CATCH();
+	{
+		rob = NULL;
+		PyErr_SetPgError(false);
+	}
+	PG_END_TRY();
+	SPI_pop();
+	MemoryContextSwitchTo(former);
+
+	if (fcinfo.isnull == false)
+	{
+		PyErr_SetString(PyExc_RuntimeError,
+			"function module load protocol did not set isnull");
+		rob = NULL;
+	}
+
+	Py_XINCREF(rob);
+	return(rob);
 }
 
 /*
