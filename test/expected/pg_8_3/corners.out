@@ -167,7 +167,7 @@ Traceback (most recent call last):
 [public.whence_overflow()]
 -- SRFs --
 -- validate key errors
-CREATE OR REPLACE FUNCTION cause_key_error_srf(OUT i int, OUT t text) RETURNS record LANGUAGE python AS
+CREATE OR REPLACE FUNCTION cause_key_error_srf(OUT i int, OUT t text) RETURNS SETOF record LANGUAGE python AS
 $python$
 def main():
 	return (
@@ -177,13 +177,13 @@ $python$;
 SELECT cause_key_error_srf();
 ERROR:  function raised a Python exception
 CONTEXT:  [exception from Python]
-TypeError: descriptor requires exactly 2 attributes, given sequence has 1 items
+KeyError: 'f'
 
 [public.cause_key_error_srf() while creating result]
 SELECT * FROM cause_key_error_srf();
 ERROR:  function raised a Python exception
 CONTEXT:  [exception from Python]
-TypeError: descriptor requires exactly 2 attributes, given sequence has 1 items
+KeyError: 'f'
 
 [public.cause_key_error_srf() while creating result]
 --- between transaction deallocation ---
