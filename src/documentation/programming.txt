@@ -30,24 +30,24 @@ provide convenient access to often used objects, some
 additional built-ins are provided by pg-python.
 
  ``@pytypes``
-  Alias to :func:`Postgres.pytypes`.
+  Alias to `Postgres.pytypes`_.
 
  ``prepare(sql_statement)``
-  Alias to :class:`Postgres.Statement`
+  Alias to :class:`Postgres.Statement`_
 
  ``proc(procedure_id)``
   Function that takes ``pg_catalog.regprocedure`` text or a
-  function ``Oid`` and returns the corresponding :class:`Postgres.Function`.
+  function ``Oid`` and returns the corresponding `Postgres.Function`_.
 
  ``sqleval(sql_expr, *args)``
-  Alias to :func:`Postgres.eval`.
+  Alias to `Postgres.eval`_.
 
  ``sqlexec(str_of_sql_statements)``
-  Execute multiple SQL statements. Alias to :func:`Postgres.execute`.
+  Execute multiple SQL statements. Alias to `Postgres.execute`_.
 
  ``xact()``
   Context manager that starts and ends an internal subtransaction.
-  Alias to :class:`Postgres.Transaction`.
+  Alias to `Postgres.Transaction`_.
 
 Normal Functions
 ================
