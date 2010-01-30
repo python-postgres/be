@@ -35,3 +35,29 @@ def main():
 	Postgres.NOTICE('success')
 $$;
 SELECT load_em();
+
+CREATE OR REPLACE FUNCTION preload_schemas(text[]) RETURNS VOID LANGUAGE python AS
+$$
+from Postgres import preload
+def main(x):
+	preload(*list(map(str, x)))
+$$;
+
+-- should work for a few versions
+SET standard_conforming_strings = OFF;
+SHOW standard_conforming_strings;
+
+CREATE OR REPLACE FUNCTION nsp_a.test_settings() RETURNS TEXT LANGUAGE python
+ SET standard_conforming_strings = ON
+AS
+$$
+from Postgres import WARNING
+inload = prepare('show standard_conforming_strings').first()
+WARNING('loaded test_settings: ' + str(inload))
+def main():
+	return inload
+$$;
+SELECT preload_schemas('{nsp_a}'::text[]);
+
+SELECT nsp_a.test_settings();
+SHOW standard_conforming_strings;
