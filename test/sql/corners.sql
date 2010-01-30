@@ -141,7 +141,7 @@ SELECT whence_overflow();
 -- SRFs --
 
 -- validate key errors
-CREATE OR REPLACE FUNCTION cause_key_error_srf(OUT i int, OUT t text) RETURNS record LANGUAGE python AS
+CREATE OR REPLACE FUNCTION cause_key_error_srf(OUT i int, OUT t text) RETURNS SETOF record LANGUAGE python AS
 $python$
 def main():
 	return (
