@@ -20,3 +20,5 @@ pg-python marks a significant deviation from the original PL/Py direction.
  - Improved native typing: arrays, composites, composite arrays.
  - Removed HeapTuple interface type in favor of DatumTuples/Postgres.types.record
  - PGXS based build
+ - Drops support for 8.0, 8.1, and 8.2 (the latter was never released or tagged)
+ - Default language name is now "python".
