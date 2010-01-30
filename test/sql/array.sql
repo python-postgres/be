@@ -329,7 +329,7 @@ def main(A):
 	)
 $python$;
 
-SELECT reconstruct_array(ARRAY[]::int[]);
+SELECT reconstruct_array('{}'::int[]);
 SELECT reconstruct_array(ARRAY[0,1,2,3,4,5,6,7,8,9]::int[]);
 SELECT reconstruct_array('[3:5]={1,2,3}'::int[]);
 SELECT reconstruct_array('[3:5]={1,2,3}'::text[]);
@@ -386,9 +386,9 @@ def main(arr, ind):
 $python$;
 
 -- index error, no elements
-SELECT py_array_get_element(ARRAY[]::int[], ARRAY[0]);
+SELECT py_array_get_element('{}'::int[], ARRAY[0]);
 -- value error, empty index tuple
-SELECT py_array_get_element(ARRAY[]::int[], '{}'::int[]);
+SELECT py_array_get_element('{}'::int[], '{}'::int[]);
 
 -- success
 SELECT py_array_get_element(ARRAY[1,2,3,4]::int[], ARRAY[1]);
