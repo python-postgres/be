@@ -39,13 +39,13 @@ ifeq ($(PLPY_STRANGE_THINGS), 1)
 override CPPFLAGS := -DPLPY_STRANGE_THINGS $(CPPFLAGS)
 endif
 
-override CPPFLAGS := "-D$(__system__)" '-DPL_UUID="$(uuid)"' $(python_cflags) $(CPPFLAGS) -I./src/include
+override CPPFLAGS := "-D$(__system__)" $(python_cflags) $(CPPFLAGS) -I./src/include
 override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 
 # Convert the characters in the file into a comma separated list of
 # ASCII character codes. (See src/module.c for where it's included)
-src/module.py.cfrag: src/module.py
-	$(python) build/tools/mkdigits.py <$? >$@
+src/module.py.cfrag: src/module.py src/__meta__.py
+	echo "__system__ = '$(__system__)'; __build_uuid__ = '$(uuid)'" | cat $? src/__meta__.py - | $(python) build/tools/mkdigits.py >$@
 
 .PHONY: html
 
