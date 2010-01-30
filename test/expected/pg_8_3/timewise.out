@@ -1,4 +1,10 @@
 SET TIMEZONE TO MST;
+SHOW integer_datetimes;
+ integer_datetimes 
+-------------------
+ on
+(1 row)
+
 CREATE OR REPLACE FUNCTION date_properties(d date) RETURNS setof text LANGUAGE python AS
 $python$
 
@@ -919,9 +925,9 @@ SELECT interval_properties('1 year'::interval);
 (14 rows)
 
 SELECT interval_properties('4 weeks 7 days 2 hours 7 minutes 2 seconds 10232 microseconds'::interval);
-               interval_properties                
---------------------------------------------------
- interval: @ 35 days 2 hours 7 mins 2.010232 secs
+             interval_properties              
+----------------------------------------------
+ interval: @ 35 days 2 hours 7 mins 2.01 secs
  millennium: 0
  century: 0
  decade: 0
