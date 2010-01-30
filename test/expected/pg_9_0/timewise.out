@@ -1,4 +1,10 @@
 SET TIMEZONE TO MST;
+SHOW integer_datetimes;
+ integer_datetimes 
+-------------------
+ on
+(1 row)
+
 CREATE OR REPLACE FUNCTION date_properties(d date) RETURNS setof text LANGUAGE python AS
 $python$
 

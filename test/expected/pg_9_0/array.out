@@ -481,7 +481,7 @@ def main(A):
 		))
 	)
 $python$;
-SELECT reconstruct_array(ARRAY[]::int[]);
+SELECT reconstruct_array('{}'::int[]);
          reconstruct_array          
 ------------------------------------
  original: {} --- reconstructed: {}
@@ -624,7 +624,7 @@ def main(arr, ind):
 	return arr.get_element(ind)
 $python$;
 -- index error, no elements
-SELECT py_array_get_element(ARRAY[]::int[], ARRAY[0]);
+SELECT py_array_get_element('{}'::int[], ARRAY[0]);
 ERROR:  function's "main" raised a Python exception
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
@@ -634,7 +634,7 @@ Traceback (most recent call last):
 
 [public.py_array_get_element(anyarray,integer[])]
 -- value error, empty index tuple
-SELECT py_array_get_element(ARRAY[]::int[], '{}'::int[]);
+SELECT py_array_get_element('{}'::int[], '{}'::int[]);
 ERROR:  function's "main" raised a Python exception
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
