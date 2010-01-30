@@ -28,8 +28,11 @@ touch build/cache/__pg_python_build_cache__
 echo >&2 "identifying requirements from environment"
 
 system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
-
 echo "__system__ = $system" >>build/cache/system.mk
+
+echo >&2 "linking test directories for installcheck"
+ln -sf test/sql sql
+ln -sf test/expected/$system expected
 
 echo >&2 "building Makefile includes for PGXS build"
 echo >&2 "LOG: caching postgres.mk. derived from $(pg_config --bindir)/pg_config"
