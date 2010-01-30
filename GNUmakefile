@@ -45,7 +45,7 @@ override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 # Convert the characters in the file into a comma separated list of
 # ASCII character codes. (See src/module.c for where it's included)
 src/module.py.cfrag: src/module.py src/__meta__.py
-	echo "__system__ = '$(__system__)'; __build_uuid__ = '$(uuid)'" | cat $? src/__meta__.py - | $(python) build/tools/mkdigits.py >$@
+	cat $? src/__meta__.py | $(python) build/tools/mkdigits.py >$@
 
 .PHONY: html
 
