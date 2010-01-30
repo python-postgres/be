@@ -159,17 +159,17 @@ WARNING:  01001: danger
 DETAIL:  details
 HINT:  hint
 CONTEXT:  added context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
 NOTICE:  00000: be advised
 DETAIL:  details
 HINT:  hint
 CONTEXT:  added context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
 INFO:  00000: useless info
 DETAIL:  details
 HINT:  hint
 CONTEXT:  added context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
 ERROR:  XX002: it's okay
 DETAIL:  details
 HINT:  hint
@@ -182,7 +182,7 @@ Traceback (most recent call last):
  Postgres.Exception
 
 [public.py_report()]
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
 -- Check that the stdio replacements are operating.
 CREATE OR REPLACE FUNCTION py_warnings() RETURNS VOID LANGUAGE python AS
 $python$
@@ -194,7 +194,7 @@ $python$;
 SELECT py_warnings();
 WARNING:  01PPY: show this text as a pg warning
 CONTEXT:  public.py_warnings():5: UserWarning
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
  py_warnings 
 -------------
  
@@ -360,7 +360,7 @@ WARNING:  BBBBB: message
 DETAIL:  detail
 HINT:  hint
 CONTEXT:  context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
  inhibited_pl_context_warning 
 ------------------------------
  
@@ -372,7 +372,7 @@ WARNING:  BBBBB: message
 DETAIL:  detail
 HINT:  hint
 CONTEXT:  context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
  inhibited_pl_context_warning 
 ------------------------------
  
@@ -384,7 +384,7 @@ WARNING:  BBBBB: message
 DETAIL:  detail
 HINT:  hint
 CONTEXT:  context
-LOCATION:  <Postgres.ereport>, module.c:187
+LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
  inhibited_pl_context_warning 
 ------------------------------
  

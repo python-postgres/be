@@ -9,9 +9,12 @@ __date__ = '2010-02-01'
 __systems__ = {
 	'pg_8_3': 'PostgreSQL 8.3',
 	'pg_8_4': 'PostgreSQL 8.4',
-	'pg_8_5': 'PostgreSQL 8.5 (Alias to 9.0)',
 	'pg_9_0': 'PostgreSQL 9.0',
 }
+__system_aliases__ = {
+	'pg_8_5' : 'pg_9_0'
+}
+__default_system__ = 'pg_9_0'
 
 __languages__ = {
 	'py_3_1': 'Python 3.1',

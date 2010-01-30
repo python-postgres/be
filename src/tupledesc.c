@@ -86,26 +86,29 @@
 	FIELD(attacl, 18, GetNULL) \
 	__VA_ARGS__
 #else
+/*
+ * 8.5/9.0 and greater.
+ */
 #define FormData_pg_attribute_Fields(...) \
 	FIELD(attrelid, 1, ObjectIdGetDatum) \
 	FIELD(attname, 2, GetNAME) \
 	FIELD(atttypid, 3, ObjectIdGetDatum) \
 	FIELD(attstattarget, 4, Int32GetDatum) \
-	FIELD(attdistinct, 5, Float4GetDatum) \
-	FIELD(attlen, 6, Int16GetDatum) \
-	FIELD(attnum, 7, Int16GetDatum) \
-	FIELD(attndims, 8, Int32GetDatum) \
-	FIELD(attcacheoff, 9, Int32GetDatum) \
-	FIELD(atttypmod, 10, Int32GetDatum) \
-	FIELD(attbyval, 11, BoolGetDatum) \
-	FIELD(attstorage, 12, CharGetDatum) \
-	FIELD(attalign, 13, CharGetDatum) \
-	FIELD(attnotnull, 14, BoolGetDatum) \
-	FIELD(atthasdef, 15, BoolGetDatum) \
-	FIELD(attisdropped, 16, BoolGetDatum) \
-	FIELD(attislocal, 17, BoolGetDatum) \
-	FIELD(attinhcount, 18, Int32GetDatum) \
-	FIELD(attacl, 19, GetNULL) \
+	FIELD(attlen, 5, Int16GetDatum) \
+	FIELD(attnum, 6, Int16GetDatum) \
+	FIELD(attndims, 7, Int32GetDatum) \
+	FIELD(attcacheoff, 8, Int32GetDatum) \
+	FIELD(atttypmod, 9, Int32GetDatum) \
+	FIELD(attbyval, 10, BoolGetDatum) \
+	FIELD(attstorage, 11, CharGetDatum) \
+	FIELD(attalign, 12, CharGetDatum) \
+	FIELD(attnotnull, 13, BoolGetDatum) \
+	FIELD(atthasdef, 14, BoolGetDatum) \
+	FIELD(attisdropped, 15, BoolGetDatum) \
+	FIELD(attislocal, 16, BoolGetDatum) \
+	FIELD(attinhcount, 17, Int32GetDatum) \
+	FIELD(attacl, 18, GetNULL) \
+	FIELD(attoptions, 19, PointerGetDatum) \
 	__VA_ARGS__
 #endif
 
@@ -619,7 +622,9 @@ tupd_item(PyObj self, Py_ssize_t i)
 		Datum pg_att_datums[Natts_pg_attribute];
 		bool pg_att_nulls[Natts_pg_attribute] = {false,};
 
-		pg_att_nulls[Natts_pg_attribute-2] = true;
+#ifdef Anum_pg_attribute_attacl
+		pg_att_nulls[Anum_pg_attribute_attacl-1] = true;
+#endif
 
 		/*
 		 * XXX: Need a better way to construct a pg_attribute Datum.

@@ -193,9 +193,9 @@ static PyNumberMethods int4_as_number = {
 	NULL,					/* nb_and */
 	NULL,					/* nb_xor */
 	NULL,					/* nb_or */
-	int4_int,			/* nb_int */
+	int4_int,				/* nb_int */
 	NULL,					/* nb_reserved */
-	int4_float,			/* nb_float */
+	int4_float,				/* nb_float */
 
 	NULL,
 };
@@ -215,7 +215,7 @@ int4_new_datum(PyObj subtype, PyObj ob, int32 mod, Datum *out, bool *isnull)
 	if (PyErr_Occurred())
 		PyErr_RelayException();
 
-#if SIZEOF_UNSIGNED_LONG > 4
+#if SIZEOF_LONG > 4
 	/*
 	 * hooray for C!
 	 */

@@ -203,7 +203,7 @@ void raise_spi_error(int spi_error);
 #define errstart(xLEVEL, xFILE, xLINE, xFUNC, ...) errstart(xLEVEL, xFILE, xLINE, xFUNC)
 #define TEXTARRAYOID 0
 #define RECORDARRAYOID 0
-#define TRIGGER_EVENT_TRUNCATE -1
+#define TRIGGER_EVENT_TRUNCATE 0xDEADBEEF
 #define PushActiveSnapshot(...)
 #define PopActiveSnapshot(...)
 #define CreateQueryDesc(A1, A2, A3, ...) CreateQueryDesc(A1, A3, __VA_ARGS__)
@@ -218,7 +218,7 @@ void raise_spi_error(int spi_error);
 /*
  * Relays can be detected by code on modern systems (8.4 and greater).
  */
-#define _PG_ERROR_IS_RELAY() (geterrcode() != ERRCODE_PYTHON_RELAY)
+#define _PG_ERROR_IS_RELAY() (geterrcode() == ERRCODE_PYTHON_RELAY)
 #define _PG_GET_TYPCATEGORY(X) (X->typcategory)
 #endif
 

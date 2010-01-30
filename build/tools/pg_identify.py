@@ -26,13 +26,18 @@ if not minor.isdigit():
 	minor = minor[:i]
 
 sysid = '_'.join(('pg', major, minor))
-err('SYSTEM: ' + sysid + ls)
 
 # read project metadata, assume we're in the configure directory
 exec(open(joinpath('src', '__meta__.py')).read())
 
+rsysid = __system_aliases__.get(sysid, sysid)
+err('IDENTITY: {0} -> {1}{2}'.format(sysid, rsysid, ls))
+sysid = rsysid
+
 if sysid not in __systems__:
 	err('WARNING: identified system, {0}, is not in the supported list{1}'.format(sysid, ls))
 	err('SUPPORTED: ' + ' '.join(__systems__.keys()) + ls)
+	err('trying to use default: ' + __default_system__)
+	sysid = __default_system__
 
 out(sysid + ls)
