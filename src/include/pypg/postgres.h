@@ -192,6 +192,36 @@ void raise_spi_error(int spi_error);
 	IDSTR(PG_ISO_8859_6, "iso8859_6") \
 	IDSTR(PG_ISO_8859_7, "iso8859_7") \
 	IDSTR(PG_ISO_8859_8, "iso8859_8")
+
+/*
+ * pg_8_3 compatibility. Looking forward to 9.1 and pg-python 2.0
+ */
+#if (PG_VERSION_NUM < 80400)
+#define PG_KOI8U (-1)
+#define SFRM_Materialize_Preferred 0
+#define SFRM_Materialize_Random 0
+#define errstart(xLEVEL, xFILE, xLINE, xFUNC, ...) errstart(xLEVEL, xFILE, xLINE, xFUNC)
+#define TEXTARRAYOID 0
+#define RECORDARRAYOID 0
+#define TRIGGER_EVENT_TRUNCATE -1
+#define PushActiveSnapshot(...)
+#define PopActiveSnapshot(...)
+#define CreateQueryDesc(A1, A2, A3, ...) CreateQueryDesc(A1, A3, __VA_ARGS__)
+#define CreateDestReceiver(A) CreateDestReceiver(A, NULL)
+#define pg_plan_queries(...) pg_plan_queries(__VA_ARGS__, true)
+#define GetActiveSnapshot() GetLatestSnapshot()
+#define FreeExprContext(X,Y) FreeExprContext(X)
+#define TYPCATEGORY_STRING '-'
+#define _PG_GET_TYPCATEGORY(X) '\0'
+#define _PG_ERROR_IS_RELAY() (PyErr_Occurred())
+#else
+/*
+ * Relays can be detected by code on modern systems (8.4 and greater).
+ */
+#define _PG_ERROR_IS_RELAY() (geterrcode() != ERRCODE_PYTHON_RELAY)
+#define _PG_GET_TYPCATEGORY(X) (X->typcategory)
+#endif
+
 /*
  * Unsupported:
  *

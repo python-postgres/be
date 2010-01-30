@@ -513,7 +513,8 @@ def _pl_first_call():
 	global sleep, cancel_backend, terminate_backend
 	sleep = proc('pg_catalog.pg_sleep(double precision)')
 	cancel_backend = proc('pg_catalog.pg_cancel_backend(int4)')
-	terminate_backend = proc('pg_catalog.pg_terminate_backend(int4)')
+	if version_info[:2] >= (8,4):
+		terminate_backend = proc('pg_catalog.pg_terminate_backend(int4)')
 
 	##
 	# Initialize the common built-in aliases.

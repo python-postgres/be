@@ -517,7 +517,7 @@ fill_pg_type(PyPgTypeInfo typinfo)
 				}
 			}
 
-			typinfo->typcategory = ts->typcategory;
+			typinfo->typcategory = _PG_GET_TYPCATEGORY(ts);
 			typinfo->typalign = ts->typalign;
 			typinfo->typlen = ts->typlen;
 			typinfo->typnamespace = ts->typnamespace;

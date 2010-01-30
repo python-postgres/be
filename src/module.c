@@ -12,7 +12,9 @@
 #include "access/heapam.h"
 #include "access/htup.h"
 #include "access/hio.h"
+#if (PG_VERSION_NUM >= 80400)
 #include "access/sysattr.h"
+#endif
 #include "access/xact.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_namespace.h"
@@ -183,7 +185,7 @@ py_ereport(PyObj self, PyObj args, PyObj kw)
 	} \
 } while(0)
 
-				if (errstart(elevel, "module.c", __LINE__, "<Postgres.ereport>", "python"))
+				if (errstart(elevel, "module.c", 0, "<Postgres.ereport>", "python"))
 				{
 					if (sqlerrcode)
 						errcode(sqlerrcode);
@@ -565,7 +567,11 @@ py_quote_literal(PyObj self, PyObj ob)
 
 	PG_TRY();
 	{
-		s = cstring_to_text_with_len(PyBytes_AS_STRING(ob), PyBytes_GET_SIZE(ob));
+		Py_ssize_t size = PyBytes_GET_SIZE(ob);
+		/* s = cstring_to_text_with_len(PyBytes_AS_STRING(ob), PyBytes_GET_SIZE(ob)); */
+		s = palloc(size + VARHDRSZ);
+		Py_MEMCPY(VARDATA(s), PyBytes_AS_STRING(ob), size);
+		SET_VARSIZE(s, size);
 		txt = DatumGetTextP(DirectFunctionCall1(quote_literal, PointerGetDatum(s)));
 		pfree(s);
 		rob = PyUnicode_FromTEXT(txt);

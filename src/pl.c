@@ -1006,7 +1006,9 @@ select_trigger_handler(TriggerEvent tev)
 		Py_STATEMENT_TRIGGER_TEMPLATE(UPDATE,update)
 		Py_ROW_TRIGGER_TEMPLATE(DELETE,delete)
 		Py_STATEMENT_TRIGGER_TEMPLATE(DELETE,delete)
+#ifndef TRIGGER_EVENT_TRUNCATE
 		Py_STATEMENT_TRIGGER_TEMPLATE(TRUNCATE,truncate)
+#endif
 
 		default:
 			return(NULL);
@@ -2255,7 +2257,7 @@ pl_handler(PG_FUNCTION_ARGS)
 			 * for us to use. This failure case happens when DatumNew causes
 			 * a Python exception.
 			 */
-			if (geterrcode() == ERRCODE_PYTHON_RELAY)
+			if (_PG_ERROR_IS_RELAY())
 			{
 				/*
 				 * Don't need the error state, all the information is in the

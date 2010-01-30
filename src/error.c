@@ -466,7 +466,7 @@ PyErr_SetPgError(bool inhibit_warning)
 	 * If it's a relayed exception, ignore the ErrorData.
 	 * (we're actually going to the raise the currently set Python error)
 	 */
-	if (geterrcode() != ERRCODE_PYTHON_RELAY)
+	if (!_PG_ERROR_IS_RELAY())
 	{
 		errdata = PyPgErrorData_FromCurrent();
 
@@ -514,11 +514,9 @@ PyErr_SetPgError(bool inhibit_warning)
 void
 PyErr_EmitPgErrorAsWarning(const char *msg)
 {
-	int code;
 	char *data;
 
-	code = geterrcode();
-	if (code != ERRCODE_PYTHON_RELAY)
+	if (!_PG_ERROR_IS_RELAY())
 	{
 		PyObj exc, val, tb;
 

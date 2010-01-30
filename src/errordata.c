@@ -123,9 +123,11 @@ errdata_get_detail(PyObj self, void *arg)
 static PyObj
 errdata_get_detail_log(PyObj self, void *arg)
 {
+#if PG_VERSION_NUM >= 80400
 	ErrorData *ed = PyPgErrorData_GetErrorData(self);
-	if (ed->detail)
+	if (ed->detail_log)
 		return(PyUnicode_FromCString(ed->detail_log));
+#endif
 	Py_INCREF(Py_None);
 	return(Py_None);
 }
@@ -153,9 +155,11 @@ errdata_get_hint(PyObj self, void *arg)
 static PyObj
 errdata_get_domain(PyObj self, void *arg)
 {
+#if PG_VERSION_NUM >= 80400
 	ErrorData *ed = PyPgErrorData_GetErrorData(self);
 	if (ed->domain)
 		return(PyUnicode_FromCString(ed->domain));
+#endif
 	Py_INCREF(Py_None);
 	return(Py_None);
 }
