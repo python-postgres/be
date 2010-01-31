@@ -1,0 +1,12 @@
+=======
+Gotchas
+=======
+
+Composite equality on 8.3
+=========================
+
+It's not supported. So in such cases::
+
+ tuple(composite_a) == tuple(composite_b)
+
+Will be necessary.

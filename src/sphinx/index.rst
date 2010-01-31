@@ -9,6 +9,7 @@ Contents
 
    admin
    programming
+   gotchas
    changes
 
 ^^^^^^^^^
