@@ -21,10 +21,8 @@ RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
 CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
 COMMIT;
 
-BEGIN;
 -- This should not fail if the one above does.
 CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";
-COMMIT;
 
 -- Finish with an explicit check.
 BEGIN;
@@ -33,7 +31,7 @@ $$
 import Postgres
 import sys
 def main():
-	return "python language installed successfully"
+	return "Python " + sys.version + "\n\nLanguage installed successfully."
 $$;
 SELECT test_python();
 -- Don't want these changes.

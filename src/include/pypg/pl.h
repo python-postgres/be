@@ -80,6 +80,8 @@ struct pl_fn_info {
 	 * VPC-SRF state.
 	 */
 	PyObject *fi_state;			/* call state; see src/stateful.c - Postgres.Stateful */
+	PyObject *fi_state_owner;	/* the object (Postgres.Stateful) that owns the state */
+								/* Protects against multiple uses of @Stateful in a single call. */
 	PyObject *fi_internal_state;/* internal call state; td for triggers, iterator for SRFs */
 	PyObject *fi_input;			/* func->fn_input or polymorphed variant */
 	PyObject *fi_output;		/* func->fn_output or polymorphed variant */

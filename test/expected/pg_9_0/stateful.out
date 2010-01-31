@@ -312,3 +312,43 @@ SELECT COUNT(t IS NULL) AS count FROM stateful_trigger_table;
 (1 row)
 
 COMMIT;
+CREATE OR REPLACE FUNCTION too_much_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def too():
+	yield 5
+	yield 7
+
+@Stateful
+def main():
+	yield 1
+	yield too()
+$$;
+SELECT too_much_state() FROM generate_series(1, 10) AS g(i);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.too_much_state()", line 12, in main
+    yield too()
+ RuntimeError: cannot progress state belonging to another object
+
+[public.too_much_state()]
+CREATE OR REPLACE FUNCTION self_dependent_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield main()
+$$;
+SELECT self_dependent_state();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.self_dependent_state()", line 6, in main
+    yield main()
+ RuntimeError: cannot execute Stateful while getting state
+
+[public.self_dependent_state()]

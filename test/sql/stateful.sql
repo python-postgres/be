@@ -195,3 +195,30 @@ SELECT * FROM stateful_trigger_table;
 UPDATE stateful_trigger_table SET t = NULL;
 SELECT COUNT(t IS NULL) AS count FROM stateful_trigger_table;
 COMMIT;
+
+
+CREATE OR REPLACE FUNCTION too_much_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def too():
+	yield 5
+	yield 7
+
+@Stateful
+def main():
+	yield 1
+	yield too()
+$$;
+SELECT too_much_state() FROM generate_series(1, 10) AS g(i);
+
+CREATE OR REPLACE FUNCTION self_dependent_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield main()
+$$;
+SELECT self_dependent_state();

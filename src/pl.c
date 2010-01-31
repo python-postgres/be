@@ -1837,11 +1837,12 @@ initialize(PG_FUNCTION_ARGS)
 		}
 
 		/*
-		 * Reset a few fields. These will be initialized later.
+		 * Reset a few fields. These will or may be initialized later.
 		 */
 		fn_info->fi_xid = 0;
 		fn_info->fi_func = NULL;
 		fn_info->fi_state = NULL;
+		fn_info->fi_state_owner = NULL;
 		fn_info->fi_internal_state = NULL;
 
 		/*

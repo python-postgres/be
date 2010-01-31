@@ -70,6 +70,23 @@ stateful_call(PyObj self, PyObj args, PyObj kw)
 getstate:
 	if (fn_info->fi_state == NULL)
 	{
+		if (fn_info->fi_state_owner != NULL)
+		{
+			/*
+			 * If next(state) calls "self", we need to complain.
+			 */
+			PyErr_SetString(PyExc_RuntimeError,
+				"cannot execute Stateful while getting state");
+			return(NULL);
+		}
+
+		/*
+		 * The state hasn't been set, but self owns fi_state.
+		 * Setting this now protects against calls to self in
+		 * next(state).
+		 */
+		fn_info->fi_state_owner = self;
+
 		/*
 		 * Need a state object.
 		 */
@@ -80,6 +97,8 @@ getstate:
 			Py_DECREF(state);
 			PyErr_SetString(PyExc_TypeError,
 				"state source did not return an iterator");
+
+			fn_info->fi_state_owner = NULL;
 			return(NULL);
 		}
 
@@ -100,6 +119,7 @@ getstate:
 			if (!PyErr_Occurred())
 				PyErr_SetString(PyExc_RuntimeError, "empty state object");
 
+			fn_info->fi_state_owner = NULL;
 			return(NULL);
 		}
 		else
@@ -124,6 +144,7 @@ getstate:
 				Py_DECREF(rob);
 				PyErr_SetString(PyExc_TypeError,
 					"stateful source did not produce an object with a 'send' method");
+				fn_info->fi_state_owner = NULL;
 				return(NULL);
 			}
 
@@ -133,14 +154,20 @@ getstate:
 			{
 				PyErr_SetString(PyExc_RuntimeError,
 					"could not store state in transaction scope");
+				fn_info->fi_state_owner = NULL;
 				return(NULL);
 			}
 
 			/*
-			 * We now have state. =D
+			 * We got state! =D
 			 */
 			fn_info->fi_state = meth;
 		}
+	}
+	else if (fn_info->fi_state_owner != self)
+	{
+		PyErr_SetString(PyExc_RuntimeError,
+			"cannot progress state belonging to another object");
 	}
 	else
 	{
@@ -169,6 +196,7 @@ getstate:
 			{
 				PySet_Discard(TransactionScope, fn_info->fi_state);
 				fn_info->fi_state = NULL;
+				fn_info->fi_state_owner = NULL;
 
 				PyErr_Clear();
 				used_label = true;
@@ -262,7 +290,7 @@ PyTypeObject PyPgStateful_Type = {
 	NULL,								/* tp_as_number */
 	NULL,								/* tp_as_sequence */
 	NULL,								/* tp_as_mapping */
-	NULL,								/* tp_hash */
+	(hashfunc) _Py_HashPointer,			/* tp_hash */
 	stateful_call,						/* tp_call */
 	NULL,								/* tp_str */
 	NULL,								/* tp_getattro */
