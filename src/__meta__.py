@@ -4,7 +4,6 @@
 # This is separated from module.py in order to allow 2.x to import it. (sphinx)
 __author__ = 'James William Pye'
 __project__ = 'pg-python'
-__date__ = '2010-02-01'
 
 __systems__ = {
 	'pg_8_3': 'PostgreSQL 8.3',
@@ -21,5 +20,5 @@ __languages__ = {
 }
 
 __version_info__ = (1, 0, 0)
-__release__ = False
-__version__ = '.'.join(map(str, __version_info__)) + (not __release__ and 'dev' or '')
+__date__ = None
+__version__ = '.'.join(map(str, __version_info__)) + (__date__ is None and 'dev' or '')

@@ -39,7 +39,7 @@ master_doc = 'index'
 # General substitutions.
 import __meta__ as meta
 project = meta.__project__
-copyright = meta.__date__ + ', ' + meta.__author__
+copyright = '2010, ' + meta.__author__
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
