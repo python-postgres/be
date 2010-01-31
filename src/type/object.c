@@ -166,7 +166,7 @@ binary_operate(const char *op, PyObj left, PyObj right)
 
 			/*
 			 * base and coerce are used to manage preliminary coercion.
-			 * If either side of the operator are not a PyPgObject, convert the
+			 * If either side of the operator is not a PyPgObject, convert the
 			 * object to the type of the other side.
 			 */
 

@@ -40,9 +40,11 @@ ln -s "test/expected/$system" expected || exit 1
 
 echo >&2 "LOG: building Makefile includes for PGXS build"
 echo >&2 "LOG: caching postgres.mk. derived from $(pg_config --bindir)/pg_config"
+echo >&2 " $(pg_config --version)"
 echo "PGXS := $(pg_config --pgxs)" >build/cache/postgres.mk
 cat "$(pg_config --pgxs)" >>build/cache/postgres.mk
 echo "pg_bindir := $(pg_config --bindir)" >>build/cache/postgres.mk
 
-echo >&2 "LOG: caching python.mk. derived from $(python3 -c 'import sys; print(sys.executable)')"
+echo >&2 "LOG: caching python.mk. derived from $(python3 -c 'import sys; print(sys.executable)') "
+echo >&2 ' '$(python3 -c 'import sys; print(sys.version.replace("\n",""))')
 python3 build/tools/config.py >build/cache/python.mk
