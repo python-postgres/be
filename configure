@@ -11,7 +11,7 @@ if test -e build/cache
 then
 	if test -e build/cache/__pg_python_build_cache__
 	then
-		echo >&2 "removing previous build/cache"
+		echo >&2 "LOG: removing previous build/cache"
 		rm -rf build/cache
 	else
 		echo >&2 "ERROR: build/cache does not appear to be from pg-python"
@@ -25,17 +25,17 @@ fi
 mkdir -p build/cache
 touch build/cache/__pg_python_build_cache__
 
-echo >&2 "identifying requirements from environment"
+echo >&2 "LOG: identifying requirements from environment"
 
 system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
 echo "__system__ = $system" >>build/cache/system.mk
 
-echo >&2 "linking test directories for installcheck"
-echo >&2 LOG: rm -f sql expected
+echo >&2 "LOG: linking test directories for installcheck"
+echo >&2 ' rm' -f sql expected
 rm -f sql expected || exit 1
-echo >&2 LOG: ln -s test/sql sql
+echo >&2 ' ln' -s test/sql sql
 ln -s "test/sql" sql || exit 1
-echo >&2 LOG: ln -s test/expected/$system expected
+echo >&2 ' ln' -s test/expected/$system expected
 ln -s "test/expected/$system" expected || exit 1
 
 echo >&2 "LOG: building Makefile includes for PGXS build"
