@@ -2,7 +2,7 @@
  * stateful.c - Postgres.Stateful
  *
  * This object provides a means for the call state to be used by a given Python
- * FUNCTION. It does this using generator's protocol.
+ * FUNCTION. It does this using the generator's protocol.
  */
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -42,7 +42,7 @@ stateful_call(PyObj self, PyObj args, PyObj kw)
 	if (pl_exec == NULL)
 	{
 		PyErr_SetString(PyExc_RuntimeError,
-			"cannot execute stateful without context to store state");
+			"cannot call Stateful without execution context");
 		return(NULL);
 	}
 
@@ -50,14 +50,14 @@ stateful_call(PyObj self, PyObj args, PyObj kw)
 	if (fn_info == NULL)
 	{
 		PyErr_SetString(PyExc_RuntimeError,
-			"execution state has no call state");
+			"cannot call Stateful without execution context function");
 		return(NULL);
 	}
 
 	if (fn_info->fi_func != PyPgStateful_GetFunction(self))
 	{
 		PyErr_SetString(PyExc_RuntimeError,
-			"cannot call Stateful in from distinct contexts");
+			"cannot call Stateful across execution contexts");
 		return(NULL);
 	}
 
@@ -208,7 +208,7 @@ stateful_new(PyTypeObject *typ, PyObj args, PyObj kw)
 	if (pl_exec == NULL)
 	{
 		PyErr_SetString(PyExc_RuntimeError,
-			"cannot create Stateful without context");
+			"cannot create Stateful without execution context");
 		return(NULL);
 	}
 
@@ -216,7 +216,7 @@ stateful_new(PyTypeObject *typ, PyObj args, PyObj kw)
 	if (pl_exec->fn_info == NULL || fn_info->fi_func == NULL)
 	{
 		PyErr_SetString(PyExc_RuntimeError,
-			"cannot create Stateful without context function");
+			"cannot create Stateful without execution context function");
 		return(NULL);
 	}
 

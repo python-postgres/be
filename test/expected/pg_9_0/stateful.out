@@ -211,7 +211,7 @@ CONTEXT:  [exception from Python]
 Traceback (most recent call last):
    File "public.call_yay_stateful()", line 7, in main
     fn_mod.main()
- RuntimeError: cannot call Stateful in from distinct contexts
+ RuntimeError: cannot call Stateful across execution contexts
 
 [public.call_yay_stateful()]
 -- CORNERS --
