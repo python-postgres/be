@@ -123,6 +123,7 @@ PyObj TransactionScope = NULL;
 PyObj Py_builtins_module = NULL;
 PyObj Py_Postgres_module = NULL;
 PyObj Py_compile_ob = NULL;
+PyObj Py_anonymous_composites = NULL;
 
 /*
  * common, persistent, global strings(PyUnicode).
@@ -747,6 +748,11 @@ _PG_init(void)
 	Py_ReturnArgs = PyObject_GetAttrString(Py_Postgres_module, "_return_args");
 	if (Py_ReturnArgs == NULL)
 		PyErr_ThrowPostgresError("could not get Postgres._return_args function");
+
+	Py_XDECREF(Py_anonymous_composites);
+	Py_anonymous_composites = PyDict_New();
+	if (Py_anonymous_composites == NULL)
+		PyErr_ThrowPostgresError("could not create anonymous composites dictionary object");
 
 	modules = PyImport_GetModuleDict();
 	if (PyObject_SetItem(modules, Postgres_str_ob, Py_Postgres_module) < 0)

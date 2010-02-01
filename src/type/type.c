@@ -18,6 +18,7 @@
 #include "postgres.h"
 #include "access/heapam.h"
 #include "access/transam.h"
+#include "funcapi.h"
 #include "catalog/pg_type.h"
 #include "catalog/pg_cast.h"
 #include "catalog/pg_namespace.h"
@@ -40,6 +41,8 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/strings.h"
+#include "pypg/externs.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/tupledesc.h"
@@ -1023,6 +1026,107 @@ PyPgType_FromPyPgTupleDesc(PyObj td_ob, PyObj typname)
 	return(rob);
 }
 
+/*
+ * PyPgType_AnonymousComposite - re-use existing anonymous types
+ */
+static PyObj
+PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
+{
+	int r;
+	PyObj rob = NULL, triple, attnames, atttypes;
+
+	/*
+	 * Build the composite's identity from:
+	 *  (typname, column_names, pg_column_types)
+	 */
+
+	attnames = PyObject_GetAttrString(tupdesc, "column_names");
+	if (attnames == NULL)
+		return(NULL);
+
+	atttypes = PyObject_GetAttrString(tupdesc, "pg_column_types");
+	if (atttypes == NULL)
+	{
+		Py_DECREF(attnames);
+		return(NULL);
+	}
+
+	triple = PyTuple_New(3);
+	if (triple == NULL)
+	{
+		Py_DECREF(attnames);
+		Py_DECREF(atttypes);
+		return(NULL);
+	}
+
+	Py_INCREF(typname);
+	PyTuple_SET_ITEM(triple, 0, typname);
+	PyTuple_SET_ITEM(triple, 1, attnames);
+	PyTuple_SET_ITEM(triple, 2, atttypes);
+
+	/*
+	 * only need to decref triple from here out
+	 */
+
+	r = PyDict_Contains(Py_anonymous_composites, triple);
+	if (r < 0)
+	{
+		Py_DECREF(triple);
+		return(NULL);
+	}
+	else if (r > 0)
+	{
+		rob = PyDict_GetItem(Py_anonymous_composites, triple);
+		if (rob == NULL)
+		{
+			Py_DECREF(triple);
+			return(NULL);
+		}
+		Py_INCREF(rob);
+		/*
+		 * XXX: check if it's current?
+		 */
+	}
+
+	/*
+	 * Not in cache or was not current.
+	 */
+	if (rob == NULL)
+	{
+		/*
+		 * Make a new one and put it in the cache.
+		 */
+		rob = PyPgType_FromPyPgTupleDesc(tupdesc, typname);
+
+		if (rob != NULL && !PyPgType_IsPolymorphic(rob))
+		{
+			if (PyDict_SetItem(Py_anonymous_composites, triple, rob))
+			{
+				/*
+				 * Try to continue anyways.
+				 */
+				elog(WARNING, "could not cache anonymous composite type");
+				PyErr_Clear();
+			}
+
+			PG_TRY();
+			{
+				BlessTupleDesc(PyPgType_GetTupleDesc(rob));
+			}
+			PG_CATCH();
+			{
+				PyErr_SetPgError(false);
+				Py_DECREF(rob);
+				rob = NULL;
+			}
+			PG_END_TRY();
+		}
+	}
+
+	Py_DECREF(triple);
+	return(rob);
+}
+
 PyObj
 PyPgType_FromTupleDesc(TupleDesc td)
 {
@@ -1039,7 +1143,7 @@ PyPgType_FromTupleDesc(TupleDesc td)
 		return(NULL);
 	}
 
-	rob = PyPgType_FromPyPgTupleDesc(td_ob, typname);
+	rob = PyPgType_AnonymousComposite(td_ob, typname);
 	Py_DECREF(td_ob);
 	Py_DECREF(typname);
 

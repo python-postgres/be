@@ -7,6 +7,7 @@ extern PyObj TransactionScope;
 extern PyObj FormatTraceback;
 extern PyObj PyExc_PostgresException;
 extern PyObj Py_Postgres_module;
+extern PyObj Py_anonymous_composites;
 
 /* initialized by PyPgType_Init() */
 extern PyObj PyPg_cstring_Array_Type;

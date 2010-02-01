@@ -804,3 +804,18 @@ def main():
 $python$;
 
 SELECT select_voids();
+
+
+-- comparable composites
+
+CREATE OR REPLACE FUNCTION compare_statements(s1 text, s2 text) RETURNS BOOLEAN LANGUAGE python AS
+$python$
+def main(a,b):
+	return prepare(a)() == prepare(b)()
+$python$;
+
+SELECT compare_statements('SELECT 1 AS a', 'SELECT 1 AS b');
+SELECT compare_statements('SELECT 1 AS a', 'SELECT 1 AS a');
+SELECT compare_statements('SELECT ''foo''::text AS a', 'SELECT 1 AS b');
+SELECT compare_statements('SELECT ''foo''::text AS b, 1 AS a', 'SELECT 1 AS a, ''foo''::text AS b');
+SELECT compare_statements('SELECT NULL::int AS a', 'SELECT 1::int AS a');
