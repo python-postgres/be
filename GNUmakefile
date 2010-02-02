@@ -29,17 +29,13 @@ REGRESS = init io srf function trigger xact error domain enum ifmod array compos
 
 # PGXS built by the configure script
 include build/cache/postgres.mk
-# target system
-include build/cache/system.mk
-
-#override REGRESS_OPTS := $(REGRESS_OPTS) --inputdir=test/$(__system__)
 
 # This is a developer option that enables some unexpected elog()'s
 ifeq ($(PLPY_STRANGE_THINGS), 1)
 override CPPFLAGS := -DPLPY_STRANGE_THINGS $(CPPFLAGS)
 endif
 
-override CPPFLAGS := "-D$(__system__)" $(python_cflags) $(CPPFLAGS) -I./src/include
+override CPPFLAGS := $(python_cflags) $(CPPFLAGS) -I./src/include
 override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 
 # Convert the characters in the file into a comma separated list of
