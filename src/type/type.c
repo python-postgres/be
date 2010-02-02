@@ -241,8 +241,9 @@ PyPgType_IsCurrent(PyObj typ)
 	 * If the entry changed, don't bother with worrying about the relation's
 	 * natts for reltypes.
 	 */
-	if (PyPgType_GetXMin(typ) != typ_xmin ||
-		!ItemPointerEquals(PyPgType_GetItemPointer(typ), &typ_tid))
+	if (PyPgType_IsComposite(typ) && (
+		PyPgType_GetXMin(typ) != typ_xmin ||
+		!ItemPointerEquals(PyPgType_GetItemPointer(typ), &typ_tid)))
 	{
 		return(false);
 	}
@@ -300,6 +301,8 @@ PyPgType_IsCurrent(PyObj typ)
 		/*
 		 * Same attributes, or it was anonymous.
 		 * Now analyze the types of the attributes in the composite.
+		 *
+		 * XXX: recursive types would mean infinite recursion here.
 		 */
 		if (!PyPgTupleDesc_IsCurrent(PyPgType_GetPyPgTupleDesc(typ)))
 			return(false);
@@ -1076,16 +1079,48 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 	}
 	else if (r > 0)
 	{
+		PyObj curtd;
+
 		rob = PyDict_GetItem(Py_anonymous_composites, triple);
 		if (rob == NULL)
 		{
 			Py_DECREF(triple);
 			return(NULL);
 		}
-		Py_INCREF(rob);
-		/*
-		 * XXX: check if it's current?
-		 */
+
+		curtd = PyPgType_GetPyPgTupleDesc(rob);
+		PG_TRY();
+		{
+			/*
+			 * Have to trap, IsCurrent hits the catalogs.
+			 *
+			 * We don't do PyPgType_IsCurrent because it would
+			 * just be an extra function call before we get to
+			 * PyPgTupleDesc_IsCurrent().
+			 */
+			if (PyPgTupleDesc_IsCurrent(curtd))
+				Py_INCREF(rob);
+			else
+			{
+				/*
+				 * The existing entry will get overwritten.
+				 */
+				rob = NULL; /* reference was borrowed */
+			}
+		}
+		PG_CATCH();
+		{
+			rob = NULL; /* reference was borrowed */
+			PyErr_SetPgError(false);
+
+			/*
+			 * Error while checking if it's current?
+			 * Let's just assume it's invalid now.
+			 */
+			PyDict_DelItem(Py_anonymous_composites, triple);
+			return(NULL);
+		}
+		PG_END_TRY();
 	}
 
 	/*

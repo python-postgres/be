@@ -819,3 +819,25 @@ SELECT compare_statements('SELECT 1 AS a', 'SELECT 1 AS a');
 SELECT compare_statements('SELECT ''foo''::text AS a', 'SELECT 1 AS b');
 SELECT compare_statements('SELECT ''foo''::text AS b, 1 AS a', 'SELECT 1 AS a, ''foo''::text AS b');
 SELECT compare_statements('SELECT NULL::int AS a', 'SELECT 1::int AS a');
+
+-- invalidated anonymous composites
+DROP TABLE IF EXISTS it_gets_changed;
+CREATE TABLE it_gets_changed (c1 text, c2 text);
+CREATE OR REPLACE FUNCTION invalidated_anonymous_composites() RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+original = prepare("SELECT ROW('foo','bar')::it_gets_changed")
+original_type = original.output
+
+def main():
+	stmt = prepare("SELECT ROW('foo','bar')::it_gets_changed")
+	if stmt.output is not original.output:
+		Postgres.WARNING("output was invalidated")
+	return ' . '.join(map(str, stmt.first()))
+$python$;
+
+SELECT invalidated_anonymous_composites();
+ALTER TABLE it_gets_changed ADD COLUMN c3 text;
+ALTER TABLE it_gets_changed DROP COLUMN c3;
+-- expecting an invalidated WARNING here.
+SELECT invalidated_anonymous_composites();

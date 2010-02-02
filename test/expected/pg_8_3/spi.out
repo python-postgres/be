@@ -1377,3 +1377,35 @@ Traceback (most recent call last):
  Postgres.Exception
 
 [public.compare_statements(text,text)]
+-- invalidated anonymous composites
+DROP TABLE IF EXISTS it_gets_changed;
+NOTICE:  table "it_gets_changed" does not exist, skipping
+CREATE TABLE it_gets_changed (c1 text, c2 text);
+CREATE OR REPLACE FUNCTION invalidated_anonymous_composites() RETURNS text LANGUAGE python AS
+$python$
+import Postgres
+original = prepare("SELECT ROW('foo','bar')::it_gets_changed")
+original_type = original.output
+
+def main():
+	stmt = prepare("SELECT ROW('foo','bar')::it_gets_changed")
+	if stmt.output is not original.output:
+		Postgres.WARNING("output was invalidated")
+	return ' . '.join(map(str, stmt.first()))
+$python$;
+SELECT invalidated_anonymous_composites();
+ invalidated_anonymous_composites 
+----------------------------------
+ foo . bar
+(1 row)
+
+ALTER TABLE it_gets_changed ADD COLUMN c3 text;
+ALTER TABLE it_gets_changed DROP COLUMN c3;
+-- expecting an invalidated WARNING here.
+SELECT invalidated_anonymous_composites();
+WARNING:  output was invalidated
+ invalidated_anonymous_composites 
+----------------------------------
+ foo . bar
+(1 row)
+

@@ -194,3 +194,35 @@ def main():
 $python$;
 
 SELECT check_record_map_apis();
+
+
+-- Find out what happens when we compare two distinct revisions of the same type
+DROP TABLE IF EXISTS compared_revisions;
+
+CREATE TABLE compared_revisions (i int, t text);
+CREATE OR REPLACE FUNCTION compare_different_same_type() RETURNS BOOLEAN LANGUAGE python AS
+$python$
+from Postgres import WARNING
+from Postgres import Type
+from Postgres.types import regtype
+
+original = Type(regtype('compared_revisions'))
+o_x = original((100, 'some text'))
+
+def main():
+	# grab the latest version
+	revision = Type(regtype('compared_revisions'))
+	colnames = revision.column_names
+	WARNING(str(colnames))
+	if len(colnames) > 2:
+		r_x = revision({'i' : 100, 't' : 'some text', 'n' : '200000'})
+		# exercise it in the face of a new version..
+		new_o_x = original((321, 'eek'))
+	else:
+		r_x = revision({'i' : 100, 't' : 'some text'})
+	return r_x == o_x
+$python$;
+
+SELECT compare_different_same_type();
+ALTER TABLE compared_revisions ADD COLUMN n numeric;
+SELECT compare_different_same_type();
