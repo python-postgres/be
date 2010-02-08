@@ -4,7 +4,7 @@ import sys
 sys.dont_write_bytecode = True
 from os.path import dirname, realpath
 sys.path.insert(0, dirname(dirname(realpath(__file__))))
-import __meta__ as meta
+import project
 
 req_template = """
 ============
@@ -28,6 +28,6 @@ listed above, it should not be expected to work.
 
 if __name__ == '__main__':
 	sys.stdout.write(req_template(
-		postgres = ' - ' + '\n - '.join(sorted(list(meta.__systems__.values()))),
-		python = ' - ' + '\n - '.join(sorted(list(meta.__languages__.values())))
+		postgres = ' - ' + '\n - '.join(sorted(list(project.systems.values()))),
+		python = ' - ' + '\n - '.join(sorted(list(project.languages.values())))
 	))

@@ -1,9 +1,45 @@
 ##
 # Pure-python part of the built-in Postgres module
 ##
+__file__ = '[Postgres]'
 import sys
 import contextlib
 import io
+
+class StringModule(object):
+	"""
+	Used represent the pure-Python Postgres and Postgres.project modules.
+	"""
+	from types import ModuleType
+
+	def __init__(self, name, src):
+		self.name = name
+		self.source = src
+
+	def get_source(self, *args):
+		return self.source()
+
+	def get_code(self, *args, compile = __builtins__.compile):
+		return compile(self.source(), '['+ self.name +']', 'exec')
+
+	def load_module(self, *args, eval = __builtins__.eval):
+		if self.name in sys.modules:
+			return sys.modules[self.name]
+		module = self.ModuleType('<' + self.name + '>')
+		module.__builtins__ = __builtins__
+		module.__name__ = self.name
+		module.__file__ = '[' + self.name + ']'
+		module.__loader__ = self
+		sys.modules[self.name] = module
+		try:
+			eval(self.get_code(), module.__dict__, module.__dict__)
+		finally:
+			del sys.modules[self.name]
+		return module
+__loader__ = StringModule('Postgres', __get_Postgres_source__)
+project = StringModule('Postgres.project', __get_Postgres_project_source__)
+project = project.load_module()
+
 # Don't add anything here unless you don't mind updating the expected output.
 severities = dict([
 	(k, CONST[k]) for k in (

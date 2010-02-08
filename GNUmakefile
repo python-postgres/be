@@ -1,4 +1,4 @@
-all: src/module.py.cfrag $(MODULE_big)
+all: src/project.py.cfrag src/module.py.cfrag $(MODULE_big)
 
 # built by configure by build/tools/config.py
 include build/cache/python.mk
@@ -40,8 +40,11 @@ override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 
 # Convert the characters in the file into a comma separated list of
 # ASCII character codes. (See src/module.c for where it's included)
-src/module.py.cfrag: src/module.py src/__meta__.py
-	cat src/module.py src/__meta__.py | $(python) build/tools/mkdigits.py >$@
+src/module.py.cfrag: src/module.py
+	$(python) build/tools/mkdigits.py <$? >$@
+
+src/project.py.cfrag: src/project.py
+	$(python) build/tools/mkdigits.py <$? >$@
 
 .PHONY: html
 

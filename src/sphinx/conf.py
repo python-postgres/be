@@ -37,17 +37,17 @@ source_suffix = '.txt'
 master_doc = 'index'
 
 # General substitutions.
-import __meta__ as meta
-project = meta.__project__
-copyright = '2010, ' + meta.__author__
+import project proj
+project = project.name
+copyright = '2010, ' + proj.author
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '.'.join(map(str,meta.__version_info__[:2]))
+version = '.'.join(map(str,proj.version_info[:2]))
 # The full version, including alpha/beta/rc tags.
-release = meta.__version__
+release = proj.version
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

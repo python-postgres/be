@@ -82,6 +82,26 @@ static const char module_python[] = {
 #include "module.py.cfrag"
 };
 
+static const char project_module_python[] = {
+#include "project.py.cfrag"
+};
+
+static PyObj
+py_get_Postgres_source(PyObj self)
+{
+	PyObj rob;
+	rob = PyUnicode_Decode(module_python, strlen(module_python), "ascii", "");
+	return(rob);
+}
+
+static PyObj
+py_get_Postgres_project_source(PyObj self)
+{
+	PyObj rob;
+	rob = PyUnicode_Decode(project_module_python, strlen(project_module_python), "ascii", "");
+	return(rob);
+}
+
 /*
  * py_ereport - ereport() interface
  *
@@ -887,8 +907,15 @@ static PyMethodDef PyPgModule_Methods[] = {
 		PyDoc_STR("print PythonMemoryContext stats to stderr")},
 	{"_cleartypecache", (PyCFunction) py_cleartypecache, METH_NOARGS,
 		PyDoc_STR("clear the type cache dictionary")},
+
+	{"__get_Postgres_source__", (PyCFunction) py_get_Postgres_source, METH_NOARGS,
+		PyDoc_STR("get the Python source to the Postgres module")},
+	{"__get_Postgres_project_source__", (PyCFunction) py_get_Postgres_project_source, METH_NOARGS,
+		PyDoc_STR("get the Python source to the Postgres.project module")},
+
 	{"__get_func__", (PyCFunction) py_get_func, METH_NOARGS,
 		PyDoc_STR("get the function that executed the Python code")},
+
 	{"current_schemas_oid", (PyCFunction) py_current_schemas_oid, METH_VARARGS,
 		PyDoc_STR("get a tuple of Oids representing the current search_path")},
 	{"current_schemas", (PyCFunction) py_current_schemas, METH_VARARGS,
@@ -1019,7 +1046,13 @@ init_Postgres(void)
 	 */
 	md = PyModule_GetDict(mod);
 	PyDict_SetItemString(md, "__builtins__", Py_builtins_module);
-	ob = PyRun_String(module_python, Py_file_input, md, md);
+	ob = Py_CompileString(module_python, "[Postgres]", Py_file_input);
+	if (ob == NULL)
+		goto fail;
+	md = PyEval_EvalCode((PyCodeObject *) ob, md, md);
+	Py_XDECREF(md);
+	Py_DECREF(ob);
+
 	if (PyErr_Occurred())
 		goto fail;
 

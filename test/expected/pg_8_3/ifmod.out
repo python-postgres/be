@@ -178,7 +178,8 @@ CONTEXT:  added context
 Traceback (most recent call last):
    File "public.py_report()", line 16, in main
     Postgres.ERROR("it's okay", code = "XX002", detail = "details", context = "added context", hint = "hint")
-   File "<string>", line 49, in ERROR
+   File "[Postgres]", line 85, in ERROR
+    return _report(_sev, *args, **kw)
  Postgres.Exception
 
 [public.py_report()]

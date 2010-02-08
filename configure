@@ -28,6 +28,10 @@ touch build/cache/__pg_python_build_cache__
 echo >&2 "LOG: identifying requirements from environment"
 
 system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
+if test $? -ne 0
+then
+	exit 1
+fi
 
 echo >&2 "LOG: linking test directories for installcheck"
 echo >&2 ' rm' -f sql expected

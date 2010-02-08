@@ -417,7 +417,8 @@ CONTEXT:  context
 Traceback (most recent call last):
    File "public.custom_error(boolean)", line 11, in main
     inhibit_pl_context = not bool(with_tb),
-   File "<string>", line 49, in ERROR
+   File "[Postgres]", line 85, in ERROR
+    return _report(_sev, *args, **kw)
  Postgres.Exception
 
 [public.custom_error(boolean)]
