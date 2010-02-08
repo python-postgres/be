@@ -584,10 +584,10 @@ def _pl_reload():
 		del sys.modules[x]
 	_pl_local_init()
 
-# clear the linecache in order to avoid
+# Clear the linecache in order to avoid
 # situations where a stale entry exists.
-# this should fix the common case of incrementally correcting
-# a buggy function that's repeatedly blowing up.
+# This helps ensure that the common case of repeat CREATE OR REPLACE's
+# show the right lines when they blow up--incremental corrections.
 def _pl_eox():
 	try:
 		import linecache
