@@ -120,7 +120,6 @@ py_ereport(PyObj self, PyObj args, PyObj kw)
 	bool inhibit_pl_context;
 	PyObj inhibit_pl_context_ob = NULL;
 	PyObj message = NULL, detail = NULL, hint = NULL, context = NULL;
-	struct pl_exec_state *pl_ctx;
 	volatile PyObj rob;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|OOOiO:ereport", words,
@@ -154,8 +153,6 @@ py_ereport(PyObj self, PyObj args, PyObj kw)
 			return(NULL);
 		break;
 	}
-
-	pl_ctx = PL_CONTEXT();
 
 	/*
 	 * Controls the ECC set by the handler that ultimately invoked this ereport().
