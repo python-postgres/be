@@ -23,7 +23,18 @@ typedef enum {
 	pl_outside_transaction = -2,
 	pl_not_initialized = -1,
 	pl_ready_for_access = 0,
+
+	/*
+	 * Interaction with database interfaces are prohibited.
+	 */
 	pl_in_failed_transaction = 1,
+
+	/*
+	 * An unnatural state used to indicate two things:
+	 *  1. on_proc_exit handler has been called
+	 *  2. the PL's internal state cannot be trusted.
+	 */
+	pl_terminated = 2,
 } pl_state_t;
 extern pl_state_t pl_state;
 

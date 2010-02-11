@@ -423,7 +423,7 @@ PyErr_EmitPostgresWarning(const char *errstr)
 	/*
 	 * Throw a warning about the Python exception.
 	 */
-	ereport(WARNING,(errmsg("%s", errstr)));
+	elog(WARNING, "%s", errstr);
 	error_context_stack = ecc.previous;
 	Assert(!PyErr_Occurred());
 }

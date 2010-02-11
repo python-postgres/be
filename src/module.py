@@ -595,3 +595,20 @@ def _pl_eox():
 	except (ImportError, AttributeError):
 		# ignore if linecache doesn't exist
 		pass
+
+def _pl_on_proc_exit():
+	try:
+		import atexit
+		try:
+			run = atexit._run_exitfuncs
+			clear = atexit._clear
+			try:
+				run()
+			finally:
+				clear()
+		except AttributeError:
+			# not the expected protocol.. throw WARNING?
+			pass
+	except ImportError:
+		# nothing to do...
+		pass

@@ -26,6 +26,7 @@
 #include "catalog/indexing.h"
 #include "storage/block.h"
 #include "storage/off.h"
+#include "storage/ipc.h"
 #include "commands/trigger.h"
 #include "executor/spi.h"
 #include "nodes/memnodes.h"
@@ -65,6 +66,7 @@
 #include "pypg/cursor.h"
 #include "pypg/module.h"
 #include "pypg/xact.h"
+#include "pypg/exit.h"
 
 PG_MODULE_MAGIC;
 
@@ -454,6 +456,9 @@ srf_eccb(Datum arg)
 	Assert(fn_info != NULL);
 	Assert(fn_info->fi_internal_state != NULL);
 
+	/*
+	 * XXX: Perhaps too optimistic about this not failing.
+	 */
 	PySet_Discard(TransactionScope, fn_info->fi_internal_state);
 	fn_info->fi_internal_state = NULL;
 }
@@ -507,7 +512,7 @@ pl_xact_hook(XactEvent xev, void *arg)
 			 * cleared before getting here.
 			 */
 			Assert(!PyErr_Occurred());
-	
+
 			increment_xact_count();
 
 			/*
@@ -771,6 +776,11 @@ _PG_init(void)
 		PyErr_ThrowPostgresError(_("could not complete local initialation"));
 	}
 	Py_DECREF(ob);
+
+	/*
+	 * Calls Postgres._pl_on_proc_exit
+	 */
+	on_proc_exit(pl_exit, (Datum) 0);
 }
 
 /*

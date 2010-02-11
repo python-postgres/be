@@ -7,6 +7,7 @@ MODULE_big := python
 
 OBJS = src/pl.o \
 src/do.o \
+src/exit.o \
 src/python.o src/postgres.o \
 src/module.o \
 src/stateful.o \
