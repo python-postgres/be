@@ -57,7 +57,7 @@ pl_exit(int code, Datum arg)
 
 	if (PyErr_Occurred())
 	{
-		PyErr_ThrowPostgresError("could not initialize on_proc_exit function");
+		PyErr_ThrowPostgresError("exception occurred during on_proc_exit");
 	}
 
 	return;
