@@ -450,31 +450,37 @@ py_make_sqlstate(PyObj self, PyObj code)
 	return(PyLong_FromLong((long) r));
 }
 
+#if PG_VERSION_NUM < 80500
 /*
- * Convert to Python string, and emit notify.
+ * py_notify - pg_notify "rewrite" without payload
  */
 static PyObj
 py_notify(PyObj self, PyObj args)
 {
-	PyObj strob;
-	char *payload;
-	Py_ssize_t payload_size;
+	PyObj channel, payload = NULL;
 	PyObj rob = NULL;
+
+	if (!PyArg_ParseTuple(args, "O|O:notify", &channel, &payload))
+		return(NULL);
+
+	if (payload != NULL)
+	{
+		PyErr_SetString(PyExc_NotImplementedError,
+			"payload given to Postgres.notify, but backend does not support payloads");
+		return(NULL);
+	}
 
 	if (DB_IS_NOT_READY())
 		return(NULL);
 
-	if (!PyArg_ParseTuple(args, "O|y#:notify", &strob, &payload, &payload_size))
-		return(NULL);
-
-	Py_INCREF(strob);
-	PyObject_StrBytes(&strob);
-	if (strob == NULL)
+	Py_INCREF(channel);
+	PyObject_StrBytes(&channel);
+	if (channel == NULL)
 		return(NULL);
 
 	PG_TRY();
 	{
-		Async_Notify(PyBytes_AS_STRING(strob));
+		Async_Notify(PyBytes_AS_STRING(channel));
 		rob = Py_None;
 	}
 	PG_CATCH();
@@ -483,11 +489,67 @@ py_notify(PyObj self, PyObj args)
 	}
 	PG_END_TRY();
 
-	Py_DECREF(strob);
+	Py_DECREF(channel);
 	Py_XINCREF(rob);
 
 	return(rob);
 }
+#else
+/*
+ * py_notify - pg_notify "rewrite" with payload
+ */
+static PyObj
+py_notify(PyObj self, PyObj args)
+{
+	PyObj channel, payload = NULL;
+	char *payload_string = NULL;
+	PyObj rob = NULL;
+
+	if (!PyArg_ParseTuple(args, "O|O:notify", &channel, &payload))
+		return(NULL);
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
+
+	Py_INCREF(channel);
+	PyObject_StrBytes(&channel);
+	if (channel == NULL)
+		return(NULL);
+
+	if (payload != NULL)
+	{
+		Py_INCREF(payload);
+		PyObject_StrBytes(&payload);
+		if (payload != NULL)
+			payload_string = PyBytes_AS_STRING(payload);
+		else
+		{
+			/*
+			 * Failed to encode payload.
+			 */
+			Py_DECREF(channel);
+			return(NULL);
+		}
+	}
+
+	PG_TRY();
+	{
+		Async_Notify(PyBytes_AS_STRING(channel), payload_string);
+		rob = Py_None;
+	}
+	PG_CATCH();
+	{
+		PyErr_SetPgError(false);
+	}
+	PG_END_TRY();
+
+	Py_DECREF(channel);
+	Py_XDECREF(payload);
+	Py_XINCREF(rob);
+
+	return(rob);
+}
+#endif /* notify with or without payload */
 
 static PyObj
 pypg_uid(void)
@@ -650,14 +712,14 @@ py_lo_create(PyObj self, PyObj args)
 static PyObj
 py_execute(PyObj self, PyObj sql_str)
 {
-	if (DB_IS_NOT_READY())
-		return(NULL);
-
 	if (PL_FN_READONLY())
 	{
 		PyErr_SetString(PyExc_RuntimeError, "cannot execute from a non-volatile function");
 		return(NULL);
 	}
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
 
 	Py_INCREF(sql_str);
 	PyObject_StrBytes(&sql_str);
