@@ -353,8 +353,7 @@ invalid_fullname(PyObj self, PyObj args, PyObj kw)
 	 * fullname is given and it's not an exact Oid object,
 	 * so convert it to a real Oid and compare.
 	 */
-	fn_oid = Oid_FromPyObject(fullname);
-	if (PyErr_Occurred())
+	if (Oid_FromPyObject(fullname, &fn_oid))
 		return(true);
 
 	if (PyPgFunction_GetOid(self) == fn_oid)
@@ -502,8 +501,7 @@ find_module(PyObj typ, PyObj args, PyObj kw)
 		return(NULL);
 	}
 
-	fn_oid = Oid_FromPyObject(fullname);
-	if (PyErr_Occurred())
+	if (Oid_FromPyObject(fullname, &fn_oid))
 		return(NULL);
 
 	return(PyPgFunction_FromOid(fn_oid));
@@ -1046,10 +1044,9 @@ func_new(PyTypeObject *subtype, PyObj args, PyObj kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "O", words, &source))
 		return(NULL);
 
-	fn_oid = Oid_FromPyObject(source);
-	if (PyErr_Occurred())
+	if (Oid_FromPyObject(source, &fn_oid))
 		return(NULL);
-	
+
 	lo = PyLong_FromUnsignedLong(fn_oid);
 	if (lo == NULL)
 		return(NULL);

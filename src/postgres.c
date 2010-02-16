@@ -150,12 +150,18 @@ Py_FreeTupleDesc(TupleDesc td)
 /*
  * Convert the Python object to an Oid.
  */
-Oid
-Oid_FromPyObject(PyObj ob)
+int
+Oid_FromPyObject(PyObj ob, Oid *out)
 {
-	Oid ro = InvalidOid;
-	PyObj io;
+	const static unsigned long maxoid = 0xFFFFFFFF;
+	unsigned long tmpul;
+	PyObj tmp;
 
+	*out = InvalidOid;
+
+	/*
+	 * Special case the reg* types and Oid itself.
+	 */
 	if (PyPgObject_Check(ob))
 	{
 		Oid typeoid = PyPgType_GetOid(Py_TYPE(ob));
@@ -169,7 +175,8 @@ Oid_FromPyObject(PyObj ob)
 			case REGPROCOID:
 			case REGTYPEOID:
 			case OIDOID:
-				return(DatumGetObjectId(PyPgObject_GetDatum(ob)));
+				*out = DatumGetObjectId(PyPgObject_GetDatum(ob));
+				return(0);
 			break;
 
 			default:
@@ -180,14 +187,27 @@ Oid_FromPyObject(PyObj ob)
 		}
 	}
 
-	io = PyNumber_Long(ob);
-	if (io == NULL)
-		return(InvalidOid);
+	/*
+	 * Convert to long and get the unsigned long.
+	 */
+	tmp = PyNumber_Long(ob);
+	if (tmp == NULL)
+		return(-1);
 
-	ro = (Oid) Oid_FromPyLong(io);
-	Py_DECREF(io);
+	tmpul = PyLong_AsUnsignedLong(tmp);
+	Py_DECREF(tmp);
 
-	return(ro);
+	if (PyErr_Occurred())
+		return(-1);
+
+	if (tmpul > maxoid)
+	{
+		PyErr_SetString(PyExc_OverflowError,
+			"number object overflows Oid");
+	}
+
+	*out = (Oid) tmpul;
+	return(0);
 }
 
 /*

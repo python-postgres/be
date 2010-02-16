@@ -621,14 +621,17 @@ py_lo_create(PyObj self, PyObj args)
 	Oid lo_oid = InvalidOid;
 	PyObj oid_ob = NULL;
 
-	if (DB_IS_NOT_READY())
-		return(NULL);
-
 	if (!PyArg_ParseTuple(args, "|O:_lo_create", &oid_ob))
 		return(NULL);
 
 	if (oid_ob != NULL)
-		lo_oid = Oid_FromPyObject(oid_ob);
+	{
+		if (Oid_FromPyObject(oid_ob, &lo_oid))
+			return(NULL);
+	}
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
 
 	PG_TRY();
 	{
@@ -687,13 +690,14 @@ py_lo_unlink(PyObj self, PyObj args)
 	int32 status;
 	PyObj oid_ob = NULL;
 
-	if (DB_IS_NOT_READY())
-		return(NULL);
-
 	if (!PyArg_ParseTuple(args, "O:_lo_unlink", &oid_ob))
 		return(NULL);
 
-	lo_id = Oid_FromPyObject(oid_ob);
+	if (Oid_FromPyObject(oid_ob, &lo_id))
+		return(NULL);
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
 
 	PG_TRY();
 	{
@@ -717,13 +721,14 @@ py_lo_open(PyObj self, PyObj args)
 	int32 fd, mode;
 	PyObj oid_ob = NULL;
 
-	if (DB_IS_NOT_READY())
-		return(NULL);
-
 	if (!PyArg_ParseTuple(args, "Oi:_lo_open", &oid_ob, &mode))
 		return(NULL);
 
-	lo_id = Oid_FromPyObject(oid_ob);
+	if (Oid_FromPyObject(oid_ob, &lo_id))
+		return(NULL);
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
 
 	PG_TRY();
 	{

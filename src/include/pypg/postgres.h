@@ -64,15 +64,15 @@ void Py_FreeTupleDesc(TupleDesc td);
 
 /*
  * Given a PyObject, intelligently convert it to an Oid.
+ * On failure, -1 is returned. 0 on success.
  */
-Oid Oid_FromPyObject(PyObj);
+int Oid_FromPyObject(PyObj src, Oid *out);
 
 /*
  * Given an Oid, convert it to a PyLong.
  * [This abstraction should be used in case the size of Oid's is increased]
  */
 #define PyLong_FromOid(OID) PyLong_FromUnsignedLong(OID)
-#define Oid_FromPyLong(OID) PyLong_AsUnsignedLong(OID)
 
 /*
  * Create a PyTupleObject from the 'row' object using the T

@@ -273,7 +273,7 @@ SELECT check_errordata_access();
  detail_log:None
  context:None
  elevel:20
- sqlerrcode:201
+ sqlerrcode:198
  code:42704
  severity:ERROR
 (8 rows)

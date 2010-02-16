@@ -2111,8 +2111,7 @@ type_new(PyTypeObject *subtype, PyObj args, PyObj kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "O:Type", words, &key))
 		return(NULL);
 
-	typoid = Oid_FromPyObject(key);
-	if (PyErr_Occurred())
+	if (Oid_FromPyObject(key, &typoid))
 		return(NULL);
 
 	return(PyPgType_FromOid(typoid));
