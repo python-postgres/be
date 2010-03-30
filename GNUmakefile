@@ -46,12 +46,3 @@ src/module.py.cfrag: src/module.py
 
 src/project.py.cfrag: src/project.py
 	$(python) build/tools/mkdigits.py <$? >$@
-
-.PHONY: html
-
-html: 
-	mkdir -p src/sphinx/html/doctrees
-	cp src/documentation/*.txt src/sphinx/
-	cp src/sphinx/index.rst src/sphinx/index.txt
-	cd src/sphinx && sphinx-build -E -b html -d html/doctrees . html
-	@cd src/sphinx/html && pwd
