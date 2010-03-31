@@ -21,6 +21,9 @@ and the entry point is called--normally ``main``.
    The term "Python function" is often used in reference to an SQL function
    object whose language is ``python``.
 
+
+.. _programming_builtins:
+
 Builtins
 ========
 
@@ -30,24 +33,24 @@ provide convenient access to often used objects, some
 additional built-ins are provided by pg-python.
 
  ``@pytypes``
-  Alias to `Postgres.pytypes`_.
+  Alias to :ref:`pg_pytypes`.
 
  ``prepare(sql_statement)``
-  Alias to :class:`Postgres.Statement`_
+  Alias to :ref:`pg_statement`
 
  ``proc(procedure_id)``
   Function that takes ``pg_catalog.regprocedure`` text or a
-  function ``Oid`` and returns the corresponding `Postgres.Function`_.
+  function ``Oid`` and returns the corresponding :ref:`pg_function`.
 
  ``sqleval(sql_expr, *args)``
-  Alias to `Postgres.eval`_.
+  Alias to :ref:`pg_eval`.
 
  ``sqlexec(str_of_sql_statements)``
-  Execute multiple SQL statements. Alias to `Postgres.execute`_.
+  Execute multiple SQL statements. Alias to :ref:`pg_execute`.
 
  ``xact()``
   Context manager that starts and ends an internal subtransaction.
-  Alias to `Postgres.Transaction`_.
+  Alias to :ref:`pg_transaction`.
 
 Normal Functions
 ================
@@ -122,6 +125,9 @@ produced by the function::
 Any iterable can be returned. Notably, main can be a generator yielding the
 objects to be coerced.
 
+
+.. _programming_trf:
+
 Trigger Returning Functions
 ===========================
 
@@ -136,7 +142,7 @@ Trigger returning functions are used by ``CREATE TRIGGER`` statements to
 designate the procedure that should be executed when the described event occurs.
 
 Trigger functions are declared in the same fashion as normal functions,
-using ``CREAETE FUNCTION``::
+using ``CREATE FUNCTION``::
 
  CREATE FUNCTION funcname()
  RETURNS TRIGGER
@@ -152,7 +158,7 @@ using ``CREAETE FUNCTION``::
 
 
 When a trigger function's entry point is invoked, it is given
-*at least* one argument, the `Postgres.TriggerData`_ describing the event.
+*at least* one argument, the :ref:`pg_triggerdata` describing the event.
 Additional arguments given to the entry point, if any, depend on the entry
 point--each entry point takes a certain number of arguments that suites the
 event.
@@ -163,7 +169,7 @@ Row Triggers
 Row triggers can be fired for each row that is inserted, updated, or
 deleted. The additional arguments given to a row trigger entry points
 are records of the target table's type--a subclass of
-`Postgres.types.record`_.
+:ref:`pg_types_record`.
 These arguments provide access the row being inserted, updated, or deleted.
 
 Row Trigger Entry Points:
@@ -219,7 +225,7 @@ before the manipulation occurs. Specifically,
 suppression.
 
 In order to signal that suppression should occur, the called entry point
-will need to raise the `Postgres.StopEvent`_ exception::
+will need to raise the :ref:`pg_stopEvent` exception::
 
  CREATE TABLE single_column(t text);
  INSERT INTO single_column VALUES ('removed'), ('kept');
@@ -288,14 +294,14 @@ replacement. See `Composite Types`_ for more information.
 .. tip::
    The ``replace`` and ``transform`` methods
    on records are often the most convenient mechanisms to create the
-   appropriate substitute. See the `Postgres.types.record`_ reference
+   appropriate substitute. See the :ref:`pg_types_record` reference
    documentation for more details on how to use these methods.
 
 Statement Triggers
 ------------------
 
 Like row-triggers, trigger functions called with statement orientation
-are given a `Postgres.TriggerData`_ object as the first argument.
+are given a :ref:`pg_triggerdata` object as the first argument.
 Statement triggers timed after are given one or two additional
 ``None`` objects--two for update manipulations. These additional
 arguments are given in order to accommodate for future functionality.
@@ -364,14 +370,17 @@ Statement Trigger Entry Points:
 
   The ``olds`` argument is always ``None``.
 
+
+.. _programming_stateful:
+
 Stateful Functions
 ==================
 
 .. note::
    Stateful functions are an advanced feature of pg-python.
 
-Stateful functions are entry points decorated with `Postgres.Stateful`_.
-When an entry point is decorated with `Postgres.Stateful`_, the callable
+Stateful functions are entry points decorated with :ref:`pg_stateful`.
+When an entry point is decorated with `Postgres.Stateful`, the callable
 should return a state object. The state object is normally a
 generator object, but it can be any object that supports the generator
 protocol::
@@ -487,7 +496,7 @@ All ``python`` SQL functions are Python modules.
 Once loaded, function modules exist in ``sys.modules`` as regular modules do.
 The primary differences between regular Python modules and function modules
 are that the function module's source is stored inside the database
-and the presence of ``__func__``, a `Postgres.Function`_ object, in the module's
+and the presence of ``__func__``, a :ref:`pg_function` object, in the module's
 dictionary. This object represents the Postgres function and provides the
 functionality needed to create the module object itself--it is also the
 module's ``__loader__``.
@@ -501,14 +510,14 @@ A function module's attributes:
   The module's PEP-302 loader.
 
  ``__func__``
-  The module's `Postgres.Function`_ object.
+  The module's :ref:`pg_function` object.
 
  ``__file__``
   The qualified regprocedure representation of the SQL function.
 
 When a function is loaded, all of the necessary information is cached for
 re-use. The function module exists in ``sys.modules`` and it contains
-``__func__``. That `Postgres.Function`_ object contains all the
+``__func__``. That :ref:`pg_function` object contains all the
 information needed to properly construct the arguments upon
 execution and what to do with the returned object.
 However, this information can change. If a function is replaced or a
@@ -525,10 +534,10 @@ Data Objects
 ============
 
 When parameters are given to a function or rows are returned by a prepared
-statement, `Postgres.Object`_ instances are used to represent the data.
+statement, :ref:`pg_object` instances are used to represent the data.
 The only exception is that Python's ``None`` is used to represent SQL NULLs.
 Some of these data objects have custom interfaces for convenient access to
-parts of the data. For example, `Postgres.types.date`_
+parts of the data. For example, :ref:`pg_types_date`
 objects have properties for getting the day, month, and year parts of the
 date.
 
@@ -542,7 +551,7 @@ comparisons.
    Operators are greedy is the sense that they will implicitly convert a
    Python object to the type of the other operand before performing the
    operation. This only occurs when one of the operands is not
-   a `Postgres.Object`_.
+   a :ref:`pg_object`.
 
 Data objects are local to the backend context, and most Python modules
 are written to expect Python types. Data objects should be converted
@@ -610,13 +619,13 @@ single elements are accessed using indirection in SQL.
 ``None`` is returned in cases where the requested element
 does not exist.
 
-See `Postgres.Array`_ for more information about the array interfaces.
+See :ref:`pg_array` for more information about the array interfaces.
 
 Composite Types
 ---------------
 
 Composite types are supported by subclasses of the
-`Postgres.types.record`_ type. Composite types are fairly interesting objects
+:ref:`pg_types_record` type. Composite types are fairly interesting objects
 as they are both a sequence and a mapping. In the following examples, the
 composite type ``composite_test`` will be used to aid examples::
 
@@ -664,12 +673,12 @@ manipulation methods. There are two manipulation methods, ``replace`` and
 
 .. tip:: These methods are particularly useful with `Trigger Returning Functions`.
 
-See `Postgres.types.record`_ for more information.
+See :ref:`pg_types_record` for more information.
 
 Database Access
 ===============
 
-Database access is provided by `Postgres.Statement`_ objects. Each created
+Database access is provided by :ref:`pg_Statement` objects. Each created
 instance represents a single SQL statement that can take positional
 parameters and return rows.
 
@@ -692,7 +701,7 @@ is returned as a Python list::
 
 Internally, a cursor is allocated when ``__call__`` is used,
 but all the rows are fetched and stored in the list. Most
-execution methods will return an actual `Postgres.Cursor`_ object.
+execution methods will return an actual :ref:`pg_cursor` object.
 The cursor that's created will be configured to suite the request. When the ``rows``
 execution method is used, the cursor returned can only be used as an
 iterable producing individual rows--the seek and read methods are not
@@ -782,7 +791,7 @@ Contents of the temporary table::
  -- third  | 3
  --(3 rows)
 
-See `Postgres.Statement`_ and `Postgres.Cursor`_ for further information about
+See :ref:`pg_statement` and :ref:`pg_cursor` for further information about
 the database access interfaces.
 
 .. _errors:
@@ -791,11 +800,11 @@ Error Control
 =============
 
 When a database error is caused by use of a Postres interface, a
-`Postgres.Exception`_ is raised. After a database error occurs, access to the
+:ref:`pg_exception` is raised. After a database error occurs, access to the
 database is prohibited until the failed
 transaction state is corrected. The transaction state cannot be
 corrected within the function unless the error occurs inside a
-`Postgres.Transaction`_ block::
+:ref:`pg_transaction` block::
 
  CREATE TEMP TABLE pkviolation (s SERIAL PRIMARY KEY);
  INSERT INTO pkviolation VALUES (DEFAULT);
@@ -825,7 +834,7 @@ corrected within the function unless the error occurs inside a
  -- 12
  --(2 rows)
 
-`Postgres.Transaction`_ context managers can only be used once, so
+:ref:`pg_transaction` context managers can only be used once, so
 ``xact`` should normally be directly invoked by the with-statement,
 ``with xact():``.
 
@@ -834,8 +843,8 @@ corrected within the function unless the error occurs inside a
    the transaction block. *Attempting to interact with the database*
    *while in a failed transaction will result in another exception being raised.*
 
-Postgres errors can be raised from Python using `Postgres.ereport`_.
-However, the `Postgres.ERROR`_ wrapper is more convenient, so direct use
+Postgres errors can be raised from Python using :ref:`pg_ereport`.
+However, the :ref:`pg_error` wrapper is more convenient, so direct use
 of ``ereport`` is *not* recommended. This
 can be used to construct custom errors with more useful information than the
 more verbose Python exception output::

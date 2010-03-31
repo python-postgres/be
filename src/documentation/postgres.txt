@@ -12,7 +12,7 @@ Information objects available in the *Postgres* module.
 **Attributes:**
 
  ``Postgres.backend_start``
-  The `Postgres.types.timestamptz`_ specifying when the backend was started.
+  The :ref:`pg_types_timestamptz` specifying when the backend was started.
   Shorthand for getting the backend start time from ``pg_stat_activity``.
 
   ``None`` if not available.
@@ -180,7 +180,7 @@ the execution methods that create cursor objects.
   A tuple of type Oids of the columns produced by the cursor.
 
  ``Cursor.output``
-  A fully anonymous `Postgres.types.record`_
+  A fully anonymous :ref:`pg_types_record`
   used to create record objects produced by the statement.
 
   Normally, this is the same object as ``Cursor.statement.output``.
@@ -435,6 +435,8 @@ These methods should only be used with Python FUNCTIONs.
   ``find_module`` is a class method.
 
 
+.. _pg_largeobject:
+
 Postgres.LargeObject
 ====================
 
@@ -478,6 +480,9 @@ A file-like interface to large objects.
 
  ``LargeObject.seek(offset[, whence = 0])``
   Seek to the target offset.
+
+
+.. _pg_object:
 
 Postgres.Object
 ===============
@@ -574,6 +579,8 @@ to ``=``.
   sole parameter.
 
 
+.. _pg_stateful:
+
 Postgres.Stateful
 =================
 
@@ -591,7 +598,7 @@ The state object is normally a generator that can receive objects via the
 	while 1:
 		args = (yield object)
 
-See `Stateful Functions`_ for more information.
+See :ref:`programming_stateful` for more information.
 
 **Constructors:**
 
@@ -614,6 +621,9 @@ See `Stateful Functions`_ for more information.
   If the call has pre-existing state, the given parameters will be given to the
   state object's ``send`` method. If ``StopIteration`` is raised, the state
   object will be created again as if there was no pre-existing state.
+
+
+.. _pg_statement:
 
 Postgres.Statement
 ==================
@@ -717,6 +727,8 @@ cursor behaves or if a cursor is even returned.
    ins.load_chunks([chunk1, chunk2])
 
 
+.. _pg_stopevent:
+
 Postgres.StopEvent
 ==================
 
@@ -725,7 +737,7 @@ manipulation.
 
 This exception is treated specially when raised by the
 ``before_insert``, ``before_update``, and
-``before_delete`` entry points in `Trigger Returning Functions`_.
+``before_delete`` entry points in :ref:`programming_trf`.
 In all other cases, the exception will thrown as a Postgres error::
 
  from Postgres import StopEvent
@@ -734,12 +746,18 @@ In all other cases, the exception will thrown as a Postgres error::
  	if new["value"] == 0xDEADBEEF:
 		raise StopEvent
 
+
+.. _pg_string:
+
 Postgres.String
 ===============
 
 Postgres.String is an abstract base type. It is used as the base type for
 all built-in string types and for any dynamically created type that is in
 the string category: ``pg_type.typcategory = 'S'``
+
+
+.. _pg_transaction:
 
 Postgres.Transaction
 ====================
@@ -749,7 +767,7 @@ rollback an internal subtransaction. The local transaction state kept by
 these objects are used to validate that transactions are committed or
 aborted in the appropriate order. When transactions objects are used
 improperly, a `Postgres.Exception` is normally raised. ``Postgres.Transaction``
-is also available in `Builtins`_ as ``xact``::
+is also available in :ref:`programming_builtins` as ``xact``::
 
  with xact():
  	...
@@ -773,6 +791,9 @@ is also available in `Builtins`_ as ``xact``::
   If no exception is noted and no database error occurred, the
   subtransaction will be committed.
 
+
+.. _pg_triggerdata:
+
 Postgres.TriggerData
 ====================
 
@@ -786,7 +807,7 @@ by the procedural language determines the timing, orientation, and
 manipulation. However, for generalized triggers, identifying the execution
 context using the trigger data can be appropriate.
 
-See `Trigger Returning Functions`_ for further information.
+See :ref:`programming_trf` for further information.
 
 **Properties:**
 
@@ -795,7 +816,7 @@ See `Trigger Returning Functions`_ for further information.
   The items in the tuple are ``str`` objects.
 
  ``TriggerData.type``
-  The `Postgres.types.record`_ subclass representing
+  The :ref:`pg_types_record` subclass representing
   the target table. For row triggers, it is also the type of the
   ``old`` and ``new`` parameters.
 
@@ -845,6 +866,8 @@ See `Trigger Returning Functions`_ for further information.
   The name of the current database.
 
 
+.. _pg_tupledesc:
+
 Postgres.TupleDesc
 ==================
 
@@ -888,6 +911,8 @@ used directly.
 
   *This count will include dropped attributes.*
 
+
+.. _pg_type:
 
 Postgres.Type
 =============
@@ -990,6 +1015,9 @@ methods to create `Data`_.
   Validate that the domain adheres to its constraints. The given object
   must be an instance of this type.
 
+
+.. _pg_cancel_backend:
+
 Postgres.cancel_backend
 =======================
 
@@ -999,6 +1027,8 @@ function. Returns a Python ``bool``, and takes a number as it's sole argument::
  from Postgres import cancel_backend
  cancel_backend(procpid)
 
+
+.. _pg_clearcache:
 
 Postgres.clearcache
 ===================
@@ -1016,15 +1046,21 @@ the latest version will be created to replace the existing cache entry.
 
 .. note:: This function has no effect on built-in types.
 
+
+.. _pg_clock_timestamp:
+
 Postgres.clock_timestamp
 ========================
 
 Get the current clock timestamp. Takes no arguments and returns a
-`Postgres.types.timestamptz`_::
+:ref:`pg_types_timestamptz`::
 
  from Postgres import clock_timestamp
 
  curtime = clock_timestamp()
+
+
+.. _pg_convert_postgres_objects:
 
 Postgres.convert_postgres_objects
 =================================
@@ -1067,6 +1103,9 @@ text            str
  ``iterable``
   An iterable containing the objects to convert.
 
+
+.. _pg_current_schemas:
+
 Postgres.current_schemas
 ========================
 
@@ -1084,6 +1123,9 @@ but returns a Python tuple of Python strings::
  ``include_temps``
   *Optional keyword. Defaults to ``False``.*
   Include the temporary schemas in the returned tuple.
+
+
+.. _pg_current_schemas_oid:
 
 Postgres.current_schemas_oid
 ============================
@@ -1104,16 +1146,18 @@ namespace Oids based on the ``search_path`` setting::
   *Optional keyword. Defaults to ``False``.*
   Include the temporary schemas in the returned tuple.
 
+
+.. _pg_debug:
+.. _pg_log:
+.. _pg_info:
+.. _pg_notice:
+.. _pg_warning:
+.. _pg_error:
+.. _pg_fatal:
+.. _pg_ereport:
+
 Postgres.ereport
 ================
-
-.. _`Postgres.DEBUG`:
-.. _`Postgres.LOG`:
-.. _`Postgres.INFO`:
-.. _`Postgres.NOTICE`:
-.. _`Postgres.WARNING`:
-.. _`Postgres.ERROR`:
-.. _`Postgres.FATAL`:
 
 ``Postgres.ereport([severity[, message[, detail[, hint[, context[, sqlerrcode[, inhibit_pl_context]]]]]]])``
 
@@ -1177,6 +1221,8 @@ integer::
   will *not* be included in the CONTEXT portion of the report.
 
 
+.. _pg_eval:
+
 Postgres.eval
 =============
 
@@ -1188,10 +1234,11 @@ SQL-expression::
  def main(...):
  	r = Postgres.eval("now()::date - 10")
 
-It is also available in `Builtins`_ as ``sqleval``.
+It is also available in :ref:`programming_builtins` as ``sqleval``.
 
 
 .. _pg_execute:
+
 Postgres.execute
 ================
 
@@ -1205,12 +1252,15 @@ function always returns ``None``::
  	INSERT INTO t VALUES (321);
  """)
 
-Also available in `Builtins`_ as ``sqlexec``.
+Also available in :ref:`programming_builtins` as ``sqlexec``.
 
 **Arguments:**
 
  ``sql_statements_string``
   A string object containing the SQL statements to execute.
+
+
+.. _pg_iterpytypes:
 
 Postgres.iterpytypes
 ====================
@@ -1238,6 +1288,9 @@ given iterable into Python types::
  ``iter``
   An iterable producing *sequences* of `Postgres.Object` instances.
 
+
+.. _pg_notify:
+
 Postgres.notify
 ===============
 
@@ -1252,6 +1305,9 @@ takes a single argument, the notification name::
 
  ``relname``
   The notification channel to use.
+
+
+.. _pg_preload:
 
 Postgres.preload
 ================
@@ -1275,6 +1331,9 @@ instance to ready the function's code.
    initialization overhead will not impact the performance of the function's
    first call.
 
+
+.. _pg_pytypes:
+
 Postgres.pytypes
 ================
 
@@ -1288,6 +1347,9 @@ objects::
 
 The decorator only converts objects to Python primitives.
 
+
+.. _pg_quote_ident:
+
 Postgres.quote_ident
 ====================
 
@@ -1300,6 +1362,9 @@ takes a single argument, the identifer string to quote::
  
  assert id == '"an""identifier"'
 
+
+.. _pg_quote_literal:
+
 Postgres.quote_literal
 ======================
 
@@ -1311,6 +1376,9 @@ It only takes a single argument, the string to quote::
  x = quote_literal('an"literal\'string')
 
  assert x == """'an"literal''string'"""
+
+
+.. _pg_quote_nullable:
 
 Postgres.quote_nullable
 =======================
@@ -1327,6 +1395,9 @@ takes a single argument, the string to quote. If given
  assert quote_nullable(None) == 'NULL'
  assert x == """'an"literal''string'"""
 
+
+.. _pg_sleep:
+
 Postgres.sleep
 ==============
 
@@ -1339,15 +1410,21 @@ to sleep and always returns ``None``::
  
  sleep(0.5)
 
+
+.. _pg_statement_timestamp:
+
 Postgres.statement_timestamp
 ============================
 
 Get the statement start time--an alias to the ``statement_timestamp`` function.
-Takes no arguments and returns a `Postgres.types.timestamptz`_::
+Takes no arguments and returns a :ref:`pg_types_timestamptz`::
 
  from Postgres import statement_timestamp
  
  assert sqleval('pg_catalog.statement_timestamp()') == statement_timestamp()
+
+
+.. _pg_transaction_timestamp:
 
 Postgres.transaction_timestamp
 ==============================
@@ -1355,11 +1432,14 @@ Postgres.transaction_timestamp
 ``transaction_timestamp()``
 
 Get the transaction start time--an alias to the ``transaction_timestamp`` function.
-Takes no arguments and returns a `Postgres.types.timestamptz`_::
+Takes no arguments and returns a :ref:`pg_types_timestamptz`::
 
  from Postgres import transaction_timestamp
  
  assert sqleval('now()') == transaction_timestamp()
+
+
+.. _pg_terminate_backend:
 
 Postgres.terminate_backend
 ==========================
@@ -1373,4 +1453,3 @@ function. Takes a single argument, the process id to terminate, and returns
  from Postgres import terminate_backend
  
  terminate_backend(proc_pid)
-

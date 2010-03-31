@@ -10,10 +10,13 @@ Python code::
 
 This chapter discusses some of the interfaces provided on those data types.
 
+
+.. _pg_types_date:
+
 Postgres.types.date
 ===================
 
-The `Postgres.Type`_ for the ``pg_catalog.date`` data type::
+The :ref:`pg_type` for the ``pg_catalog.date`` data type::
 
  from Postgres.types import date
  d = date('2000-01-01')
@@ -59,7 +62,7 @@ The `Postgres.Type`_ for the ``pg_catalog.date`` data type::
 Postgres.types.interval
 =======================
 
-The `Postgres.Type`_ for the ``pg_catalog.interval`` data type::
+The :ref:`pg_type` for the ``pg_catalog.interval`` data type::
 
  from Postgres.types import interval
  
@@ -105,14 +108,17 @@ The `Postgres.Type`_ for the ``pg_catalog.interval`` data type::
  ``epoch``
   The 'epoch' part as a Python float.
 
+
+.. _pg_types_record:
+
 Postgres.types.record
 =====================
 
-The `Postgres.Type`_ instance for the ``pg_catalog.record`` data type.
+The :ref:`pg_type` instance for the ``pg_catalog.record`` data type.
 This type is used as the abstract base type for all composite types.
 
 Subclasses of this type are used to represent table types. These types are
-used by `Trigger Returning Functions`_ in order to represent the data given
+used by :ref:`programming_trf` in order to represent the data given
 to the row-level entry points.
 
 **Constructors:**
@@ -135,7 +141,7 @@ Only subclasses ``Postgres.types.record`` can be *directly* instantiated.
 **Properties:**
 
  ``record.column_types``
-  A tuple of `Postgres.Type`_ instances. The index of
+  A tuple of :ref:`pg_type` instances. The index of
   each item corresponds to the column type.
 
   This property is available on record subclasses *and* instances thereof.
@@ -238,7 +244,7 @@ Only subclasses ``Postgres.types.record`` can be *directly* instantiated.
 Postgres.types.time
 ===================
 
-The `Postgres.Type`_ for the ``pg_catalog.time`` data type::
+The :ref:`pg_type` for the ``pg_catalog.time`` data type::
 
  from Postgres.types import time
  t = time('12:00:00')
@@ -337,6 +343,9 @@ The `Postgres.Type` for the ``pg_catalog.timetz`` data type::
   The 'epoch' part as a Python float.
  ``timezone``
   The 'timezone' part as a Python int.
+
+
+.. _pg_types_timestamptz:
 
 Postgres.types.timestamptz
 ==========================

@@ -1,24 +1,7 @@
 # -*- coding: utf-8 -*-
-#
-# pg-python documentation build configuration file, created by
-# sphinx-quickstart on Mon Mar  2 17:21:37 2009.
-#
-# This file is execfile()d with the current directory set to its containing dir.
-#
-# The contents of this file are pickled, so don't put values in the namespace
-# that aren't pickleable (module imports are okay, they're removed automatically).
-#
-# All configuration values have a default value; values that are commented out
-# serve to show the default value.
-
 import sys, os
-sys.path.insert(0, '.')
 sys.dont_write_bytecode = True
-
-# If your extensions are in another directory, add it here. If the directory
-# is relative to the documentation root, use os.path.abspath to make it
-# absolute, like shown here.
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # General configuration
 # ---------------------
@@ -37,8 +20,8 @@ source_suffix = '.txt'
 master_doc = 'index'
 
 # General substitutions.
-import project proj
-project = project.name
+import project as proj
+project = proj.name
 copyright = '2010, ' + proj.author
 
 # The default replacements for |version| and |release|, also used in various
@@ -63,83 +46,7 @@ today_fmt = '%B %d, %Y'
 #exclude_dirs = []
 
 # The reST default role (used for this markup: `text`) to use for all documents.
-#default_role = None
-
-# If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
-
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
-#add_module_names = True
-
-# If true, sectionauthor and moduleauthor directives will be shown in the
-# output. They are ignored by default.
-#show_authors = False
-
-# The name of the Pygments (syntax highlighting) style to use.
+default_role = None
+add_function_parentheses = True
 pygments_style = 'sphinx'
-
-
-# Options for HTML output
-# -----------------------
-
-# The style sheet to use for HTML and HTML Help pages. A file of that name
-# must exist either in Sphinx' static/ path, or in one of the custom paths
-# given in html_static_path.
 html_style = 'default.css'
-
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-#html_title = None
-
-# A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
-
-# The name of an image file (within the static path) to place at the top of
-# the sidebar.
-#html_logo = None
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-#html_favicon = None
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = []
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-#html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
-
-# Additional templates that should be rendered to pages, maps page names to
-# template names.
-#html_additional_pages = {}
-
-# If false, no module index is generated.
-#html_use_modindex = True
-
-# If false, no index is generated.
-#html_use_index = True
-
-# If true, the index is split into individual pages for each letter.
-#html_split_index = False
-
-# If true, the reST sources are included in the HTML build as _sources/<name>.
-#html_copy_source = True
-
-# If true, an OpenSearch description file will be output, and all pages will
-# contain a <link> tag referring to it.  The value of this option must be the
-# base URL from which the finished HTML is served.
-#html_use_opensearch = ''
-
-# If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = ''
