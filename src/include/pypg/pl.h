@@ -20,7 +20,13 @@ Datum pl_handler(PG_FUNCTION_ARGS);
  * Allows DB interface points to identify if it can proceed.
  */
 typedef enum {
+	/*
+	 * State used for between transaction work.
+	 */
 	pl_outside_transaction = -2,
+	/*
+	 * _PG_init hasn't finished.
+	 */
 	pl_not_initialized = -1,
 	pl_ready_for_access = 0,
 
@@ -30,11 +36,19 @@ typedef enum {
 	pl_in_failed_transaction = 1,
 
 	/*
+	 * When an interrupt occurs, this state is used notify
+	 * other parts of the system that the PL needs to exit.
+	 *
+	 * It has a special effect on ISTs.
+	 */
+	pl_interrupted = 2,
+
+	/*
 	 * An unnatural state used to indicate two things:
 	 *  1. on_proc_exit handler has been called
 	 *  2. the PL's internal state cannot be trusted.
 	 */
-	pl_terminated = 2,
+	pl_terminated = 3,
 } pl_state_t;
 extern pl_state_t pl_state;
 

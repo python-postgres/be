@@ -378,6 +378,18 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		Py_XDECREF(errdata_ob);
 
 		/*
+		 * The exception will still be reported, but go ahead and
+		 * trump the code and errstr as the PL needs to exit.
+		 */
+		if (pl_state == pl_interrupted)
+		{
+			CHECK_FOR_INTERRUPTS();
+			/*
+			 * Okay, well, fall through to the recommended error.
+			 */
+		}
+
+		/*
 		 * Throw an error referring to a Python exception.
 		 */
 		ereport(ERROR,(errcode(code), errmsg("%s", errstr)));
@@ -470,8 +482,36 @@ PyErr_SetPgError(bool inhibit_warning)
 	{
 		errdata = PyPgErrorData_FromCurrent();
 
+		/*
+		 * The above _FromCurrent will set the error if it failed.
+		 */
 		if (errdata != NULL)
 		{
+			if (!inhibit_warning)
+			{
+				ErrorData *ed;
+				ed = PyPgErrorData_GetErrorData(errdata);
+
+				/*
+				 * Check for interrupt code.
+				 */
+				switch (ed->sqlerrcode)
+				{
+					case ERRCODE_OPERATOR_INTERVENTION:
+					case ERRCODE_QUERY_CANCELED:
+					case ERRCODE_ADMIN_SHUTDOWN:
+						/*
+						 * Interrupted. Things need to stop.
+						 */
+						pl_state = pl_interrupted;
+					break;
+
+					default:
+						;
+					break;
+				}
+			}
+
 			PyErr_SetObject(PyExc_PostgresException, errdata);
 			PyErr_Fetch(&exc, &val, &tb);
 			PyErr_NormalizeException(&exc, &val, &tb);
@@ -481,13 +521,19 @@ PyErr_SetPgError(bool inhibit_warning)
 	}
 	else
 	{
+		/*
+		 * It's a relay; meaning the ErrorData is "empty", and we should
+		 * expect a Python error to be set.
+		 */
 		PG_TRY();
 		{
+			/* Don't need it at all */
 			FlushErrorState();
 		}
 		PG_CATCH();
 		{
-			;
+			/* can't happen? */
+			elog(WARNING, "could not flush error state");
 		}
 		PG_END_TRY();
 

@@ -12,6 +12,7 @@
 #include "fmgr.h"
 #include "funcapi.h"
 #include "libpq/libpq-be.h"
+#include "libpq/pqsignal.h"
 #include "miscadmin.h"
 #include "access/htup.h"
 #include "access/heapam.h"
@@ -508,6 +509,12 @@ pl_xact_hook(XactEvent xev, void *arg)
 			handler_count = 0;
 
 			/*
+			 * A residual KeyboardInterrupt may exist.
+			 */
+			if (pl_state == pl_interrupted)
+				PyErr_Clear();
+
+			/*
 			 * Any Python error should have been converted to a Postgres error and
 			 * cleared before getting here.
 			 */
@@ -519,7 +526,7 @@ pl_xact_hook(XactEvent xev, void *arg)
 			 * Reset PL state.
 			 */
 			pl_ist_count = 0;
-			if (pl_state == pl_ready_for_access)
+			if (pl_state == pl_ready_for_access || pl_state == pl_interrupted)
 				pl_state = pl_outside_transaction;
 
 			PG_TRY();
@@ -602,6 +609,36 @@ pl_subxact_hook(
 		case SUBXACT_EVENT_START_SUB:
 			;
 		break;
+	}
+}
+
+static pqsigfunc SIGINT_original = NULL;
+static void
+pl_sigint(SIGNAL_ARGS)
+{
+	SIGINT_original(postgres_signal_arg);
+	/*
+	 * If cancelling and there has been PL activity.
+	 */
+	if (QueryCancelPending && handler_count)
+	{
+		pl_state = pl_interrupted;
+		PyErr_SetInterrupt();
+	}
+}
+
+static pqsigfunc SIGTERM_original = NULL;
+static void
+pl_sigterm(SIGNAL_ARGS)
+{
+	SIGTERM_original(postgres_signal_arg);
+	/*
+	 * If dying and there has been PL activity.
+	 */
+	if (ProcDiePending && handler_count)
+	{
+		pl_state = pl_interrupted;
+		PyErr_SetInterrupt();
 	}
 }
 
@@ -798,6 +835,11 @@ pl_first_call(void)
 	 * Expects _PG_init() has been called.
 	 */
 	Assert(Py_IsInitialized());
+
+	if (SIGINT_original == NULL)
+		SIGINT_original = pqsignal(SIGINT, pl_sigint);
+	if (SIGTERM_original == NULL)
+		SIGTERM_original = pqsignal(SIGTERM, pl_sigterm);
 
 	Py_XDECREF(py_my_datname_str_ob);
 	py_my_datname_str_ob = NULL;

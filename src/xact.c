@@ -34,6 +34,10 @@ xact_enter(PyObj self)
 		PyErr_SetString(PyExc_RuntimeError, "Postgres.Transaction already used");
 		return(NULL);
 	}
+
+	if (DB_IS_NOT_READY())
+		return(NULL);
+
 	if (!pl_ist_begin(PyPgTransaction_GetState(self)))
 		return(NULL);
 	PyPgTransaction_SetId(self, pl_ist_count);
@@ -65,11 +69,30 @@ xact_exit(PyObj self, PyObj args)
 	if (typ == Py_None)
 	{
 		/*
-		 * No Python exception, attempt commit.
+		 * No Python exception, attempt commit iff not interrupted.
 		 */
-		if (!pl_ist_commit(xid, state))
-			return(NULL);
-		PyPgTransaction_SetState(self, pl_ist_committed);
+		if (pl_state == pl_interrupted)
+		{
+			/* pl was interrupted, abort. */
+			if (!pl_ist_abort(xid, state))
+				return(NULL);
+			PyPgTransaction_SetState(self, pl_ist_aborted);
+			/*
+			 * ah, suppressing the exception is actually a no-no.
+			 * Even if it is to be restored, the outer block
+			 * needs to be able to identify that this was aborted.
+			 */
+			PyErr_SetNone(PyExc_KeyboardInterrupt);
+		}
+		else
+		{
+			/*
+			 * Okay, attempt commit.
+			 */
+			if (!pl_ist_commit(xid, state))
+				return(NULL);
+			PyPgTransaction_SetState(self, pl_ist_committed);
+		}
 	}
 	else
 	{
