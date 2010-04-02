@@ -162,11 +162,14 @@ class test_interrupt(unittest.TestCase):
 		db.msghook = self.hook
 		with xact():
 			try:
+				# not actually testing anything here;
+				# rather, we need 'handler_count > 0'.
 				with xact():
 					sqlexec(xfuncs[0])
 			except QueryCanceledError:
 				pass
 			db.interrupt()
+			time.sleep(0.07)
 			sqlexec("SELECT return_one();")
 
 if __name__ == '__main__':
