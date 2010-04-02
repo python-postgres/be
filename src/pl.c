@@ -291,6 +291,8 @@ get_PyPgFunction_from_oid(Oid fn_oid, PyObj *module)
 	Assert(module != NULL);
 
 	modules = PyImport_GetModuleDict(); /* borrowed */
+	if (PyErr_Occurred())
+		return(NULL);
 
 	Py_ALLOCATE_OWNER();
 	{
@@ -623,7 +625,7 @@ pl_sigint(SIGNAL_ARGS)
 	/*
 	 * If cancelling and there has been PL activity.
 	 */
-	if (QueryCancelPending && handler_count)
+	if (QueryCancelPending && handler_count && PyEval_GetFrame() != NULL)
 	{
 		pl_state = pl_in_failed_transaction;
 		PyErr_SetInterrupt();
@@ -638,7 +640,7 @@ pl_sigterm(SIGNAL_ARGS)
 	/*
 	 * If dying and there has been PL activity.
 	 */
-	if (ProcDiePending && handler_count)
+	if (ProcDiePending && handler_count && PyEval_GetFrame() != NULL)
 	{
 		pl_state = pl_in_failed_transaction;
 		PyErr_SetInterrupt();
@@ -1921,9 +1923,8 @@ initialize(PG_FUNCTION_ARGS)
 			}
 			else
 				PyErr_ThrowPostgresErrorWithCode(
-						ERRCODE_PYTHON_PROTOCOL_VIOLATION,
-						"the Postgres.Function object "
-						"\"__func__\" was not in the module");
+					ERRCODE_PYTHON_PROTOCOL_VIOLATION,
+					"could not get the \"__func__\" attribute from the function module");
 		}
 
 		/*

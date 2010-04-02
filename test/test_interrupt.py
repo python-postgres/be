@@ -98,11 +98,38 @@ def main():
 $$;
 """
 
+call_iloops = """
+CREATE OR REPLACE FUNCTION
+public.call_iloops()
+RETURNS int LANGUAGE python AS
+$$
+import Postgres
+functions = [
+	proc('public.iloop()'),
+	proc('public.iloop_in_subxact()'),
+	proc('public.iloop_in_failed_subxact()'),
+]
+
+def main():
+	for x in functions:
+		try:
+			with xact():
+				x()
+		except KeyboardInterrupt:
+			pass
+		except Postgres.Exception as err:
+			if not err.code.startswith('57'):
+				raise
+	return 1
+$$;
+"""
+
 funcs = [
 	infinite_loop,
 	infinite_loop_in_subxact,
 	infinite_loop_in_failed_subxact,
 	return_one,
+	call_iloops,
 ]
 
 xfuncs = [
@@ -169,8 +196,19 @@ class test_interrupt(unittest.TestCase):
 			except QueryCanceledError:
 				pass
 			db.interrupt()
-			time.sleep(0.07)
+			time.sleep(0.1)
 			sqlexec("SELECT return_one();")
+
+	@pg_tmp
+	def testInterruptWithinUse(self):
+		# In order to implement interrupt support,
+		# the signal handlers are overridden.
+		# This means that it is possible to set an interrupt
+		# while outside of the PL. Exercise that case.
+		db.msghook = self.hook
+		sqlexec("SELECT call_iloops();")
+		with xact():
+			sqlexec("SELECT call_iloops();")
 
 if __name__ == '__main__':
 	from types import ModuleType
