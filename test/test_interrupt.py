@@ -88,10 +88,21 @@ def main():
 $$;
 """
 
+return_one = """
+CREATE OR REPLACE FUNCTION
+public.return_one()
+RETURNS int LANGUAGE python AS
+$$
+def main():
+	return 1
+$$;
+"""
+
 funcs = [
 	infinite_loop,
 	infinite_loop_in_subxact,
 	infinite_loop_in_failed_subxact,
+	return_one,
 ]
 
 xfuncs = [
@@ -141,6 +152,22 @@ class test_interrupt(unittest.TestCase):
 					pass
 				self.failUnlessEqual(prepare('select 1').first(), 1)
 		self.failUnlessEqual(prepare('select 1').first(), 1)
+
+	@pg_tmp
+	def testInterruptBeforeUse(self):
+		# In order to implement interrupt support,
+		# the signal handlers are overridden.
+		# This means that it is possible to set an interrupt
+		# while outside of the PL. Exercise that case.
+		db.msghook = self.hook
+		with xact():
+			try:
+				with xact():
+					sqlexec(xfuncs[0])
+			except QueryCanceledError:
+				pass
+			db.interrupt()
+			sqlexec("SELECT return_one();")
 
 if __name__ == '__main__':
 	from types import ModuleType
