@@ -71,18 +71,19 @@ xact_exit(PyObj self, PyObj args)
 		/*
 		 * No Python exception, attempt commit iff not interrupted.
 		 */
-		if (pl_state == pl_interrupted)
+		if (pl_state == pl_in_failed_transaction)
 		{
 			/* pl was interrupted, abort. */
 			if (!pl_ist_abort(xid, state))
 				return(NULL);
 			PyPgTransaction_SetState(self, pl_ist_aborted);
+
 			/*
 			 * ah, suppressing the exception is actually a no-no.
 			 * Even if it is to be restored, the outer block
 			 * needs to be able to identify that this was aborted.
 			 */
-			PyErr_SetNone(PyExc_KeyboardInterrupt);
+			PyErr_SetInterrupt();
 		}
 		else
 		{

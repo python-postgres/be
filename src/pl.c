@@ -511,8 +511,11 @@ pl_xact_hook(XactEvent xev, void *arg)
 			/*
 			 * A residual KeyboardInterrupt may exist.
 			 */
-			if (pl_state == pl_interrupted)
+			if (pl_state == pl_in_failed_transaction)
+			{
 				PyErr_Clear();
+				pl_state = pl_ready_for_access;
+			}
 
 			/*
 			 * Any Python error should have been converted to a Postgres error and
@@ -526,7 +529,7 @@ pl_xact_hook(XactEvent xev, void *arg)
 			 * Reset PL state.
 			 */
 			pl_ist_count = 0;
-			if (pl_state == pl_ready_for_access || pl_state == pl_interrupted)
+			if (pl_state == pl_ready_for_access)
 				pl_state = pl_outside_transaction;
 
 			PG_TRY();
@@ -622,7 +625,7 @@ pl_sigint(SIGNAL_ARGS)
 	 */
 	if (QueryCancelPending && handler_count)
 	{
-		pl_state = pl_interrupted;
+		pl_state = pl_in_failed_transaction;
 		PyErr_SetInterrupt();
 	}
 }
@@ -637,7 +640,7 @@ pl_sigterm(SIGNAL_ARGS)
 	 */
 	if (ProcDiePending && handler_count)
 	{
-		pl_state = pl_interrupted;
+		pl_state = pl_in_failed_transaction;
 		PyErr_SetInterrupt();
 	}
 }

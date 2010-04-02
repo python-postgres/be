@@ -381,13 +381,7 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		 * The exception will still be reported, but go ahead and
 		 * trump the code and errstr as the PL needs to exit.
 		 */
-		if (pl_state == pl_interrupted)
-		{
-			CHECK_FOR_INTERRUPTS();
-			/*
-			 * Okay, well, fall through to the recommended error.
-			 */
-		}
+		CHECK_FOR_INTERRUPTS();
 
 		/*
 		 * Throw an error referring to a Python exception.
@@ -503,7 +497,7 @@ PyErr_SetPgError(bool inhibit_warning)
 						/*
 						 * Interrupted. Things need to stop.
 						 */
-						pl_state = pl_interrupted;
+						pl_state = pl_in_failed_transaction;
 					break;
 
 					default:
