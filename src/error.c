@@ -329,6 +329,7 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		 */
 		PG_TRY();
 		{
+			CHECK_FOR_INTERRUPTS();
 			ReThrowError(PyPgErrorData_GetErrorData(errdata_ob));
 		}
 		PG_CATCH();
@@ -485,25 +486,6 @@ PyErr_SetPgError(bool inhibit_warning)
 			{
 				ErrorData *ed;
 				ed = PyPgErrorData_GetErrorData(errdata);
-
-				/*
-				 * Check for interrupt code.
-				 */
-				switch (ed->sqlerrcode)
-				{
-					case ERRCODE_OPERATOR_INTERVENTION:
-					case ERRCODE_QUERY_CANCELED:
-					case ERRCODE_ADMIN_SHUTDOWN:
-						/*
-						 * Interrupted. Things need to stop.
-						 */
-						pl_state = pl_in_failed_transaction;
-					break;
-
-					default:
-						;
-					break;
-				}
 			}
 
 			PyErr_SetObject(PyExc_PostgresException, errdata);
