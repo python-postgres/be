@@ -98,10 +98,10 @@ struct PyObject_ReferenceOwner {
 };
 
 #define _PYRO_DECLARE_OWNER() \
-	struct PyObject_ReferenceOwner _next_owner = {{NULL,},0}; \
-	struct PyObject_ReferenceOwner *_prev_owner; \
-	_prev_owner = _PyObject_OwnerStack; \
-	_PyObject_OwnerStack = &_next_owner
+	volatile struct PyObject_ReferenceOwner _next_owner = {{NULL,},0}; \
+	volatile struct PyObject_ReferenceOwner *_prev_owner; \
+	_prev_owner = (volatile struct PyObject_ReferenceOwner *) _PyObject_OwnerStack; \
+	_PyObject_OwnerStack = ((struct PyObject_ReferenceOwner *) &_next_owner)
 
 #define _PYRO_GET_ACQUIRED(_py_NN) \
 	(_PyObject_OwnerStack->acquired[_py_NN])
@@ -159,7 +159,7 @@ struct PyObject_ReferenceOwner {
 
 #define _PYRO_DEALLOCATE(...) do { \
 	_PYRO_RELEASE_ALL(); \
-	_PyObject_OwnerStack = _prev_owner; \
+	_PyObject_OwnerStack = ((struct PyObject_ReferenceOwner *) _prev_owner); \
 	__VA_ARGS__; \
 } while(0)
 

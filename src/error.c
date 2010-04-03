@@ -328,7 +328,6 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		 */
 		PG_TRY();
 		{
-			CHECK_FOR_INTERRUPTS();
 			ReThrowError(PyPgErrorData_GetErrorData(errdata_ob));
 		}
 		PG_CATCH();
@@ -359,6 +358,10 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 	{
 		bool is_interrupt = false;
 
+		/*
+		 * If it's a QUERY_CANCELED Postgres.Exception,
+		 * the usual route will properly emit it.
+		 */
 		if (PyErr_Occurred() == PyExc_KeyboardInterrupt)
 			is_interrupt = true;
 
