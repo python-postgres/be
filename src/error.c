@@ -167,7 +167,9 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 	const char *protitle = NULL;
 	char *data;
 
+	HOLD_INTERRUPTS();
 	data = context(false, false);
+	RESUME_INTERRUPTS();
 
 	fn_bytes = fn_filename;
 	if (fn_bytes != NULL)
@@ -299,21 +301,18 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 				 * could have been raised with a buggy __getattr__
 				 * implementation. (yeah, there's a test for this too)
 				 */
+				HOLD_INTERRUPTS();
 				ereport(WARNING,
 						(errmsg("could not get \"inhibit_pl_context\" attribute on \"%s\" exception",
 								Py_TYPE(val)->tp_name),
 						errdetail("A non-fatal Python exception occurred while building the traceback.")));
-
-				/*
-				 * Tried to notify the user of the issue, now clear it and move
-				 * on.
-				 */
-				PyErr_Clear();
+				RESUME_INTERRUPTS();
 			}
 		}
 	}
+
 	/*
-	 * Don't inhibit if it's a Python exception.
+	 * Don't inhibit if it's a normal Python exception.
 	 * Chances are that it's not intentional.
 	 */
 	if (inhibit_pl_context == true &&
@@ -358,6 +357,11 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 	}
 	else
 	{
+		bool is_interrupt = false;
+
+		if (PyErr_Occurred() == PyExc_KeyboardInterrupt)
+			is_interrupt = true;
+
 		if (inhibit_pl_context)
 		{
 			/*
@@ -380,14 +384,26 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 
 		/*
 		 * The exception will still be reported, but go ahead and
-		 * trump the code and errstr as the PL needs to exit.
+		 * trump it if an interrupt occurred.
 		 */
 		CHECK_FOR_INTERRUPTS();
 
-		/*
-		 * Throw an error referring to a Python exception.
-		 */
-		ereport(ERROR,(errcode(code), errmsg("%s", errstr)));
+		if (is_interrupt)
+		{
+			/*
+			 * It's a KeyboardInterrupt, and CFI didn't raise.
+			 * XXX: Should it include the original, overridden exception data?
+			 */
+			ereport(ERROR,(errcode(ERRCODE_QUERY_CANCELED),
+				errmsg("interrupt raised by Python interpreter")));
+		}
+		else
+		{
+			/*
+			 * Throw an error referring to a Python exception.
+			 */
+			ereport(ERROR,(errcode(code), errmsg("%s", errstr)));
+		}
 	}
 
 	/*
@@ -430,7 +446,10 @@ PyErr_EmitPostgresWarning(const char *errstr)
 	/*
 	 * Throw a warning about the Python exception.
 	 */
+	HOLD_INTERRUPTS();
 	elog(WARNING, "%s", errstr);
+	RESUME_INTERRUPTS();
+
 	error_context_stack = ecc.previous;
 	Assert(!PyErr_Occurred());
 }
@@ -444,6 +463,7 @@ PyErr_EmitPostgresWarning(const char *errstr)
 void
 PyErr_SetPgError(bool inhibit_warning)
 {
+	static bool raising_interrupt = false;
 	MemoryContext former = CurrentMemoryContext;
 	PyObj errdata = NULL;
 	PyObj exc, val, tb;
@@ -462,7 +482,13 @@ PyErr_SetPgError(bool inhibit_warning)
 			 * If this is ever emitted, it is likely a programming error(PL level).
 			 * [ie, a PG_TRY() block was not properly protected from in-error use]
 			 */
-			elog(WARNING, "database already in error state");
+			if (PyErr_Occurred() != PyExc_KeyboardInterrupt)
+			{
+				/* Don't bother if it's likely due to an interrupt */
+				HOLD_INTERRUPTS();
+				elog(WARNING, "database already in error state");
+				RESUME_INTERRUPTS();
+			}
 		}
 
 		if (pl_state == pl_ready_for_access)
@@ -501,6 +527,7 @@ PyErr_SetPgError(bool inhibit_warning)
 		 * It's a relay; meaning the ErrorData is "empty", and we should
 		 * expect a Python error to be set.
 		 */
+		HOLD_INTERRUPTS();
 		PG_TRY();
 		{
 			/* Don't need it at all */
@@ -512,6 +539,7 @@ PyErr_SetPgError(bool inhibit_warning)
 			elog(WARNING, "could not flush error state");
 		}
 		PG_END_TRY();
+		RESUME_INTERRUPTS();
 
 		/*
 		 * huh, relayed exception did *not* have a Python
@@ -531,6 +559,25 @@ PyErr_SetPgError(bool inhibit_warning)
 	 * If PyPgErrorData could not be created, a RuntimeError will be set.
 	 */
 	Assert(PyErr_Occurred());
+
+	/*
+	 * Now check if there's an interrupt that needs to be serviced.
+	 * The interrupt exception overrides.
+	 */
+	if (!raising_interrupt)
+	{
+		raising_interrupt = true;
+		PG_TRY();
+		{
+			CHECK_FOR_INTERRUPTS();
+		}
+		PG_CATCH();
+		{
+			PyErr_SetPgError(true);
+		}
+		PG_END_TRY();
+		raising_interrupt = false;
+	}
 }
 
 void
@@ -556,9 +603,11 @@ PyErr_EmitPgErrorAsWarning(const char *msg)
 		/*
 		 * Throw a warning about the PG error.
 		 */
+		HOLD_INTERRUPTS();
 		ereport(WARNING,(
 			errmsg("%s", msg),
 			errcontext("[Postgres ERROR]\n%s", data)));
+		RESUME_INTERRUPTS();
 		pfree(data);
 
 		PyErr_Restore(exc, val, tb);
@@ -577,9 +626,11 @@ PyErr_EmitPgErrorAsWarning(const char *msg)
 		/*
 		 * Throw a warning about the Python exception.
 		 */
+		HOLD_INTERRUPTS();
 		ereport(WARNING,(
 			errmsg("%s", msg),
 			errcontext("[exception from Python]\n%s", data)));
+		RESUME_INTERRUPTS();
 		pfree(data);
 	}
 }

@@ -185,11 +185,14 @@ check_state(int elevel, unsigned long previous_ist_count)
 
 		if (pl_state > 0)
 		{
+			/* reset the indicator; error is being indicated */
+			/* However, do so before warning in case of interrupt. */
+			pl_state = pl_ready_for_access;
+
 			/*
 			 * Only warn about the failure as the savepoint exception is
 			 * the appropriate error to thrown in this situation.
 			 */
-			pl_state = pl_ready_for_access; /* reset the indicator; error is being indicated */
 			ereport(WARNING,(
 				errcode(ERRCODE_PYTHON_PROTOCOL_VIOLATION),
 				errmsg("function failed to propagate error state")
@@ -617,6 +620,13 @@ pl_subxact_hook(
 	}
 }
 
+static int
+set_keyboard_interrupt(void *ignored)
+{
+	PyErr_SetNone(PyExc_KeyboardInterrupt);
+	return(-1);
+}
+
 static pqsigfunc SIGINT_original = NULL;
 static void
 pl_sigint(SIGNAL_ARGS)
@@ -628,7 +638,7 @@ pl_sigint(SIGNAL_ARGS)
 	if (QueryCancelPending && handler_count && PyEval_GetFrame() != NULL)
 	{
 		pl_state = pl_in_failed_transaction;
-		PyErr_SetInterrupt();
+	    Py_AddPendingCall(set_keyboard_interrupt, NULL);
 	}
 }
 
@@ -643,7 +653,7 @@ pl_sigterm(SIGNAL_ARGS)
 	if (ProcDiePending && handler_count && PyEval_GetFrame() != NULL)
 	{
 		pl_state = pl_in_failed_transaction;
-		PyErr_SetInterrupt();
+	    Py_AddPendingCall(set_keyboard_interrupt, NULL);
 	}
 }
 
@@ -2328,7 +2338,10 @@ pl_handler(PG_FUNCTION_ARGS)
 			 * It's already failing out, so only warn the user if the IST
 			 * count is off.
 			 */
+			HOLD_INTERRUPTS();
 			check_state(WARNING, stored_ist_count);
+			RESUME_INTERRUPTS();
+
 			pl_execution_context = previous;
 
 			/*

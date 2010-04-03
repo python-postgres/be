@@ -282,8 +282,10 @@ errdata_dealloc(PyObj self)
 			 * Don't bother using PyErr_EmitPgErrorAsWarning() in
 			 * fear of this happening again.
 			 */
+			HOLD_INTERRUPTS();
 			FlushErrorState();
 			elog(WARNING, "failed to deallocate ErrorData object");
+			RESUME_INTERRUPTS();
 		}
 		PG_END_TRY();
 		MemoryContextSwitchTo(former);

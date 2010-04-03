@@ -75,12 +75,11 @@ pl_ist_abort(unsigned long xid, char state)
 			));
 		}
 
-		SPI_restore_connection();
-
 		pl_ist_count = pl_ist_count - 1;
 		RollbackAndReleaseCurrentSubTransaction();
 
 		pl_state = pl_ready_for_access; /* No longer in an error state. */
+		SPI_restore_connection();
 	}
 	PG_CATCH();
 	{

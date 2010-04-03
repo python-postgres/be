@@ -68,11 +68,12 @@ xact_exit(PyObj self, PyObj args)
 
 	if (typ == Py_None)
 	{
-		/*
-		 * Okay, attempt commit.
-		 */
+		/* Attempt commit */
 		if (!pl_ist_commit(xid, state))
+		{
+			PyPgTransaction_SetState(self, pl_ist_aborted);
 			return(NULL);
+		}
 		PyPgTransaction_SetState(self, pl_ist_committed);
 	}
 	else

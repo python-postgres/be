@@ -1135,17 +1135,17 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 
 		if (rob != NULL && !PyPgType_IsPolymorphic(rob))
 		{
-			if (PyDict_SetItem(Py_anonymous_composites, triple, rob))
-			{
-				/*
-				 * Try to continue anyways.
-				 */
-				elog(WARNING, "could not cache anonymous composite type");
-				PyErr_Clear();
-			}
-
 			PG_TRY();
 			{
+				if (PyDict_SetItem(Py_anonymous_composites, triple, rob))
+				{
+					/* Try to continue anyways. */
+					PyErr_Clear();
+
+					/* Inside the try block in case of interrupt. */
+					elog(WARNING, "could not cache anonymous composite type");
+				}
+
 				BlessTupleDesc(PyPgType_GetTupleDesc(rob));
 			}
 			PG_CATCH();

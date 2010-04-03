@@ -151,7 +151,7 @@ class test_interrupt(unittest.TestCase):
 			# Ran inside a block.
 			self.failUnlessRaises(QueryCanceledError, sqlexec, x)
 			# Connection should be usable now.
-			self.failUnlessEqual(prepare('select 1').first(), 1)
+			self.failUnlessEqual(proc('return_one()')(), 1)
 
 	@pg_tmp
 	def testInterruptInBlock(self):
@@ -164,7 +164,7 @@ class test_interrupt(unittest.TestCase):
 			except QueryCanceledError:
 				pass
 			# Connection should be usable now.
-			self.failUnlessEqual(prepare('select 1').first(), 1)
+			self.failUnlessEqual(proc('return_one()')(), 1)
 
 	@pg_tmp
 	def testInterruptInSubxact(self):
@@ -177,8 +177,8 @@ class test_interrupt(unittest.TestCase):
 						sqlexec(x)
 				except QueryCanceledError:
 					pass
-				self.failUnlessEqual(prepare('select 1').first(), 1)
-		self.failUnlessEqual(prepare('select 1').first(), 1)
+				self.failUnlessEqual(proc('return_one()')(), 1)
+		self.failUnlessEqual(proc('return_one()')(), 1)
 
 	@pg_tmp
 	def testInterruptBeforeUse(self):
@@ -195,9 +195,10 @@ class test_interrupt(unittest.TestCase):
 					sqlexec(xfuncs[0])
 			except QueryCanceledError:
 				pass
+			return_one = proc('return_one()')
 			db.interrupt()
-			time.sleep(0.1)
-			sqlexec("SELECT return_one();")
+			time.sleep(0.3)
+			self.failUnlessEqual(return_one(), 1)
 
 	@pg_tmp
 	def testInterruptWithinUse(self):
@@ -209,6 +210,7 @@ class test_interrupt(unittest.TestCase):
 		sqlexec("SELECT call_iloops();")
 		with xact():
 			sqlexec("SELECT call_iloops();")
+		self.failUnlessEqual(proc('return_one()')(), 1)
 
 if __name__ == '__main__':
 	from types import ModuleType
