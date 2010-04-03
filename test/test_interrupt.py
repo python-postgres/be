@@ -115,8 +115,6 @@ def main():
 		try:
 			with xact():
 				x()
-		except KeyboardInterrupt:
-			pass
 		except Postgres.Exception as err:
 			if not err.code.startswith('57'):
 				raise
@@ -141,6 +139,9 @@ xfuncs = [
 class test_interrupt(unittest.TestCase):
 	def hook(self, msg):
 		if msg.message == 'doint':
+			# sleep to give the function time to get into
+			# its infinite loop.
+			time.sleep(0.03)
 			db.interrupt()
 			return True # suppress
 
