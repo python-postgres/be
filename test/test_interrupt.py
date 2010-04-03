@@ -141,9 +141,11 @@ class test_interrupt(unittest.TestCase):
 		if msg.message == 'doint':
 			# sleep to give the function time to get into
 			# its infinite loop.
-			time.sleep(0.03)
+			time.sleep(0.01)
 			db.interrupt()
-			return True # suppress
+		else:
+			print('WARNING:', msg.message)
+		return True # suppress
 
 	@pg_tmp
 	def testInterrupt(self):

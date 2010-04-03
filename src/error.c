@@ -167,9 +167,7 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 	const char *protitle = NULL;
 	char *data;
 
-	HOLD_INTERRUPTS();
 	data = context(false, false);
-	RESUME_INTERRUPTS();
 
 	fn_bytes = fn_filename;
 	if (fn_bytes != NULL)
@@ -253,6 +251,8 @@ PyErr_RelayException(void)
  * This function is needed by the root handler as when it re-throws any raised
  * errors, the pl_exec_state has been restored to the prior execution context.
  * (needed an explicit pl_exec_state parameter)
+ *
+ * NOTE: Clears the Python exception.
  */
 void
 PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec_state *pl_ctx)
@@ -412,6 +412,11 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 	Assert(false);
 }
 
+/*
+ * Slightly higher-level PyErr_ThrowPostgresErrorWithContext.
+ *
+ * NOTE: Clears the Python exception.
+ */
 void
 PyErr_ThrowPostgresErrorWithCode(int code, const char *errstr)
 {
@@ -446,9 +451,7 @@ PyErr_EmitPostgresWarning(const char *errstr)
 	/*
 	 * Throw a warning about the Python exception.
 	 */
-	HOLD_INTERRUPTS();
 	elog(WARNING, "%s", errstr);
-	RESUME_INTERRUPTS();
 
 	error_context_stack = ecc.previous;
 	Assert(!PyErr_Occurred());

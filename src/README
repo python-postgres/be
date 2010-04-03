@@ -121,3 +121,21 @@ corresponding pg_proc entry. The function's module is set to the InlineExecutor
 class defined in the pure-Python portion of the Postgres
 module(See src/module.py). This class provides the "main" entry point which
 takes a single argument, the source to execute.
+
+
+Interrupt Support
+-----------------
+
+Interrupts are supported by overriding the default signal handlers for SIGTERM
+and SIGINT. While scary at first, these overrides are *not* installed unless the
+PL has been invoked--they are installed at first call, not on _PG_init.
+Additionally, when they have been installed, the new functionality is only invoked
+in transactions where there has been PL activity. Specifically, the
+`handler_count` must be greater than zero *and* there must be a Python stack
+frame.
+
+Managing interrupts during PL execution is fairly tricky. When an interrupt
+occurs, the KeyboardInterrupt exception is set via Py_AddPendingCall iff CFI
+doesn't raise. If the Python interpreter never actually calls it, it's
+important the Py_MakePendingCalls is performed between transactions in order to
+avoid a spurious exception upon re-entry.

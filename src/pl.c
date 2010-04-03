@@ -193,10 +193,13 @@ check_state(int elevel, unsigned long previous_ist_count)
 			 * Only warn about the failure as the savepoint exception is
 			 * the appropriate error to thrown in this situation.
 			 */
+
+			HOLD_INTERRUPTS();
 			ereport(WARNING,(
 				errcode(ERRCODE_PYTHON_PROTOCOL_VIOLATION),
 				errmsg("function failed to propagate error state")
 			));
+			RESUME_INTERRUPTS();
 		}
 
 		ereport(elevel,(
@@ -518,6 +521,18 @@ pl_xact_hook(XactEvent xev, void *arg)
 			 */
 			if (pl_state == pl_in_failed_transaction)
 			{
+				/*
+				 * It won't set an interrupt exception if handler_count is zero.
+				 */
+				if (Py_MakePendingCalls())
+				{
+					/*
+					 * Some other pending call raised an exception.
+					 */
+					PyErr_EmitPgErrorAsWarning(
+						"unexpected Python exception between transactions");
+				}
+
 				PyErr_Clear();
 				pl_state = pl_ready_for_access;
 			}
@@ -620,10 +635,53 @@ pl_subxact_hook(
 	}
 }
 
+/*
+ * Used to track if `set_interrupt` is already pending.
+ */
+static bool interrupt_set = false;
+
 static int
-set_keyboard_interrupt(void *ignored)
+set_interrupt(void *ignored)
 {
-	PyErr_SetNone(PyExc_KeyboardInterrupt);
+	int r = -1;
+
+	if (handler_count == 0)
+	{
+		/*
+		 * Not in Python? Don't set the error.
+		 */
+		r = 0;
+	}
+	else
+	{
+		PG_TRY();
+		{
+			CHECK_FOR_INTERRUPTS();
+			/*
+			 * If CFI doesn't throw, just set the KI.
+			 */
+			PyErr_SetNone(PyExc_KeyboardInterrupt);
+		}
+		PG_CATCH();
+		{
+			/*
+			 * Inhibit the warning, the interrupt may be overriding
+			 * an existing exception.
+			 */
+			PyErr_SetPgError(true);
+		}
+		PG_END_TRY();
+	}
+
+	/*
+	 * It can set the interrupt again.
+	 */
+	interrupt_set = false;
+
+	/*
+	 * It is inside the Python interpreter, so the cleared interrupt
+	 * is merely converted like any other PG error.
+	 */
 	return(-1);
 }
 
@@ -635,10 +693,11 @@ pl_sigint(SIGNAL_ARGS)
 	/*
 	 * If cancelling and there has been PL activity.
 	 */
-	if (QueryCancelPending && handler_count && PyEval_GetFrame() != NULL)
+	if (QueryCancelPending && handler_count && PyEval_GetFrame() != NULL && interrupt_set == false)
 	{
 		pl_state = pl_in_failed_transaction;
-	    Py_AddPendingCall(set_keyboard_interrupt, NULL);
+		interrupt_set = true;
+	    Py_AddPendingCall(set_interrupt, NULL);
 	}
 }
 
@@ -650,10 +709,11 @@ pl_sigterm(SIGNAL_ARGS)
 	/*
 	 * If dying and there has been PL activity.
 	 */
-	if (ProcDiePending && handler_count && PyEval_GetFrame() != NULL)
+	if (ProcDiePending && handler_count && PyEval_GetFrame() != NULL && interrupt_set == false)
 	{
 		pl_state = pl_in_failed_transaction;
-	    Py_AddPendingCall(set_keyboard_interrupt, NULL);
+		interrupt_set = true;
+	    Py_AddPendingCall(set_interrupt, NULL);
 	}
 }
 
@@ -2336,11 +2396,10 @@ pl_handler(PG_FUNCTION_ARGS)
 
 			/*
 			 * It's already failing out, so only warn the user if the IST
-			 * count is off.
+			 * count is off. Either the user did something wrong, or
+			 * the interpreter exited via longjmp(PL programming error).
 			 */
-			HOLD_INTERRUPTS();
 			check_state(WARNING, stored_ist_count);
-			RESUME_INTERRUPTS();
 
 			pl_execution_context = previous;
 
