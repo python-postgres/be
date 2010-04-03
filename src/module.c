@@ -185,38 +185,42 @@ py_ereport(PyObj self, PyObj args, PyObj kw)
 		{
 			PG_TRY();
 			{
+
 /*
  * Repetitious enough to annoy me into doing this. -jwp
  *
  * Coerce object into a string; if it fails, relay.
  */
-#define ATTACH(CB, OBJ) do { \
-	Py_INCREF(OBJ); \
-	PyObject_StrBytes(&OBJ); \
-	if (OBJ == NULL) \
-		PyErr_RelayException(); \
-	else \
-	{ \
-		Py_XREPLACE(OBJ); \
-		CB("%s", PyBytes_AS_STRING(OBJ)); \
+#define mkstr(OBJ) do { \
+	if (OBJ) { \
+		Py_INCREF(OBJ); \
+		PyObject_StrBytes(&OBJ); \
+		if (OBJ == NULL) \
+			PyErr_RelayException(); \
+		Py_ACQUIRE(OBJ); \
 	} \
 } while(0)
+				mkstr(message);
+				mkstr(hint);
+				mkstr(detail);
+				mkstr(context);
+#undef mkstr
 
 				if (errstart(elevel, "pg-python/src/module.c", 1, "<Postgres.ereport>", "python"))
 				{
 					if (sqlerrcode)
 						errcode(sqlerrcode);
 
-					ATTACH(errmsg, message);
+					errmsg("%s", PyBytes_AS_STRING(message));
 					if (hint)
-						ATTACH(errhint, hint);
+						errhint("%s", PyBytes_AS_STRING(hint));
 					if (detail)
-						ATTACH(errdetail, detail);
+						errdetail("%s", PyBytes_AS_STRING(detail));
 					if (context)
-						ATTACH(errcontext, context);
+						errcontext("%s", PyBytes_AS_STRING(context));
 					errfinish(0);
 				}
-#undef ATTACH
+
 				rob = Py_None;
 				Py_INCREF(rob);
 			}
