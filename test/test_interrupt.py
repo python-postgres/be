@@ -48,6 +48,7 @@ def main():
 	Postgres.WARNING('doint')
 	while True:
 		pass
+		pass
 	return -1
 $$;
 """
@@ -63,6 +64,7 @@ def main():
 	with xact():
 		Postgres.WARNING('doint')
 		while True:
+			pass
 			pass
 	return -1
 $$;
@@ -83,6 +85,7 @@ def main():
 			pass
 		Postgres.WARNING('doint')
 		while True:
+			pass
 			pass
 	return -1
 $$;
@@ -115,6 +118,7 @@ def main():
 		try:
 			with xact():
 				x()
+				pass
 		except Postgres.Exception as err:
 			if not err.code.startswith('57'):
 				raise

@@ -165,7 +165,8 @@ check_state(int elevel, unsigned long previous_ist_count)
 	 * Subtransaction and Error state checks.
 	 *
 	 * First, check the IST count. If there are open ISTs, abort them and
-	 * report the inappropriate exit state using an error.
+	 * report the inappropriate exit state using an error or a warning
+	 * if the PL is failing out.
 	 */
 	Assert(elevel == ERROR || elevel == WARNING);
 
@@ -254,7 +255,9 @@ run_PyPgFunction_module(PyObj func)
 		 */
 		if (pl_state > 0)
 			pl_state = pl_ready_for_access;
+
 		check_state(WARNING, stored_ist_count);
+
 		PyErr_ThrowPostgresError(
 			"could not load Python function's module object");
 	}
@@ -482,9 +485,10 @@ increment_xact_count(void)
 	if (pl_xact_count == 0)
 	{
 		pl_xact_count = 2;
-		ereport(WARNING, (
-			errmsg("internal transaction counter wrapped")
-		));
+
+		HOLD_INTERRUPTS();
+		ereport(WARNING, (errmsg("internal transaction counter wrapped")));
+		RESUME_INTERRUPTS();
 	}
 }
 
@@ -575,12 +579,12 @@ pl_xact_hook(XactEvent xev, void *arg)
 			}
 			PG_END_TRY();
 
-			/*
-			 * *Very* unlikely to error out, but protect anyways as this
-			 * can execute arbitrary code.
-			 */
 			PG_TRY();
 			{
+				/*
+				 * *Very* unlikely to error out, but protect anyways as this
+				 * can execute arbitrary code.
+				 */
 				PySet_Clear(TransactionScope);
 				PyGC_Collect();
 			}
@@ -657,10 +661,6 @@ set_interrupt(void *ignored)
 		PG_TRY();
 		{
 			CHECK_FOR_INTERRUPTS();
-			/*
-			 * If CFI doesn't throw, just set the KI.
-			 */
-			PyErr_SetNone(PyExc_KeyboardInterrupt);
 		}
 		PG_CATCH();
 		{
@@ -2410,12 +2410,13 @@ pl_handler(PG_FUNCTION_ARGS)
 			 */
 			if (_PG_ERROR_IS_RELAY())
 			{
+				_PYRO_DEALLOCATE(); /* release references held by owner */
+
 				/*
 				 * Don't need the error state, all the information is in the
 				 * set Python error.
 				 */
 				FlushErrorState();
-				_PYRO_DEALLOCATE(); /* release references held by owner */
 
 				/* Restore the caller's memory context. */
 				MemoryContextSwitchTo(current_exec_state.return_memory_context);

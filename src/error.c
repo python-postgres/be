@@ -167,7 +167,9 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 	const char *protitle = NULL;
 	char *data;
 
+	HOLD_INTERRUPTS();
 	data = context(false, false);
+	RESUME_INTERRUPTS();
 
 	fn_bytes = fn_filename;
 	if (fn_bytes != NULL)
@@ -180,18 +182,27 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 			PyErr_Clear();
 	}
 
-	if (protitle)
+	PG_TRY();
 	{
-		if (desc)
-			errcontext("[exception from Python]\n%s\n[%s while %s]",
-				data, protitle, desc);
+		if (protitle)
+		{
+			if (desc)
+				errcontext("[exception from Python]\n%s\n[%s while %s]",
+					data, protitle, desc);
+			else
+				errcontext("[exception from Python]\n%s\n[%s]", data, protitle);
+		}
+		else if (desc)
+			errcontext("[exception from Python]\n%s\n[%s]", data, desc);
 		else
-			errcontext("[exception from Python]\n%s\n[%s]", data, protitle);
+			errcontext("[exception from Python]\n%s", data);
 	}
-	else if (desc)
-		errcontext("[exception from Python]\n%s\n[%s]", data, desc);
-	else
-		errcontext("[exception from Python]\n%s", data);
+	PG_CATCH();
+	{
+		Assert(false);
+		PG_RE_THROW();
+	}
+	PG_END_TRY();
 
 	Py_XDECREF(fn_bytes);
 	pfree(data);
@@ -323,9 +334,6 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 
 	if (errdata_ob != NULL && PyPgErrorData_Check(errdata_ob))
 	{
-		/*
-		 * Throw the original error, but with the Python traceback in the context.
-		 */
 		PG_TRY();
 		{
 			ReThrowError(PyPgErrorData_GetErrorData(errdata_ob));
@@ -381,7 +389,8 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		}
 
 		/*
-		 * pg_errordata was not an Postgres.ErrorData object.
+		 * pg_errordata was not an Postgres.ErrorData object or
+		 * interrupt was identified.
 		 */
 		Py_XDECREF(errdata_ob);
 

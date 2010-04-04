@@ -236,6 +236,8 @@ pl_ist_begin(char state)
 void
 pl_ist_reset(unsigned long count)
 {
+	HOLD_INTERRUPTS();
 	for (; count > 0; --count)
 		RollbackAndReleaseCurrentSubTransaction();
+	RESUME_INTERRUPTS();
 }
