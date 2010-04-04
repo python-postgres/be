@@ -203,11 +203,15 @@ check_state(int elevel, unsigned long previous_ist_count)
 			RESUME_INTERRUPTS();
 		}
 
+		if (elevel == WARNING)
+			HOLD_INTERRUPTS();
 		ereport(elevel,(
 			errcode(ERRCODE_SAVEPOINT_EXCEPTION),
 			errmsg("function failed to exit all subtransactions"),
 			errdetail("The %lu remaining subtransactions have been aborted.", dif)
 		));
+		if (elevel == WARNING)
+			RESUME_INTERRUPTS();
 	}
 
 	/*
