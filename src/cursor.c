@@ -6,7 +6,6 @@
 #include <structmember.h>
 
 #include "postgres.h"
-#include "miscadmin.h"
 #include "access/heapam.h"
 #include "access/transam.h"
 #include "access/xact.h"
@@ -58,7 +57,7 @@
 #define whence__FROM_END_txt "FROM_END"
 
 /*
- * Given a Python object, return the appropiate whence__* integer(0, or 1, or 2).
+ * Given a Python object, return the appropriate whence__* integer(0, or 1, or 2).
  *
  * returns -1 on error
  */
