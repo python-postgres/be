@@ -2410,7 +2410,7 @@ pl_handler(PG_FUNCTION_ARGS)
 			 */
 			if (_PG_ERROR_IS_RELAY())
 			{
-				_PYRO_DEALLOCATE(); /* release references held by owner */
+				_PYRO_DEALLOCATE(); /* release references held by owner and pop */
 
 				/*
 				 * Don't need the error state, all the information is in the
@@ -2431,7 +2431,7 @@ pl_handler(PG_FUNCTION_ARGS)
 				Assert(false);
 			}
 
-			_PYRO_DEALLOCATE(); /* release references held by owner */
+			_PYRO_DEALLOCATE(); /* release references held by owner and pop */
 
 			/*
 			 * Restore the caller's memory context.
