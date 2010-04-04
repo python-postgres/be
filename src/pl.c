@@ -2388,6 +2388,8 @@ pl_handler(PG_FUNCTION_ARGS)
 		{
 			/*
 			 * It's already failing, so use check_state(WARNING, ...)
+			 *
+			 * This will keep check_state() from ever raising an error here.
 			 */
 			if (pl_state > 0)
 				pl_state = pl_ready_for_access;
