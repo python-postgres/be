@@ -128,9 +128,20 @@ context(bool incontext, bool display_full_exc)
 			return(pstrdup(_("<Python exception indicated, but None was set>")));
 		}
 		else if (!incontext)
+		{
+			/*
+			 * Only try again once.
+			 */
 			return(context(true, false));
+		}
 		else
+		{
+			/*
+			 * Second format_traceback failed.
+			 */
+			PyErr_Clear();
 			return(pstrdup("<could not get Python traceback>"));
+		}
 	}
 	else
 	{
