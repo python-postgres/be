@@ -161,15 +161,10 @@ context(bool incontext, bool display_full_exc)
 }
 
 static void
-emit_exception_errcontext(const char *desc, PyObj fn_filename)
+emit_exception_errcontext(const char *context_data, const char *desc, PyObj fn_filename)
 {
 	PyObj fn_bytes = NULL;
 	const char *protitle = NULL;
-	char *data;
-
-	HOLD_INTERRUPTS();
-	data = context(false, false);
-	RESUME_INTERRUPTS();
 
 	fn_bytes = fn_filename;
 	if (fn_bytes != NULL)
@@ -188,14 +183,14 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 		{
 			if (desc)
 				errcontext("[exception from Python]\n%s\n[%s while %s]",
-					data, protitle, desc);
+					context_data, protitle, desc);
 			else
-				errcontext("[exception from Python]\n%s\n[%s]", data, protitle);
+				errcontext("[exception from Python]\n%s\n[%s]", context_data, protitle);
 		}
 		else if (desc)
-			errcontext("[exception from Python]\n%s\n[%s]", data, desc);
+			errcontext("[exception from Python]\n%s\n[%s]", context_data, desc);
 		else
-			errcontext("[exception from Python]\n%s", data);
+			errcontext("[exception from Python]\n%s", context_data);
 	}
 	PG_CATCH();
 	{
@@ -205,7 +200,6 @@ emit_exception_errcontext(const char *desc, PyObj fn_filename)
 	PG_END_TRY();
 
 	Py_XDECREF(fn_bytes);
-	pfree(data);
 }
 
 void
@@ -240,9 +234,14 @@ ecc_context(void *arg)
 	struct pl_exec_state *pl_ctx = arg;
 	PyObj filename;
 	const char *desc;
+	char *data;
 
 	collect_errcontext_params(pl_ctx, &desc, &filename);
-	emit_exception_errcontext(desc, filename);
+
+	data = context(false, false);
+
+	emit_exception_errcontext(data, desc, filename);
+	pfree(data);
 }
 
 void
@@ -334,28 +333,30 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 
 	if (errdata_ob != NULL && PyPgErrorData_Check(errdata_ob))
 	{
+		volatile char *context_data = NULL;
+
 		PG_TRY();
 		{
+			if (!inhibit_pl_context)
+				context_data = context(false, false);
+			else
+				PyErr_Clear();
+
 			ReThrowError(PyPgErrorData_GetErrorData(errdata_ob));
 		}
 		PG_CATCH();
 		{
 			Py_DECREF(errdata_ob);
 
-			if (inhibit_pl_context)
-			{
-				/*
-				 * Don't include context.
-				 */
-				PyErr_Clear();
-			}
-			else
+			if (!inhibit_pl_context)
 			{
 				PyObj filename;
 				const char *desc;
 
 				collect_errcontext_params(pl_ctx, &desc, &filename);
-				emit_exception_errcontext(desc, filename);
+				emit_exception_errcontext((char *) context_data, desc, filename);
+				if (context_data)
+					pfree((char *) context_data);
 			}
 
 			PG_RE_THROW();
