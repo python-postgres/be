@@ -673,7 +673,7 @@ statement_call(PyObj self, PyObj args, PyObj kw)
 		/*
 		 * Just use a chunking cursor. Nothing fancy.
 		 */
-		curs = PyPgCursor_New(self, args, kw, CUR_CHUNKS(100));
+		curs = PyPgCursor_New(self, args, kw, CUR_CHUNKS(10000));
 		if (curs == NULL)
 			return(NULL);
 		rob = PyList_New(0);
