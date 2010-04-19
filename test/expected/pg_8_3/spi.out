@@ -1312,7 +1312,11 @@ $python$;
 SELECT check_column_materialize_record();
 ERROR:  input of anonymous composite types is not implemented
 SELECT * FROM check_column_materialize_record();
-ERROR:  input of anonymous composite types is not implemented
+ERROR:  could not materialize result from returned iterable
+CONTEXT:  [exception from Python]
+TypeError: cannot normalize row from 'Postgres.types.text'
+
+[public.check_column_materialize_record() while materializing]
 -- check handling of VOID
 CREATE OR REPLACE FUNCTION return_void() RETURNS VOID LANGUAGE python AS
 'main = lambda: None';

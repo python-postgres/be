@@ -120,6 +120,15 @@ void raise_spi_error(int spi_error);
 #define CALLED_AS_SRF(FCINFO) \
 	(FCINFO->resultinfo && IsA(FCINFO->resultinfo, ReturnSetInfo))
 
+#if (PG_VERSION_NUM < 80400)
+/*
+ * In 8.3, there is no "materialized preferred", so be sure to select
+ * materialization in order to guarantee the materialization path for supporting
+ * the optimized route with returned Postgres.Cursor objects.
+ */
+#define SRF_SHOULD_MATERIALIZE(FCINFO) \
+	(((ReturnSetInfo *) FCINFO->resultinfo)->allowedModes & SFRM_Materialize)
+#else
 /*
  * Iff materialization is available and (VPC is not available or VPC is
  * available, but materialization is preferrred).
@@ -133,6 +142,7 @@ void raise_spi_error(int spi_error);
 			  FCINFO->resultinfo)->allowedModes & SFRM_Materialize_Preferred) \
 		) \
 	))
+#endif
 
 #define SRF_VPC_REQUEST(FCINFO) \
 	(((ReturnSetInfo *) FCINFO->resultinfo)->allowedModes & SFRM_ValuePerCall)

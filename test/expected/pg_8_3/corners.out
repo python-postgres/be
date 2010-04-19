@@ -19,7 +19,7 @@ ERROR:  function raised a Python exception
 CONTEXT:  [exception from Python]
 TypeError: int() argument must be a string or a number, not 'tuple'
 
-[public.check_failed_srf_coercion() while creating result]
+[public.check_failed_srf_coercion() while materializing]
 -- This will trigger a failure from int's typinput [due to str()]
 CREATE OR REPLACE FUNCTION check_failed_srf_coercion2() RETURNS setof int LANGUAGE python AS
 $python$
@@ -181,11 +181,11 @@ KeyError: 'f'
 
 [public.cause_key_error_srf() while creating result]
 SELECT * FROM cause_key_error_srf();
-ERROR:  function raised a Python exception
+ERROR:  could not materialize result from returned iterable
 CONTEXT:  [exception from Python]
 KeyError: 'f'
 
-[public.cause_key_error_srf() while creating result]
+[public.cause_key_error_srf() while materializing]
 --- between transaction deallocation ---
 CREATE OR REPLACE FUNCTION check_between_xact_deallocs() RETURNS text LANGUAGE python AS
 $python$
