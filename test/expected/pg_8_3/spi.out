@@ -1,5 +1,16 @@
 -- This is, sadly, a grab bag of SPI tests.
 --
+CREATE OR REPLACE FUNCTION cursor_id() RETURNS text LANGUAGE python AS
+$python$
+def main():
+	return prepare('select 1').rows().cursor_id
+$python$;
+SELECT cursor_id();
+     cursor_id      
+--------------------
+ <unnamed portal 1>
+(1 row)
+
 CREATE OR REPLACE FUNCTION prepare_in_module() RETURNS text LANGUAGE python AS
 $python$
 import Postgres
@@ -423,7 +434,9 @@ cur = prepare("SELECT 1::bigint").rows()
 def main(dump_cursor):
 	global cur
 	if dump_cursor:
-		cur = prepare("SELECT 1::bigint").rows()
+		# use .declare() in order to validate cursor_is_closed()
+		# is being used for each next().
+		cur = prepare("SELECT 1::bigint").declare()
 		return 0
 	r = next(cur)[0]
 	try:
@@ -442,11 +455,11 @@ SELECT cached_cursor(false);
 
 -- should fail with cursor is closed
 SELECT cached_cursor(false);
-ERROR:  cannot use 'next' operation on a closed cursor
+ERROR:  cannot use 'read' operation on a closed cursor
 HINT:  All Postgres.Cursor objects are closed at the end of a transaction.
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
-   File "public.cached_cursor(boolean)", line 9, in main
+   File "public.cached_cursor(boolean)", line 11, in main
     r = next(cur)[0]
  Postgres.Exception
 
@@ -470,7 +483,7 @@ SELECT cached_cursor(false);
 ERROR:  function's "main" raised a Python exception
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
-   File "public.cached_cursor(boolean)", line 9, in main
+   File "public.cached_cursor(boolean)", line 11, in main
     r = next(cur)[0]
  StopIteration
 
@@ -487,20 +500,19 @@ SELECT cached_cursor(true);
 
 ROLLBACK TO a;
 SELECT cached_cursor(false);
-ERROR:  cannot use 'next' operation on a closed cursor
+ERROR:  cannot use 'read' operation on a closed cursor
 HINT:  All Postgres.Cursor objects are closed at the end of a transaction.
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
-   File "public.cached_cursor(boolean)", line 9, in main
+   File "public.cached_cursor(boolean)", line 11, in main
     r = next(cur)[0]
  Postgres.Exception
 
 [public.cached_cursor(boolean)]
 ABORT;
--- doesn't last across savepoints..
+-- should last across *released* savepoints..
 BEGIN;
 SAVEPOINT a;
---- XXX: cursor not living beyond RELEASE'd savepoint?
 SELECT cached_cursor(true);
  cached_cursor 
 ---------------
