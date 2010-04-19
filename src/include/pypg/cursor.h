@@ -29,11 +29,13 @@ typedef struct PyPgCursor {
 	 */
 	Py_ssize_t cur_chunksize;
 
+	char *cur_name;
+
 	/*
 	 * The pl transaction id that the cursor was created in.
 	 * Used to identify the validity of cur_portal.
 	 */
-	unsigned long cur_xid, cur_subxid;
+	unsigned long cur_xid;
 
 	Portal cur_portal;
 	PyObj cur_buffer; /* Iterable used for rows() cursors */
@@ -62,18 +64,18 @@ int PyPgCursor_Close(PyObj self);
 #define PyPgCursor_GetOutput(SELF) (((PyPgCursor) SELF)->cur_output)
 #define PyPgCursor_GetChunksize(SELF) (((PyPgCursor) SELF)->cur_chunksize)
 #define PyPgCursor_GetXid(SELF) (((PyPgCursor) SELF)->cur_xid)
-#define PyPgCursor_GetSubXid(SELF) (((PyPgCursor) SELF)->cur_subxid)
 #define PyPgCursor_GetPortal(SELF) (((PyPgCursor) SELF)->cur_portal)
 #define PyPgCursor_GetBuffer(SELF) (((PyPgCursor) SELF)->cur_buffer)
+#define PyPgCursor_GetName(SELF) (((PyPgCursor) SELF)->cur_name)
 
 #define PyPgCursor_SetStatement(SELF, STMT) (((PyPgCursor) SELF)->cur_statement = STMT)
 #define PyPgCursor_SetParameters(SELF, PARAMS) (((PyPgCursor) SELF)->cur_parameters = PARAMS)
 #define PyPgCursor_SetOutput(SELF, TYP) (((PyPgCursor) SELF)->cur_output = TYP)
 #define PyPgCursor_SetChunksize(SELF, CS) (((PyPgCursor) SELF)->cur_chunksize = CS)
 #define PyPgCursor_SetXid(SELF, XID) (((PyPgCursor) SELF)->cur_xid = XID)
-#define PyPgCursor_SetSubXid(SELF, XID) (((PyPgCursor) SELF)->cur_subxid = XID)
 #define PyPgCursor_SetPortal(SELF, PORT) (((PyPgCursor) SELF)->cur_portal = PORT)
 #define PyPgCursor_SetBuffer(SELF, BUF) (((PyPgCursor) SELF)->cur_buffer = BUF)
+#define PyPgCursor_SetName(SELF, NAMESTR) (((PyPgCursor) SELF)->cur_name = NAMESTR)
 
 /* Scrollable */
 #define PyPgCursor_IsDeclared(SELF) (PyPgCursor_GetChunksize(SELF) == 1 || PyPgCursor_GetChunksize(SELF) == -1)
@@ -89,8 +91,7 @@ int PyPgCursor_Close(PyObj self);
 #define PyPgCursor_GetDirection(SELF) (PyPgCursor_GetChunksize(SELF) == -1 ? false : true)
 
 #define PyPgCursor_IsClosed(SELF) ( \
-	(PyPgCursor_GetXid(SELF) != pl_xact_count || \
-	PyPgCursor_GetSubXid(SELF) != pl_subxact_rollback_count) || \
+	(PyPgCursor_GetXid(SELF) != pl_xact_count) || \
 	!PortalIsValid(PyPgCursor_GetPortal(SELF)))
 
 #ifdef __cplusplus

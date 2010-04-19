@@ -107,7 +107,6 @@ pl_state_t pl_state = pl_not_initialized;
  * It's started at 2 so that we can use 1 for some special cases.
  */
 unsigned long pl_xact_count = 2;
-unsigned long pl_subxact_rollback_count = 2;
 
 /*
  * Primarily used to hold Postgres.Object !typbyval Datums.
@@ -608,42 +607,6 @@ pl_xact_hook(XactEvent xev, void *arg)
 }
 
 /*
- * pl_subxact_hook - This exists for Postgres.Cursor.
- */
-static void
-pl_subxact_hook(
-	SubXactEvent xev,
-	SubTransactionId mySubid,
-	SubTransactionId parentSubid, void *arg)
-{
-	if (handler_count == 0)
-	{
-		/*
-		 * Haven't been in the handler, so no objects could have
-		 * been created that would need to be expired in rollback cases.
-		 */
-		return;
-	}
-
-	switch (xev)
-	{
-		case SUBXACT_EVENT_ABORT_SUB:
-		{
-			++pl_subxact_rollback_count;
-		}
-		break;
-
-		/*
-		 * Nothing to do in these cases.
-		 */
-		case SUBXACT_EVENT_COMMIT_SUB:
-		case SUBXACT_EVENT_START_SUB:
-			;
-		break;
-	}
-}
-
-/*
  * Used to track if `set_interrupt` is already pending.
  */
 static bool interrupt_set = false;
@@ -880,7 +843,6 @@ _PG_init(void)
 		PyErr_ThrowPostgresError("could not set Postgres module in sys.modules");
 
 	RegisterXactCallback(pl_xact_hook, NULL);
-	RegisterSubXactCallback(pl_subxact_hook, NULL);
 	ereport(LOG,(
 			errmsg("initialized Python %s", Py_GetVersion())));
 
@@ -888,7 +850,6 @@ _PG_init(void)
 	if (ob == NULL)
 	{
 		UnregisterXactCallback(pl_xact_hook, NULL);
-		UnregisterSubXactCallback(pl_subxact_hook, NULL);
 		PyErr_ThrowPostgresError(_("could not complete local initialation"));
 	}
 	Py_DECREF(ob);

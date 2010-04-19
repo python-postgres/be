@@ -1,5 +1,11 @@
 -- This is, sadly, a grab bag of SPI tests.
 --
+CREATE OR REPLACE FUNCTION cursor_id() RETURNS text LANGUAGE python AS
+$python$
+def main():
+	return prepare('select 1').rows().cursor_id
+$python$;
+SELECT cursor_id();
 
 CREATE OR REPLACE FUNCTION prepare_in_module() RETURNS text LANGUAGE python AS
 $python$
@@ -185,7 +191,9 @@ cur = prepare("SELECT 1::bigint").rows()
 def main(dump_cursor):
 	global cur
 	if dump_cursor:
-		cur = prepare("SELECT 1::bigint").rows()
+		# use .declare() in order to validate cursor_is_closed()
+		# is being used for each next().
+		cur = prepare("SELECT 1::bigint").declare()
 		return 0
 	r = next(cur)[0]
 	try:
@@ -218,10 +226,9 @@ ROLLBACK TO a;
 SELECT cached_cursor(false);
 ABORT;
 
--- doesn't last across savepoints..
+-- should last across *released* savepoints..
 BEGIN;
 SAVEPOINT a;
---- XXX: cursor not living beyond RELEASE'd savepoint?
 SELECT cached_cursor(true);
 RELEASE a;
 SELECT cached_cursor(false);

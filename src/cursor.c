@@ -140,26 +140,24 @@ resolve_whence(PyObj whence_ob)
 static int
 cursor_is_closed(PyObj self, const char *action)
 {
-	if (PyPgCursor_IsClosed(self))
+	PG_TRY();
 	{
-		/*
-		 * It's closed.
-		 */
-		PG_TRY();
+		if (PyPgCursor_IsClosed(self) || SPI_cursor_find(PyPgCursor_GetName(self)) == NULL)
 		{
+			PyPgCursor_SetPortal(self, NULL);
 			ereport(ERROR, (
 				errmsg("cannot use '%s' operation on a closed cursor", action),
 				errhint("All Postgres.Cursor objects are closed at the end of a transaction.")
 			));
 		}
-		PG_CATCH();
-		{
-			PyErr_SetPgError(false);
-		}
-		PG_END_TRY();
-
+	}
+	PG_CATCH();
+	{
+		PyErr_SetPgError(false);
 		return(-1);
 	}
+	PG_END_TRY();
+
 	return(0);
 }
 
@@ -176,6 +174,9 @@ get_more(PyObj self, bool forward, long count)
 	Portal p = PyPgCursor_GetPortal(self);
 	volatile PyObj rob = NULL;
 	uint32 i = 0;
+
+	if (cursor_is_closed(self, "read"))
+		return(NULL);
 
 	PG_TRY();
 	{
@@ -240,6 +241,9 @@ column_get_more(PyObj self, bool forward, long count)
 	Portal p = PyPgCursor_GetPortal(self);
 	volatile PyObj rob = NULL;
 	uint32 i = 0;
+
+	if (cursor_is_closed(self, "read"))
+		return(NULL);
 
 	output_column = PyPgType_GetPyPgTupleDesc(output);
 	output_column = PyPgTupleDesc_GetTypesTuple(output_column);
@@ -421,6 +425,14 @@ cursor_set_chunksize(PyObj self, PyObj val, void *unused)
 	return(0);
 }
 
+static PyObj
+cursor_get_cursor_id(PyObj self, void *unused)
+{
+	char *name = PyPgCursor_GetName(self);
+
+	return(PyUnicode_FromCString(name));
+}
+
 static PyGetSetDef PyPgCursor_GetSet[] = {
 	{"column_names", cursor_get_column_names, NULL,
 		PyDoc_STR("name of the columns produced by the cursor")},
@@ -434,6 +446,8 @@ static PyGetSetDef PyPgCursor_GetSet[] = {
 	{"chunksize", cursor_get_chunksize, cursor_set_chunksize,
 		PyDoc_STR("change the number of tuples to be read from "
 						"the Portal when more are needed")},
+	{"cursor_id", cursor_get_cursor_id, NULL,
+		PyDoc_STR("identifier (name) of the cursor")},
 	{NULL}
 };
 
@@ -774,6 +788,19 @@ cursor_dealloc(PyObj self)
 		}
 	}
 
+	if (PyPgCursor_GetName(self))
+	{
+		PG_TRY();
+		{
+			pfree(PyPgCursor_GetName(self));
+		}
+		PG_CATCH();
+		{
+			PyErr_EmitPgErrorAsWarning("failed to free Postgres.Cursor's name");
+		}
+		PG_END_TRY();
+	}
+
 	Py_TYPE(self)->tp_free(self);
 }
 
@@ -792,7 +819,7 @@ cursor_next(PyObj self)
 {
 	PyObj rob = NULL;
 
-	if (DB_IS_NOT_READY() || cursor_is_closed(self, "next"))
+	if (DB_IS_NOT_READY())
 		return(NULL);
 
 	if (PyPgCursor_IsDeclared(self))
@@ -1018,8 +1045,8 @@ PyPgCursor_NEW(
 
 		p = SPI_cursor_open(NULL, plan, datums, cnulls, PL_FN_READONLY());
 		PyPgCursor_SetPortal(rob, p);
+		PyPgCursor_SetName(rob, MemoryContextStrdup(PythonMemoryContext, p->name));
 		PyPgCursor_SetXid(rob, pl_xact_count);
-		PyPgCursor_SetSubXid(rob, pl_subxact_rollback_count);
 
 		FreeDatumsAndNulls(freemap, datums, nulls);
 		datums = NULL;
@@ -1043,6 +1070,13 @@ PyPgCursor_NEW(
 int
 PyPgCursor_Close(PyObj self)
 {
+	/*
+	 * PyPgCursor_IsClosed() vs cursor_is_closed()
+	 *
+	 * _IsClosed *only* interrogates the PyPgCursor object,
+	 * whereas cursor_is_closed goes further to validate
+	 * that the Portal is still active using SPI_cursor_find.
+	 */
 	if (PyPgCursor_IsClosed(self))
 		PyPgCursor_SetPortal(self, NULL);
 	else
