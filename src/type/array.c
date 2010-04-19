@@ -224,8 +224,8 @@ static ArrayType *
 array_from_py_list(PyObj element_type, PyObj listob, int elemmod)
 {
 	PyPgTypeInfo typinfo = PyPgTypeInfo(element_type);
-	volatile Datum *datums = NULL;
-	volatile bool *nulls = NULL;
+	Datum * volatile datums = NULL;
+	bool * volatile nulls = NULL;
 	unsigned int nelems;
 	int i, ndims;
 	int dims[MAXDIM];
@@ -374,9 +374,9 @@ array_from_list_and_info(PyObj element_type, PyObj listob, int elemmod,
 	PyPgTypeInfo typinfo = PyPgTypeInfo(element_type);
 	unsigned int nelems;
 	int i;
-	volatile Datum *datums = NULL;
-	volatile bool *nulls = NULL;
-	volatile ArrayType *rat = NULL;
+	Datum * volatile datums = NULL;
+	bool * volatile nulls = NULL;
+	ArrayType * volatile rat = NULL;
 
 	Assert(PyList_CheckExact(listob));
 

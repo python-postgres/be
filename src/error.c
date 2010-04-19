@@ -344,12 +344,12 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 
 	if (errdata_ob != NULL && PyPgErrorData_Check(errdata_ob))
 	{
-		volatile char *context_data = NULL;
+		char * volatile errcontext_data = NULL;
 
 		PG_TRY();
 		{
 			if (!inhibit_pl_context)
-				context_data = context(false, false);
+				errcontext_data = context(false, false);
 			else
 				PyErr_Clear();
 
@@ -359,15 +359,22 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		{
 			Py_DECREF(errdata_ob);
 
-			if (!inhibit_pl_context)
+			/*
+			 * In the case of inhibit_pl_context, it was requested
+			 * to suppress the information and therefore errcontext_data is
+			 * NULL.
+			 *
+			 * In the case where errcontext_data is NULL, context() threw a PG
+			 * error, and it needs to just re-throw.
+			 */
+			if (!inhibit_pl_context && errcontext_data != NULL)
 			{
 				PyObj filename;
 				const char *desc;
 
 				collect_errcontext_params(pl_ctx, &desc, &filename);
-				emit_exception_errcontext((char *) context_data, desc, filename);
-				if (context_data)
-					pfree((char *) context_data);
+				emit_exception_errcontext(errcontext_data, desc, filename);
+				pfree(errcontext_data);
 			}
 
 			PG_RE_THROW();

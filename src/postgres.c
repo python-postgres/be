@@ -50,7 +50,7 @@ PyObj py_my_datname_str_ob = NULL;
 void *
 Py_palloc(Size memsize)
 {
-	volatile void *rptr = NULL;
+	void * volatile rptr = NULL;
 
 	PG_TRY();
 	{
@@ -62,7 +62,7 @@ Py_palloc(Size memsize)
 	}
 	PG_END_TRY();
 
-	return((void *) rptr);
+	return(rptr);
 }
 
 Datum

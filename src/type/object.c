@@ -70,7 +70,7 @@ unary_operate(const char *op, PyObj right)
 		PyObj rtype;
 		Operator opt;
 		volatile Datum rd = 0;
-		volatile List *namelist = NULL;
+		List * volatile namelist = NULL;
 
 		PG_TRY();
 		{
@@ -150,7 +150,7 @@ binary_operate(const char *op, PyObj left, PyObj right)
 	Py_ALLOCATE_OWNER();
 	{
 		volatile Datum rd = 0;
-		volatile List *namelist = NULL;
+		List * volatile namelist = NULL;
 		PyObj rtype;
 		PyObj coerce = NULL;
 
