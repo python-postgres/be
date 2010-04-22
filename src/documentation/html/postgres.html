@@ -1,0 +1,1502 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Postgres Module &mdash; pg-python v1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pg-python v1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Postgres.types Module" href="postgres_types.html" />
+    <link rel="prev" title="Changes" href="changes.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="postgres_types.html" title="Postgres.types Module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="changes.html" title="Changes"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="postgres-module">
+<h1>Postgres Module<a class="headerlink" href="#postgres-module" title="Permalink to this headline">¶</a></h1>
+<p>The <tt class="docutils literal"><span class="pre">Postgres</span></tt> module reference.</p>
+<div class="section" id="data">
+<h2>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h2>
+<p>Information objects available in the <em>Postgres</em> module.</p>
+<p><strong>Attributes:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Postgres.backend_start</span></tt></dt>
+<dd><p class="first">The <a class="reference external" href="postgres_types.html#pg-types-timestamptz"><em>Postgres.types.timestamptz</em></a> specifying when the backend was started.
+Shorthand for getting the backend start time from <tt class="docutils literal"><span class="pre">pg_stat_activity</span></tt>.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.client_addr</span></tt></dt>
+<dd><p class="first">The client&#8217;s address as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.client_port</span></tt></dt>
+<dd><p class="first">The client&#8217;s port as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.current_database</span></tt></dt>
+<dd>The name of the current database as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.encoding</span></tt></dt>
+<dd>The server encoding as a <em>Python</em> encoding name.</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.version</span></tt></dt>
+<dd>The version of PostgreSQL as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.version_info</span></tt></dt>
+<dd>The version of PostgreSQL as a Python <tt class="docutils literal"><span class="pre">tuple</span></tt>.
+The tuple&#8217;s items are <tt class="docutils literal"><span class="pre">(major,</span> <span class="pre">minor,</span> <span class="pre">patch,</span> <span class="pre">state,</span> <span class="pre">level)</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Postgres.CONST</span></tt></dt>
+<dd><p class="first">A dictionary object providing many compile-time constants.
+This is primarily used to support the pure-Python parts of the
+<tt class="docutils literal"><span class="pre">Postgres</span></tt> module.</p>
+<p class="last"><strong>Functions should not depend on this object.</strong></p>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-array">
+<span id="pg-array"></span><h2>Postgres.Array<a class="headerlink" href="#postgres-array" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.Array</span></tt> is the base type of all Postgres array types in Python.
+When an uninitialized array type is referenced, a subclass of this type
+is created to represent the array type.</p>
+<p><strong>Constructors</strong>:</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Array(string_or_nested_lists)</span></tt></dt>
+<dd><p class="first">If given a string, an array will be created using the type input
+function. If given a list, the objects contained in the list will make
+up the elements in the array. Multi-dimensional arrays can be built
+using lists by nesting them:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">WARNING</span>
+<span class="kn">from</span> <span class="nn">Postgres.types</span> <span class="kn">import</span> <span class="n">int4</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">int4</span><span class="o">.</span><span class="n">Array</span><span class="p">([</span>
+    <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">]],</span>
+    <span class="p">[[</span><span class="mi">12</span><span class="p">,</span><span class="mi">14</span><span class="p">],[</span><span class="mi">16</span><span class="p">,</span><span class="mi">18</span><span class="p">]],</span>
+    <span class="p">[[</span><span class="o">-</span><span class="mi">18</span><span class="p">,</span><span class="o">-</span><span class="mi">14</span><span class="p">],[</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span><span class="o">-</span><span class="mi">20</span><span class="p">]],</span>
+<span class="p">])</span>
+
+<span class="n">WARNING</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.from_elements(iter</span> <span class="pre">[,</span> <span class="pre">dimensions</span> <span class="pre">=</span> <span class="pre">(N,)</span> <span class="pre">[,</span> <span class="pre">lowerbounds</span> <span class="pre">=</span> <span class="pre">(1,)]])</span></tt></dt>
+<dd><p class="first">Build an array from an iterator producing coercable elements and the
+specified dimensions and lower bounds. The iterator is the only required
+argument.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">dimensions</span></tt> and <tt class="docutils literal"><span class="pre">lowerbounds</span></tt>
+keywords must be sequences of the same length if provided at all.
+If no <tt class="docutils literal"><span class="pre">lowerbounds</span></tt> are given, a default will be
+provided: all the lower bounds will be <tt class="docutils literal"><span class="pre">1</span></tt>.
+If no <tt class="docutils literal"><span class="pre">dimensions</span></tt> are given, a default will be
+generated based on the length of the iterable.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Properties</strong>:</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Array.dimensions</span></tt></dt>
+<dd>A tuple containing numbers that represent the dimensions of the array.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.has_null</span></tt></dt>
+<dd>Whether the array has NULLs.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.lowerbounds</span></tt></dt>
+<dd>A tuple of numbers representing the lowerbounds of the array.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.ndim</span></tt></dt>
+<dd>The number of dimenions in the array.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.nelements</span></tt></dt>
+<dd>The number of elements in the array.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.Element</span></tt></dt>
+<dd><cite>Postgres.Type</cite> instance of the array&#8217;s element type.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods</strong>:</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Array.elements()</span></tt></dt>
+<dd>Return an iterator that produces all the elements of the array.
+The elements are produced in physical order.</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.get_element(sequence)</span></tt></dt>
+<dd><p class="first">Return the element addressed by the <tt class="docutils literal"><span class="pre">sequence</span></tt> argument.
+This method takes a sequence of zero-based indexes that are adjusted by
+the array&#8217;s configured lower bounds. Indexes that are out-of-bounds cause
+index errors. <tt class="docutils literal"><span class="pre">ValueError</span></tt> is raised when too many or too few indexes
+are given in the sequence:</p>
+<div class="last highlight-python"><pre>from Postgres.types import int4
+_int4 = int4.Array
+A = _int4([[1,2],[3,4])
+assert A.sql_get_element((0,0)) == 1 # In SQL: SELECT (ARRAY[[1,2],[3,4]]::int4)[1][1]</pre>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.sql_get_element(sequence_of_indexes)</span></tt></dt>
+<dd><p class="first">Return the element addressed by the <em>sequence_of_indexes</em> argument.
+The method is consistent with how array elements are accessed in SQL.
+Slicing is <em>not</em> supported by this method.
+<em>Indexes that are out-of-bounds result in ``None`` being returned.</em>:</p>
+<div class="last highlight-python"><pre>from Postgres.types import int4
+_int4 = int4.Array
+A = _int4([[1,2],[3,4])
+assert A.sql_get_element((1,1)) == 1 # In SQL: SELECT (ARRAY[[1,2],[3,4]]::int4)[1][1]</pre>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.__getitem__(index_or_slice),</span> <span class="pre">Array[index_or_slice]</span></tt></dt>
+<dd><p class="first">Get a slice, sub-array, or element from the array. If given an index,
+the sub-array or element at that index will be returned.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Slices only support steps of one.</p>
+</div>
+<div class="last admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This interface expects zero-based indexes.</p>
+</div>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Array.__len__(),</span> <span class="pre">len(Array)</span></tt></dt>
+<dd>The upper bounds of the first axis minus the lower bounds of the first
+axis plus one. The natural length of the first axis.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-cursor">
+<span id="pg-cursor"></span><h2>Postgres.Cursor<a class="headerlink" href="#postgres-cursor" title="Permalink to this headline">¶</a></h2>
+<p>Cursor objects provide a Python interface to Postgres Portals. Primarily,
+cursors are iterators that yield rows produced by the Portal. However, the
+execution method used on the statement object ultimately determines how the
+cursor operates. For instance, the <tt class="docutils literal"><span class="pre">chunks()</span></tt> method will
+cause <tt class="docutils literal"><span class="pre">next()</span></tt> to return sequences of rows instead of
+individual rows. See <cite>Postgres.Statement</cite> for more information about
+the execution methods that create cursor objects.</p>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Cursor.statement</span></tt></dt>
+<dd>The <a class="reference internal" href="#postgres-statement">Postgres.Statement</a> object that created the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.parameters</span></tt></dt>
+<dd>The <em>original</em> arguments given to the statement
+that created the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.column_types</span></tt></dt>
+<dd>A tuple of <a class="reference internal" href="#postgres-type">Postgres.Type</a> instances of the columns produced by the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.column_names</span></tt></dt>
+<dd>A tuple of strings naming the columns produced by the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.pg_column_types</span></tt></dt>
+<dd>A tuple of type Oids of the columns produced by the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.output</span></tt></dt>
+<dd><p class="first">A fully anonymous <a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a>
+used to create record objects produced by the statement.</p>
+<p class="last">Normally, this is the same object as <tt class="docutils literal"><span class="pre">Cursor.statement.output</span></tt>.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.direction</span></tt></dt>
+<dd>For scrollable cursors, this is a modifiable property used to
+control the direction of seek and read operations.
+<tt class="xref docutils literal"><span class="pre">True</span></tt> for forward, the default. <tt class="xref docutils literal"><span class="pre">False</span></tt> for backwards. The
+configured direction affects seek, read, and next methods.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.chunksize</span></tt></dt>
+<dd><p class="first">For NO SCROLL cursors, this property is used to control the
+size of the chunks read from the Portal. For row cursors, the chunksize
+effects how many rows should be internally buffered for subsequent
+consumption via <tt class="docutils literal"><span class="pre">__next__</span></tt>.</p>
+<p class="last">This property is immutable for SCROLL cursors; cursors created using the
+<tt class="docutils literal"><span class="pre">declare()</span></tt> method. For such cursors, <tt class="docutils literal"><span class="pre">__next__</span></tt> only reads a single row at a time.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Cursor.close()</span></tt></dt>
+<dd>Close the cursor, inhibiting further use. Returns
+<tt class="xref docutils literal"><span class="pre">None</span></tt>. Nothing happens if it is already closed.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.clone()</span></tt></dt>
+<dd>Create a replica of the cursor using the same statement, method, and
+parameters. The new cursor is returned.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.seek(offset[,</span> <span class="pre">whence</span> <span class="pre">=</span> <span class="pre">0])</span></tt></dt>
+<dd>Move the cursor&#8217;s position to the specified offset according to the
+<tt class="docutils literal"><span class="pre">whence</span></tt> keyword argument. Whence behaves consistently
+with seek operations on file objects. <tt class="docutils literal"><span class="pre">0</span></tt> for absolute,
+<tt class="docutils literal"><span class="pre">1</span></tt> for relative, and <tt class="docutils literal"><span class="pre">2</span></tt> for absolute
+from the end.</dd>
+<dt><tt class="docutils literal"><span class="pre">Cursor.read([quantity[,</span> <span class="pre">direction</span> <span class="pre">=</span> <span class="pre">None]])</span></tt></dt>
+<dd>Read the requested number of rows in the resolved direction. If no
+quantity is specified, all of the remaining rows will be returned.</dd>
+<dt><tt class="docutils literal"><span class="pre">next(Cursor),</span> <span class="pre">Cursor.__next__()</span></tt></dt>
+<dd><p class="first">Get the next item from the cursor. For cursors created by the
+<tt class="docutils literal"><span class="pre">chunks</span></tt> execution method, this will return a list of
+row objects. Any other cursors will return the next row according to its
+current position&#8211;and direction for scrollable cursors.</p>
+<p class="last">In compliance with the iterator protocol, this method will raise
+<tt class="docutils literal"><span class="pre">StopIteration</span></tt> when the cursor is exhausted.</p>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-errordata">
+<span id="pg-errordata"></span><h2>Postgres.ErrorData<a class="headerlink" href="#postgres-errordata" title="Permalink to this headline">¶</a></h2>
+<p>When a database error occurs, this type is used to provide a Python
+interface to the information collected about the error. Normally, instances
+of this type are associated with an <cite>Postgres.Exception</cite> instance using the
+<tt class="docutils literal"><span class="pre">pg_errordata</span></tt> attribute.</p>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">ErrorData.message</span></tt></dt>
+<dd>Error &#8216;message&#8217; field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.elevel</span></tt></dt>
+<dd>Error-level as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object. Usually,
+<tt class="docutils literal"><span class="pre">Postgres.CONST[&quot;ERROR&quot;]</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.severity</span></tt></dt>
+<dd>Error-level as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object. Usually,
+<tt class="docutils literal"><span class="pre">&quot;ERROR&quot;</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.code</span></tt></dt>
+<dd>Error code field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.sqlerrcode</span></tt></dt>
+<dd>Encoded error code field as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.detail</span></tt></dt>
+<dd>Error detail field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.context</span></tt></dt>
+<dd>Error &#8216;context&#8217; field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.domain</span></tt></dt>
+<dd>Error domain field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.hint</span></tt></dt>
+<dd>Error &#8216;hint&#8217; field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.filename</span></tt></dt>
+<dd>Error &#8216;filename&#8217; field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.function</span></tt></dt>
+<dd>Error &#8216;function&#8217; field as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.line</span></tt></dt>
+<dd>Error &#8216;line&#8217; (number) field as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.internal_position</span></tt></dt>
+<dd>The &#8216;internalpos&#8217; field as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.cursorpos</span></tt></dt>
+<dd>The cursor position field as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">ErrorData.saved_errno</span></tt></dt>
+<dd>&#8216;saved_errno&#8217; field as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object. This
+represents the system errno that caused the database error.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-exception">
+<span id="pg-exception"></span><h2>Postgres.Exception<a class="headerlink" href="#postgres-exception" title="Permalink to this headline">¶</a></h2>
+<p>The exception raised when a Postgres database error occurs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">xact</span><span class="p">():</span>
+        <span class="n">Postgres</span><span class="o">.</span><span class="n">ERROR</span><span class="p">(</span><span class="n">message</span> <span class="o">=</span> <span class="s">&#39;internal error&#39;</span><span class="p">,</span> <span class="n">code</span> <span class="o">=</span> <span class="s">&#39;XX000&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">Exception</span> <span class="k">as</span> <span class="n">dberr</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">dberr</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s">&#39;XX000&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span>
+</pre></div>
+</div>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Exception([pg_errordata</span> <span class="pre">=</span> <span class="pre">None])</span></tt></dt>
+<dd><p class="first">Create the exception using the given <cite>Postgres.ErrorData</cite> object.</p>
+<p class="last">The <cite>Postgres.ERROR</cite> wrapper to <cite>Postgres.ereport</cite> is the preferable way to
+construct and throw this exception.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Exception.code</span></tt></dt>
+<dd>The error code as a string.</dd>
+<dt><tt class="docutils literal"><span class="pre">Exception.details</span></tt></dt>
+<dd>A dictionary object consisting of a subset of the attributes on the
+assigned <tt class="docutils literal"><span class="pre">pg_errordata</span></tt> attribute.</dd>
+<dt><tt class="docutils literal"><span class="pre">Exception.errno</span></tt></dt>
+<dd>The <tt class="docutils literal"><span class="pre">errno</span></tt> attribute on <tt class="docutils literal"><span class="pre">pg_errordata</span></tt>.</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">Exception.message</span></tt></p>
+<blockquote>
+The error message.</blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Exception.severity</span></tt></dt>
+<dd>The severity of the error as a string.
+Almost always, <tt class="docutils literal"><span class="pre">'ERROR'</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Exception.pg_errordata</span></tt></dt>
+<dd>The <cite>Postgres.ErrorData</cite> instance describing the database error.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-function">
+<span id="pg-function"></span><h2>Postgres.Function<a class="headerlink" href="#postgres-function" title="Permalink to this headline">¶</a></h2>
+<p>Function objects are used to provide access to a Postgres function&#8217;s
+functionality and basic metadata. These objects are used to work with any
+Postgres function, not just Python functions.</p>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Function(oid)</span></tt></dt>
+<dd>Create an instance using the given Oid. The Oid will be used to lookup the
+function&#8217;s information in <tt class="docutils literal"><span class="pre">pg_catalog.pg_proc</span></tt>.</dd>
+</dl>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Function.oid</span></tt></dt>
+<dd>The function&#8217;s oid as a Python <tt class="docutils literal"><span class="pre">int</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.oidstr</span></tt></dt>
+<dd>The function&#8217;s Oid as a Python <tt class="docutils literal"><span class="pre">str</span></tt> object.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.namespace</span></tt></dt>
+<dd>The function&#8217;s namespace Oid as a Python <tt class="docutils literal"><span class="pre">int</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.nspname</span></tt></dt>
+<dd>The <em>name</em> of the function&#8217;s namespace as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.filename</span></tt></dt>
+<dd>The function&#8217;s qualified <tt class="docutils literal"><span class="pre">regprocedure</span></tt> representation.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.language</span></tt></dt>
+<dd>The language Oid of the function as a Python <tt class="docutils literal"><span class="pre">int</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.input</span></tt></dt>
+<dd>A <cite>Postgres.TupleDesc</cite> describing the function&#8217;s arguments.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.output</span></tt></dt>
+<dd>The return type, a <cite>Postgres.Type</cite> instance.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Function.__call__(*args)</span></tt></dt>
+<dd><p class="first">Call the Postgres function with the given arguments.</p>
+<p>The arguments that the function takes depend on the signature of the
+Postgres function itself. The given arguments will be coerced to the
+Postgres argument types, then the function will be invoked with those
+created Datums. The <tt class="docutils literal"><span class="pre">input</span></tt> attribute describes the
+parameters taken by the function.</p>
+<p class="last"><em>Direct function invocation cannot be used with set</em>
+<em>returning, trigger returning, or polymorphic functions.</em></p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>PEP-302 Methods:</strong></p>
+<p>These methods should only be used with Python FUNCTIONs.</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Function.is_package([fullname])</span></tt></dt>
+<dd>Always returns <tt class="xref docutils literal"><span class="pre">False</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.get_source([fullname])</span></tt></dt>
+<dd><p class="first">Get the function&#8217;s source code.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">fullname</span></tt> parameter is optional, but if it is
+provided it <em>must</em> be a string that equals string
+form of the function&#8217;s Oid.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.get_code([fullname])</span></tt></dt>
+<dd><p class="first">Get the code object that the function&#8217;s source code compiles into.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">fullname</span></tt> parameter is optional, but if it is
+provided it <em>must</em> be a string that equals string
+form of the function&#8217;s Oid.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Function.load_module([fullname])</span></tt></dt>
+<dd><p class="first">Load the function module. If the module doesn&#8217;t already exist
+in <tt class="docutils literal"><span class="pre">sys.modules</span></tt>, a new module will be created and the
+function&#8217;s code will be executed. This will not invoke any entry
+points.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">fullname</span></tt> parameter is optional, but if it is
+provided it <em>must</em> be a string that equals string
+form of the function&#8217;s Oid.</p>
+</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">Function.find_module(fullname[,</span> <span class="pre">path])</span></tt></p>
+<blockquote>
+<p>Create a function object from the given <tt class="docutils literal"><span class="pre">fullname</span></tt>.
+The fullname must be a function Oid.</p>
+<p><tt class="docutils literal"><span class="pre">find_module</span></tt> is a class method.</p>
+</blockquote>
+</blockquote>
+</div>
+<div class="section" id="postgres-largeobject">
+<span id="pg-largeobject"></span><h2>Postgres.LargeObject<a class="headerlink" href="#postgres-largeobject" title="Permalink to this headline">¶</a></h2>
+<p>A file-like interface to large objects.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Using large objects in conjunction with subtransactions can lead to internal
+errors.</p>
+</div>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">LargeObject.create()</span></tt></dt>
+<dd>Create a new large object.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject.tmp()</span></tt></dt>
+<dd>Create a new large object that is unlinked after its closed.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject(oid[,</span> <span class="pre">mode</span> <span class="pre">=</span> <span class="pre">'r'])</span></tt></dt>
+<dd><p class="first">The instance constructor.</p>
+<p class="last">Open the large object at the given Oid.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">LargeObject.oid</span></tt></dt>
+<dd>The large object&#8217;s oid.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">LargeObject.unlink()</span></tt></dt>
+<dd>Close and remove the large object.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject.close()</span></tt></dt>
+<dd>Close the large object.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject.read(nbytes)</span></tt></dt>
+<dd>Read data from the large object.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject.write(data)</span></tt></dt>
+<dd>Read data from the large object.</dd>
+<dt><tt class="docutils literal"><span class="pre">LargeObject.seek(offset[,</span> <span class="pre">whence</span> <span class="pre">=</span> <span class="pre">0])</span></tt></dt>
+<dd>Seek to the target offset.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-object">
+<span id="pg-object"></span><h2>Postgres.Object<a class="headerlink" href="#postgres-object" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.Object</span></tt> is the base type of all Postgres types. Instances are,
+effectively, a Postgres <cite>Datum</cite> associated with the respective type.
+Postgres.Object instances are a Python interface to Postgres data.
+See <a class="reference internal" href="#data">Data</a> for more information.</p>
+<p>The interfaces described here are applicable to <em>instances of subclasses</em>.
+<tt class="docutils literal"><span class="pre">Postgres.Object</span></tt> itself is abstract, so the described constructors,
+properties, and methods <em>only apply to subclasses</em> of <tt class="docutils literal"><span class="pre">Postgres.Object</span></tt>.</p>
+<div class="section" id="default-operator-mapping">
+<h3>Default Operator Mapping<a class="headerlink" href="#default-operator-mapping" title="Permalink to this headline">¶</a></h3>
+<p>The Python operator methods are mapped to Postgres operators. Most are
+mapped to syntactically identical operators, but some are mapped
+semantically identical operators. This table shows the default mapping, but
+some types override this in order provide the expected
+functionality&#8211;notably, string types will map <tt class="docutils literal"><span class="pre">__add__</span></tt> to
+<tt class="docutils literal"><span class="pre">&quot;||&quot;</span></tt>.</p>
+<p>Binary Operators:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Python Operators</th>
+<th class="head">Postgres Operators</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">+</span></tt>, __add__</td>
+<td><tt class="docutils literal"><span class="pre">+</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">-</span></tt>, __sub__</td>
+<td><tt class="docutils literal"><span class="pre">-</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">*</span></tt>, __mul__</td>
+<td><tt class="docutils literal"><span class="pre">*</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">/</span></tt>, __div__</td>
+<td><tt class="docutils literal"><span class="pre">/</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">%</span></tt>, __mod__</td>
+<td><tt class="docutils literal"><span class="pre">%</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">**</span></tt>, __pow__</td>
+<td><tt class="docutils literal"><span class="pre">^</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&amp;</span></tt>, __and__</td>
+<td><tt class="docutils literal"><span class="pre">&amp;</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">|</span></tt>, __or__</td>
+<td><tt class="docutils literal"><span class="pre">|</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">^</span></tt>, __xor__</td>
+<td><tt class="docutils literal"><span class="pre">#</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>, __lshift__</td>
+<td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>, __rshift__</td>
+<td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Unary Operators:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Python Operators</th>
+<th class="head">Postgres Operators</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">-</span></tt>, __neg__</td>
+<td><tt class="docutils literal"><span class="pre">-</span></tt></td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">~</span></tt>, __invert__</td>
+<td><tt class="docutils literal"><span class="pre">~</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>All comparison operators are syntactically mapped. Although, <tt class="docutils literal"><span class="pre">==</span></tt> is reduced
+to <tt class="docutils literal"><span class="pre">=</span></tt>.</p>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">Object(pystr[,</span> <span class="pre">mod</span> <span class="pre">=</span> <span class="pre">strseq])</span></tt></p>
+<blockquote>
+<p>Create a new data object using the given Python string. For many
+built-in subclasses, this is specialized to accept other kinds of
+Python objects. However, when a Python <tt class="docutils literal"><span class="pre">str</span></tt> is given, the type&#8217;s
+input function is always used.</p>
+<p>The <tt class="docutils literal"><span class="pre">mod</span></tt> keyword is optional and can be used to specify the typmod
+for the data. The given object is coerced to a
+<tt class="docutils literal"><span class="pre">Postgres.types.cstring.Array</span></tt> and given to the type&#8217;s typmodin
+function. If <tt class="docutils literal"><span class="pre">mod</span></tt> is <tt class="xref docutils literal"><span class="pre">None</span></tt>, the default, <tt class="docutils literal"><span class="pre">-1</span></tt> will
+ultimately be used.</p>
+</blockquote>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Object.datum</span></tt></dt>
+<dd>The raw Datum as a Python long. Read-only. Do <em>not</em> use this.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Object.__str__(),</span> <span class="pre">str(Object)</span></tt></dt>
+<dd>Return the data object&#8217;s string representation as a Python
+<tt class="docutils literal"><span class="pre">str</span></tt>. The string is created by the type&#8217;s output
+function.</dd>
+<dt><tt class="docutils literal"><span class="pre">Object.__int__(),</span> <span class="pre">int(Object)</span></tt></dt>
+<dd><p class="first">Attempt to instantiate a Python <tt class="docutils literal"><span class="pre">int</span></tt> from the string
+representation of the object. <tt class="docutils literal"><span class="pre">int(str(o))</span></tt></p>
+<p class="last">Numeric subclasses normally override this default functionality.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Object.__bool__(),</span> <span class="pre">bool(Object)</span></tt></dt>
+<dd>Cast the data object to a Postgres BOOL, and return the truth as a
+Python bool.</dd>
+</dl>
+<p><tt class="docutils literal"><span class="pre">Object.__abs__(),</span> <span class="pre">abs(Object)</span></tt></p>
+<blockquote>
+Execute the <tt class="docutils literal"><span class="pre">abs(Object::&lt;pg_type.typname&gt;)</span></tt> function that takes the type as its
+sole parameter.</blockquote>
+</blockquote>
+</div>
+</div>
+<div class="section" id="postgres-stateful">
+<span id="pg-stateful"></span><h2>Postgres.Stateful<a class="headerlink" href="#postgres-stateful" title="Permalink to this headline">¶</a></h2>
+<p>The decorator for managing the call state of an entry point. If a given entry
+point is decorated with <tt class="docutils literal"><span class="pre">Postgres.Stateful</span></tt>, the callable is expected to
+return a state object to be used when the function is executed in the future.
+The state object is normally a generator that can receive objects via the
+<tt class="docutils literal"><span class="pre">send</span></tt> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">Stateful</span>
+
+<span class="nd">@Stateful</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+       <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="nb">object</span><span class="p">)</span>
+       <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+               <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="nb">object</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="programming.html#programming-stateful"><em>Stateful Functions</em></a> for more information.</p>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Stateful(ob)</span></tt></dt>
+<dd>Create an instance using <tt class="docutils literal"><span class="pre">ob</span></tt> as the source of state.</dd>
+</dl>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">stateful.source</span></tt></dt>
+<dd>The object that will be called to get the state object.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">stateful.__call__(*args,</span> <span class="pre">**kw)</span></tt>, <tt class="docutils literal"><span class="pre">stateful(*args,</span> <span class="pre">**kw)</span></tt></dt>
+<dd><p class="first">If the call has no pre-existing state, the given parameters will be given
+directly to the <tt class="docutils literal"><span class="pre">stateful.source</span></tt> object. The object returned by that call
+will have its <tt class="docutils literal"><span class="pre">__next__</span></tt> method immediately invoked in order to extract the
+return object.</p>
+<p class="last">If the call has pre-existing state, the given parameters will be given to the
+state object&#8217;s <tt class="docutils literal"><span class="pre">send</span></tt> method. If <tt class="docutils literal"><span class="pre">StopIteration</span></tt> is raised, the state
+object will be created again as if there was no pre-existing state.</p>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-statement">
+<span id="pg-statement"></span><h2>Postgres.Statement<a class="headerlink" href="#postgres-statement" title="Permalink to this headline">¶</a></h2>
+<p>Statement objects provide an interface to fully-planned, single,
+statements. Statements are the primary interface for accessing the database in
+Python.</p>
+<p>A statement object is created by calling
+<tt class="docutils literal"><span class="pre">Postgres.Statement</span></tt> with an SQL string as the first
+argument. Subsequent arguments can be given to specify constant parameters,
+but when this is done, all of the statement&#8217;s parameters must be provided.</p>
+<p>When a statement is invoked, a <cite>Postgres.Cursor</cite> object is created and used to
+manage the Portal. The chosen statement execution method determines how the
+cursor behaves or if a cursor is even returned.</p>
+<p><strong>Properties</strong>:</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Statement.parameter_types</span></tt></dt>
+<dd>A tuple of <cite>Postgres.Type</cite> instances. The index of
+each item corresponds to the parameter required by the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.column_types</span></tt></dt>
+<dd>A tuple of <cite>Postgres.Type</cite> instances. The index of
+each item corresponds to the columns produced by the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.column_names</span></tt></dt>
+<dd>A tuple of strings naming the columns produced by the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.pg_parameter_types</span></tt></dt>
+<dd>A tuple of type Oid&#8217;s specifying the parameter types.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.pg_column_types</span></tt></dt>
+<dd>A tuple of type Oid&#8217;s specifying the column types.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.input</span></tt></dt>
+<dd>A <cite>Postgres.TupleDesc</cite> object describing the statement&#8217;s parameters.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.output</span></tt></dt>
+<dd>An anonymous composite type used to create row objects produced by the
+statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.string</span></tt></dt>
+<dd>The original object given as the statement&#8217;s SQL source.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.command</span></tt></dt>
+<dd>The command tag of the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.parameters</span></tt></dt>
+<dd>The constant parameters given to the statement&#8217;s constructor.
+<tt class="xref docutils literal"><span class="pre">None</span></tt> if none.</dd>
+</dl>
+</blockquote>
+<p><strong>Methods</strong>:</p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Statement.clone()</span></tt></dt>
+<dd>Create a new statement using the same parameters that created the
+statement that method is being called on.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.rows(*args)</span></tt></dt>
+<dd><p class="first">Execute the statement and return a <cite>Postgres.Cursor</cite> configured to yield
+individual rows fetched from the cursor.</p>
+<p class="last">The returned cursor is to be used to iterate over the rows produced by
+the statement.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.column(*args)</span></tt></dt>
+<dd>Execute the statement and return a <cite>Postgres.Cursor</cite> configured to yield
+the first column of each row fetched from the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.chunks(*args)</span></tt></dt>
+<dd>Execute the statement and return a <cite>Postgres.Cursor</cite>
+configured to yield chunks of rows fetched from the cursor.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.first(*args)</span></tt></dt>
+<dd>Execute the statement and return either the first column of the first
+row, or the first row when multiple columns are present.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.declare(*args)</span></tt></dt>
+<dd>Execute the statement and return a <cite>Postgres.Cursor</cite>
+configured with SCROLL. This
+execution method provides a cursor whose <tt class="docutils literal"><span class="pre">seek</span></tt> and
+<tt class="docutils literal"><span class="pre">read</span></tt> methods are usable.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.load_rows(iterable)</span></tt></dt>
+<dd>Repeatedly execute the statement for each item produced by the iterator.
+Each item will be given as the parameters for the statement.</dd>
+<dt><tt class="docutils literal"><span class="pre">Statement.load_chunks(iterable)</span></tt></dt>
+<dd><p class="first">Repeatedly execute the statement for each item in the iterable
+produced by the iterator.
+Each item is expected to be a iterable producing parameters to be given
+to the statement:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">sqlexec</span><span class="p">(</span><span class="s">&quot;CREATE TABLE t (i int, t text)&quot;</span><span class="p">)</span>
+
+<span class="n">chunk1</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;hello&#39;</span><span class="p">),</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;world&#39;</span><span class="p">)]</span>
+<span class="n">chunk2</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;more&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">)]</span>
+
+<span class="n">ins</span> <span class="o">=</span> <span class="n">prepare</span><span class="p">(</span><span class="s">&quot;INSERT INTO t VALUES ($1, $2)&quot;</span><span class="p">)</span>
+<span class="n">ins</span><span class="o">.</span><span class="n">load_chunks</span><span class="p">([</span><span class="n">chunk1</span><span class="p">,</span> <span class="n">chunk2</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-stopevent">
+<span id="pg-stopevent"></span><h2>Postgres.StopEvent<a class="headerlink" href="#postgres-stopevent" title="Permalink to this headline">¶</a></h2>
+<p>A flow-control exception used by trigger returning functions to stop a
+manipulation.</p>
+<p>This exception is treated specially when raised by the
+<tt class="docutils literal"><span class="pre">before_insert</span></tt>, <tt class="docutils literal"><span class="pre">before_update</span></tt>, and
+<tt class="docutils literal"><span class="pre">before_delete</span></tt> entry points in <a class="reference external" href="programming.html#programming-trf"><em>Trigger Returning Functions</em></a>.
+In all other cases, the exception will thrown as a Postgres error:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">StopEvent</span>
+
+<span class="k">def</span> <span class="nf">before_insert</span><span class="p">(</span><span class="n">td</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+       <span class="k">if</span> <span class="n">new</span><span class="p">[</span><span class="s">&quot;value&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0xDEADBEEF</span><span class="p">:</span>
+               <span class="k">raise</span> <span class="n">StopEvent</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-string">
+<span id="pg-string"></span><h2>Postgres.String<a class="headerlink" href="#postgres-string" title="Permalink to this headline">¶</a></h2>
+<p>Postgres.String is an abstract base type. It is used as the base type for
+all built-in string types and for any dynamically created type that is in
+the string category: <tt class="docutils literal"><span class="pre">pg_type.typcategory</span> <span class="pre">=</span> <span class="pre">'S'</span></tt></p>
+</div>
+<div class="section" id="postgres-transaction">
+<span id="pg-transaction"></span><h2>Postgres.Transaction<a class="headerlink" href="#postgres-transaction" title="Permalink to this headline">¶</a></h2>
+<p>Transaction objects are simple context managers that start, commit or
+rollback an internal subtransaction. The local transaction state kept by
+these objects are used to validate that transactions are committed or
+aborted in the appropriate order. When transactions objects are used
+improperly, a <cite>Postgres.Exception</cite> is normally raised. <tt class="docutils literal"><span class="pre">Postgres.Transaction</span></tt>
+is also available in <a class="reference external" href="programming.html#programming-builtins"><em>Builtins</em></a> as <tt class="docutils literal"><span class="pre">xact</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">xact</span><span class="p">():</span>
+       <span class="o">...</span>
+</pre></div>
+</div>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Transaction.__enter__()</span></tt></dt>
+<dd>Context manager interface that starts the internal subtransaction. A
+<cite>RuntimeError</cite> will be raised if called more than
+once on the same instance.</dd>
+<dt><tt class="docutils literal"><span class="pre">Transaction.__exit__(exc,</span> <span class="pre">val,</span> <span class="pre">tb)</span></tt></dt>
+<dd><p class="first">Aborts or commits the transaction depending on the given arguments and
+the identified transaction state.</p>
+<p>If an exception is noted by the arguments or the transaction failed
+due to database error, the subtransaction will be rolled back. A
+<tt class="xref docutils literal"><span class="pre">False</span></tt> value will always be returned indicating that
+the exception, if any, should be raised.</p>
+<p class="last">If no exception is noted and no database error occurred, the
+subtransaction will be committed.</p>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-triggerdata">
+<span id="pg-triggerdata"></span><h2>Postgres.TriggerData<a class="headerlink" href="#postgres-triggerdata" title="Permalink to this headline">¶</a></h2>
+<p>When a TRIGGER returning function is executed by an event, instances of
+this type are given as the first argument to the selected entry point. This
+object provides the basic information about the trigger that executed the
+procedure, the target table, and the event&#8217;s details.</p>
+<p>Some of the provided information is redundant as the entry point selected
+by the procedural language determines the timing, orientation, and
+manipulation. However, for generalized triggers, identifying the execution
+context using the trigger data can be appropriate.</p>
+<p>See <a class="reference external" href="programming.html#programming-trf"><em>Trigger Returning Functions</em></a> for further information.</p>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">TriggerData.args</span></tt></dt>
+<dd>Python tuple of trigger arguments specified by <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">TRIGGER</span></tt>.
+The items in the tuple are <tt class="docutils literal"><span class="pre">str</span></tt> objects.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.type</span></tt></dt>
+<dd>The <a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> subclass representing
+the target table. For row triggers, it is also the type of the
+<tt class="docutils literal"><span class="pre">old</span></tt> and <tt class="docutils literal"><span class="pre">new</span></tt> parameters.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.relation_id</span></tt></dt>
+<dd>The <tt class="docutils literal"><span class="pre">Oid</span></tt> of the target table.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.table_schema</span></tt></dt>
+<dd>The schema name that holds the target table.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.table_name</span></tt></dt>
+<dd>The table name of the target table.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.trigger_schema</span></tt></dt>
+<dd>The schema name that holds the trigger.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.trigger_name</span></tt></dt>
+<dd>The name of the trigger. Defined by the <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">TRIGGER</span></tt> statement that
+originally created the <tt class="docutils literal"><span class="pre">TRIGGER</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.manipulation</span></tt></dt>
+<dd><p class="first">The operation that caused the trigger to execute the procedure. Always
+one of:</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">'INSERT'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">'UPDATE'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">'DELETE'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">'TRUNCATE'</span></tt></li>
+</ul>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.orientation</span></tt></dt>
+<dd><p class="first">Identifies if the trigger was fired at the row level or the statement
+level. Always one of:</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">'ROW'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">'STATEMENT'</span></tt></li>
+</ul>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.timing</span></tt></dt>
+<dd><p class="first">When the trigger executed the procedure.
+Always one of:</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">'BEFORE'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">'AFTER'</span></tt></li>
+</ul>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.table_catalog</span></tt></dt>
+<dd>The name of the current database.</dd>
+<dt><tt class="docutils literal"><span class="pre">TriggerData.trigger_catalog</span></tt></dt>
+<dd>The name of the current database.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-tupledesc">
+<span id="pg-tupledesc"></span><h2>Postgres.TupleDesc<a class="headerlink" href="#postgres-tupledesc" title="Permalink to this headline">¶</a></h2>
+<p>The Python interface to the TupleDesc structures. This is essentially a
+sequence of <tt class="docutils literal"><span class="pre">pg_attribute</span></tt> instances. Normally,
+these objects are used to support composite types and do not need to be
+used directly.</p>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.column_count</span></tt></dt>
+<dd><p class="first">Number of attributes in the descriptor.</p>
+<p class="last">This count does <em>not</em> include dropped columns.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.column_names</span></tt></dt>
+<dd><p class="first">A tuple of strings naming the attributes in the descriptor.</p>
+<p class="last">This sequence does <em>not</em> include dropped columns.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.column_types</span></tt></dt>
+<dd><p class="first">A tuple of <cite>Postgres.Type</cite> instances of the attributes in
+the descriptor.</p>
+<p class="last">This sequence does <em>not</em> include dropped columns.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.pg_column_types</span></tt></dt>
+<dd><p class="first">A tuple of type Oids of the attributes in the descriptor.</p>
+<p class="last">This sequence does <em>not</em> include dropped columns.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.__getitem__(index),</span> <span class="pre">TupleDesc[index]</span></tt></dt>
+<dd><p class="first">Get the <tt class="docutils literal"><span class="pre">pg_attribute</span></tt> instance of the index.</p>
+<p class="last"><em>The returned record may be for a dropped attribute.</em></p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">TupleDesc.__len__(),</span> <span class="pre">len(TupleDesc)</span></tt></dt>
+<dd><p class="first">The total number of attributes in the descriptor.</p>
+<p class="last"><em>This count will include dropped attributes.</em></p>
+</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-type">
+<span id="pg-type"></span><h2>Postgres.Type<a class="headerlink" href="#postgres-type" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.Type</span></tt> is <a class="reference internal" href="#postgres-object">Postgres.Object</a>&#8216;s type. Instances of this type, Postgres.Object
+and subclasses thereof, are used to represent Postgres
+types. These objects provide access to type metadata and instantiation
+methods to create <a class="reference internal" href="#data">Data</a>.</p>
+<p><strong>Constructors:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Postgres.Type(oid)</span></tt></dt>
+<dd><p class="first">A Postgres.Type instance can be created by calling
+<tt class="docutils literal"><span class="pre">Postgres.Type</span></tt> with a type oid as it&#8217;s sole argument.
+If the type exists, a Postgres.Object <em>subclass</em> is
+returned.</p>
+<p class="last">The given Oid can be a Python int, Postgres.types.oid, or a
+Postgres.types.regtype instance.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Properties:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Type.Array</span></tt></dt>
+<dd>The array type of the element type. If the instance is an array type,
+this property will be the same object as the instance. <cite>Postgres.Array</cite>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.Base</span></tt></dt>
+<dd>The ultimate base type of the domain type. If the instance is not a
+domain, this property will be the same object as the instance.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.Element</span></tt></dt>
+<dd>The element type of the array type. If the instance is not an array
+type, this property will be the same object as the instance.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.oid</span></tt></dt>
+<dd>The type&#8217;s Oid as a Python <tt class="docutils literal"><span class="pre">int</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.oidstr</span></tt></dt>
+<dd>The type&#8217;s Oid as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typname</span></tt></dt>
+<dd>The type&#8217;s name as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.nspname</span></tt></dt>
+<dd>The type&#8217;s namespace name as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typnamespace</span></tt></dt>
+<dd>The type&#8217;s namespace Oid as a Python <tt class="docutils literal"><span class="pre">int</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.descriptor</span></tt></dt>
+<dd>The type&#8217;s <cite>Postgres.TupleDesc</cite>. <tt class="xref docutils literal"><span class="pre">None</span></tt>, if the type is not a composite type.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.column_names</span></tt></dt>
+<dd><p class="first">The attribute names of the type&#8217;s TupleDesc in a Python tuple.
+Ordered by the attribute&#8217;s index.</p>
+<p class="last">This does <em>not</em> include dropped attributes.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.column_types</span></tt></dt>
+<dd><p class="first">The attribute types, <tt class="docutils literal"><span class="pre">Postgres.Type</span></tt> instances, of
+the type&#8217;s TupleDesc in a Python tuple. Ordered by the attribute&#8217;s
+index.</p>
+<p class="last">This does not include dropped attributes.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.pg_column_types</span></tt></dt>
+<dd><p class="first">The attribute type Oids of the type&#8217;s TupleDesc in a Python tuple.
+Ordered by the attribute&#8217;s index.</p>
+<p class="last">This does not include dropped attributes.</p>
+</dd>
+</dl>
+</blockquote>
+<p><strong>Methods:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">Type.typoutput(ob)</span></tt></dt>
+<dd>Call the type&#8217;s typoutput routine. The given object must be an instance
+of this type. Usually, <tt class="docutils literal"><span class="pre">str(ob)</span></tt> suffices.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typsend(ob)</span></tt></dt>
+<dd>Call the type&#8217;s binary send routine. The given object must be an
+instance of this type.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typinput(strob[,</span> <span class="pre">mod</span> <span class="pre">=</span> <span class="pre">pyint])</span></tt></dt>
+<dd>Call the type&#8217;s string input routine. This is different from
+instantiation as the typmod is <em>not</em> passed through
+the type&#8217;s modin.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typreceive(bufob[,</span> <span class="pre">mod</span> <span class="pre">=</span> <span class="pre">pyint])</span></tt></dt>
+<dd>Call the type&#8217;s typreceive routine. The given object,
+<tt class="docutils literal"><span class="pre">bufob</span></tt>, must support the Python buffer protocol.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typmodin(sequence)</span></tt></dt>
+<dd>Call the type&#8217;s modin routine. Takes a sequence of strings,
+<tt class="docutils literal"><span class="pre">cstring[]</span></tt> and returns an <tt class="docutils literal"><span class="pre">int4</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.typmodout(num)</span></tt></dt>
+<dd>Call the type&#8217;s modout routine. Takes an integer and returns a
+<tt class="docutils literal"><span class="pre">cstring</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">Type.check(ob)</span></tt></dt>
+<dd>Validate that the domain adheres to its constraints. The given object
+must be an instance of this type.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-cancel-backend">
+<span id="pg-cancel-backend"></span><h2>Postgres.cancel_backend<a class="headerlink" href="#postgres-cancel-backend" title="Permalink to this headline">¶</a></h2>
+<p>Cancel the query of another backend process, alias to the pg_cancel_backend
+function. Returns a Python <tt class="docutils literal"><span class="pre">bool</span></tt>, and takes a number as it&#8217;s sole argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">cancel_backend</span>
+<span class="n">cancel_backend</span><span class="p">(</span><span class="n">procpid</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-clearcache">
+<span id="pg-clearcache"></span><h2>Postgres.clearcache<a class="headerlink" href="#postgres-clearcache" title="Permalink to this headline">¶</a></h2>
+<p>Releases <a class="reference internal" href="#postgres-type">Postgres.Type</a> and <a class="reference internal" href="#postgres-function">Postgres.Function</a> objects from the cache. It
+also clears the Python <tt class="docutils literal"><span class="pre">linecache</span></tt> if the module is available:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">clearcache</span>
+<span class="n">clearcache</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Normally, it is not necessary to ever call this function. When a function
+or type is looked up in the cache, its entry is checked to validate that
+it is up-to-date. If it needs to be refreshed, a new object reflecting
+the latest version will be created to replace the existing cache entry.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function has no effect on built-in types.</p>
+</div>
+</div>
+<div class="section" id="postgres-clock-timestamp">
+<span id="pg-clock-timestamp"></span><h2>Postgres.clock_timestamp<a class="headerlink" href="#postgres-clock-timestamp" title="Permalink to this headline">¶</a></h2>
+<p>Get the current clock timestamp. Takes no arguments and returns a
+<a class="reference external" href="postgres_types.html#pg-types-timestamptz"><em>Postgres.types.timestamptz</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">clock_timestamp</span>
+
+<span class="n">curtime</span> <span class="o">=</span> <span class="n">clock_timestamp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-convert-postgres-objects">
+<span id="pg-convert-postgres-objects"></span><h2>Postgres.convert_postgres_objects<a class="headerlink" href="#postgres-convert-postgres-objects" title="Permalink to this headline">¶</a></h2>
+<p>Convert the <a class="reference internal" href="#postgres-object">Postgres.Object</a> instances in the given iterable
+into standard Python types. A tuple with the converted objects is returned:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">convert_postgres_object</span>
+<span class="kn">from</span> <span class="nn">Postgres.types</span> <span class="kn">import</span> <span class="n">int4</span><span class="p">,</span> <span class="n">text</span>
+
+<span class="n">pg_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">int4</span><span class="p">(</span><span class="mi">123</span><span class="p">),</span> <span class="n">text</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">),</span> <span class="nb">set</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])]</span>
+<span class="n">py_data</span> <span class="o">=</span> <span class="n">convert_postgres_objects</span><span class="p">(</span><span class="n">pg_data</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">py_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="nb">int</span>
+<span class="k">assert</span> <span class="n">py_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="nb">str</span>
+
+<span class="c"># ignores unidentified types</span>
+<span class="k">assert</span> <span class="n">py_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="nb">set</span>
+</pre></div>
+</div>
+<p><em>Data objects whose type is not listed in the table below are not converted</em>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="54%" />
+<col width="46%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Postgres Types</th>
+<th class="head">Python Types</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>bool</td>
+<td>bool</td>
+</tr>
+<tr><td>int2</td>
+<td>int</td>
+</tr>
+<tr><td>int4</td>
+<td>int</td>
+</tr>
+<tr><td>int8</td>
+<td>int</td>
+</tr>
+<tr><td>float4</td>
+<td>float</td>
+</tr>
+<tr><td>float8</td>
+<td>float</td>
+</tr>
+<tr><td>char</td>
+<td>str</td>
+</tr>
+<tr><td>bpchar</td>
+<td>str</td>
+</tr>
+<tr><td>varchar</td>
+<td>str</td>
+</tr>
+<tr><td>cstring</td>
+<td>str</td>
+</tr>
+<tr><td>text</td>
+<td>str</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">iterable</span></tt></dt>
+<dd>An iterable containing the objects to convert.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-current-schemas">
+<span id="pg-current-schemas"></span><h2>Postgres.current_schemas<a class="headerlink" href="#postgres-current-schemas" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.current_schemas</span></tt> provides a structured version of
+the <tt class="docutils literal"><span class="pre">search_path</span></tt> setting. Like <tt class="docutils literal"><span class="pre">pg_catalog.current_schemas</span></tt>,
+but returns a Python tuple of Python strings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+<span class="n">schemas</span> <span class="o">=</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">current_schemas</span><span class="p">()</span>
+<span class="n">all_schemas</span> <span class="o">=</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">current_schemas</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">include_temps</span></tt></dt>
+<dd><em>Optional keyword. Defaults to ``False``.</em>
+Include the temporary schemas in the returned tuple.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-current-schemas-oid">
+<span id="pg-current-schemas-oid"></span><h2>Postgres.current_schemas_oid<a class="headerlink" href="#postgres-current-schemas-oid" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.current_schemas_oid</span></tt> provides a tuple of
+namespace Oids based on the <tt class="docutils literal"><span class="pre">search_path</span></tt> setting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+<span class="n">schemas</span> <span class="o">=</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">current_schemas_oid</span><span class="p">()</span>
+<span class="n">all_schemas</span> <span class="o">=</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">current_schemas_oid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The Oids may refer to namespaces that no longer exist.</p>
+</div>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">include_temps</span></tt></dt>
+<dd><em>Optional keyword. Defaults to ``False``.</em>
+Include the temporary schemas in the returned tuple.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-ereport">
+<span id="pg-ereport"></span><span id="pg-fatal"></span><span id="pg-error"></span><span id="pg-warning"></span><span id="pg-notice"></span><span id="pg-info"></span><span id="pg-log"></span><span id="pg-debug"></span><h2>Postgres.ereport<a class="headerlink" href="#postgres-ereport" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.ereport([severity[,</span> <span class="pre">message[,</span> <span class="pre">detail[,</span> <span class="pre">hint[,</span> <span class="pre">context[,</span> <span class="pre">sqlerrcode[,</span> <span class="pre">inhibit_pl_context]]]]]]])</span></tt></p>
+<p><tt class="docutils literal"><span class="pre">Postgres.ereport</span></tt> is an interface to Postgres&#8217; ereport facility.
+Direct use is not recommended as the aliases provide some added convenience
+over the raw function:</p>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Postgres.DEBUG</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.LOG</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.INFO</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.NOTICE</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.WARNING</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.ERROR</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Postgres.FATAL</span></tt></li>
+</ul>
+</blockquote>
+<p>In addition to the severity being implied by the name, the aliases can
+accept an additional <tt class="docutils literal"><span class="pre">code</span></tt> argument which is converted
+to an SQL-state code. This is in contrast to <tt class="docutils literal"><span class="pre">ereport</span></tt>,
+which can <em>only</em> take the <tt class="docutils literal"><span class="pre">sqlerrcode</span></tt> keyword as an
+integer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+       <span class="n">Postgres</span><span class="o">.</span><span class="n">WARNING</span><span class="p">(</span><span class="s">&quot;unexpected event&quot;</span><span class="p">)</span>
+       <span class="n">Postgres</span><span class="o">.</span><span class="n">WARNING</span><span class="p">(</span><span class="s">&quot;extra info&quot;</span><span class="p">,</span> <span class="n">code</span> <span class="o">=</span> <span class="s">&#39;01001&#39;</span><span class="p">)</span>
+       <span class="n">Postgres</span><span class="o">.</span><span class="n">LOG</span><span class="p">(</span><span class="s">&quot;additional information about the event&quot;</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">event_details</span><span class="p">)</span>
+       <span class="n">Postgres</span><span class="o">.</span><span class="n">ereport</span><span class="p">(</span><span class="n">Postgres</span><span class="o">.</span><span class="n">severities</span><span class="p">[</span><span class="s">&#39;DEBUG4&#39;</span><span class="p">],</span> <span class="s">&quot;direct report&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Keyword Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">severity</span></tt></dt>
+<dd>The first, required keyword parameter. This is expected to be the integer form of
+the error level. The mapping of severity names to error level integers
+is available at <tt class="docutils literal"><span class="pre">Postgres.severities</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">message</span></tt></dt>
+<dd>The second, required keyword parameter. This is the primary message
+portion of the report. This string is given to <tt class="docutils literal"><span class="pre">errmsg</span></tt></dd>
+<dt><tt class="docutils literal"><span class="pre">detail</span></tt></dt>
+<dd>String given to <tt class="docutils literal"><span class="pre">errdetail</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">hint</span></tt></dt>
+<dd>String given to <tt class="docutils literal"><span class="pre">errhint</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">context</span></tt></dt>
+<dd>String given to <tt class="docutils literal"><span class="pre">errcontext</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">sqlerrcode</span></tt></dt>
+<dd>SQL-state integer given to <tt class="docutils literal"><span class="pre">errcode</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">code</span></tt></dt>
+<dd><p class="first">The SQL-state string. This is converted to an SQL-state integer and
+given as the <tt class="docutils literal"><span class="pre">sqlerrcode</span></tt> keyword.</p>
+<p class="last"><em>This keyword is not accepted by Postgres.ereport. See the aliases listed above.</em></p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">inhibit_pl_context</span></tt></dt>
+<dd>If given <tt class="xref docutils literal"><span class="pre">True</span></tt>, the traceback and function identity
+will <em>not</em> be included in the CONTEXT portion of the report.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-eval">
+<span id="pg-eval"></span><h2>Postgres.eval<a class="headerlink" href="#postgres-eval" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.eval</span></tt> is a function that uses <a class="reference internal" href="#postgres-statement">Postgres.Statement</a> to execute an
+SQL-expression:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+       <span class="n">r</span> <span class="o">=</span> <span class="n">Postgres</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;now()::date - 10&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is also available in <a class="reference external" href="programming.html#programming-builtins"><em>Builtins</em></a> as <tt class="docutils literal"><span class="pre">sqleval</span></tt>.</p>
+</div>
+<div class="section" id="postgres-execute">
+<span id="pg-execute"></span><h2>Postgres.execute<a class="headerlink" href="#postgres-execute" title="Permalink to this headline">¶</a></h2>
+<p>Execute multiple SQL statements in the given string. This function takes a
+single argument, a string containing the SQL statements to execute. This
+function always returns <tt class="xref docutils literal"><span class="pre">None</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+<span class="n">Postgres</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">       CREATE TEMP TABLE t (i int);</span>
+<span class="s">       INSERT INTO t VALUES (321);</span>
+<span class="s">&quot;&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Also available in <a class="reference external" href="programming.html#programming-builtins"><em>Builtins</em></a> as <tt class="docutils literal"><span class="pre">sqlexec</span></tt>.</p>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">sql_statements_string</span></tt></dt>
+<dd>A string object containing the SQL statements to execute.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-iterpytypes">
+<span id="pg-iterpytypes"></span><h2>Postgres.iterpytypes<a class="headerlink" href="#postgres-iterpytypes" title="Permalink to this headline">¶</a></h2>
+<p>A callable that produces an iterator that uses
+<a class="reference internal" href="#postgres-convert-postgres-objects">Postgres.convert_postgres_objects</a> to convert the sequences produced by the
+given iterable into Python types:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">iterpytypes</span>
+
+<span class="n">stmt</span> <span class="o">=</span> <span class="n">prepare</span><span class="p">(</span><span class="s">&quot;SELECT i FROM generate_series(1, 100) AS g(i)&quot;</span><span class="p">)</span>
+
+<span class="c"># process the rows() cursor with iterpytypes</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">iterpytypes</span><span class="p">(</span><span class="n">stmt</span><span class="o">.</span><span class="n">rows</span><span class="p">())</span>
+
+<span class="c"># iterate over the results as Python types</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+       <span class="n">i</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+       <span class="o">...</span>
+</pre></div>
+</div>
+<p><em>iterpytypes yields Python tuples.</em></p>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">iter</span></tt></dt>
+<dd>An iterable producing <em>sequences</em> of <cite>Postgres.Object</cite> instances.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-notify">
+<span id="pg-notify"></span><h2>Postgres.notify<a class="headerlink" href="#postgres-notify" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.notify</span></tt> is an alias to the <tt class="docutils literal"><span class="pre">NOTIFY</span></tt> command. It only
+takes a single argument, the notification name:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+
+<span class="n">Postgres</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s">&quot;relid&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Arguments:</strong></p>
+<blockquote>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">relname</span></tt></dt>
+<dd>The notification channel to use.</dd>
+</dl>
+</blockquote>
+</div>
+<div class="section" id="postgres-preload">
+<span id="pg-preload"></span><h2>Postgres.preload<a class="headerlink" href="#postgres-preload" title="Permalink to this headline">¶</a></h2>
+<p>Preload provides a means to load a set of functions
+before they are actually used. The arguments accepted by the function are
+schema identifiers. The Python functions in each schema are collected and
+loaded. If no schemas are given, all Python functions in the database are loaded:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
+
+<span class="n">Postgres</span><span class="o">.</span><span class="n">preload</span><span class="p">(</span><span class="s">&quot;schema1&quot;</span><span class="p">,</span> <span class="s">&quot;schema2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Essentially, <tt class="docutils literal"><span class="pre">pg_proc</span></tt> is queried for all Python function Oids,
+<a class="reference internal" href="#postgres-function">Postgres.Function</a> instances are created from
+each Oid, and the <tt class="docutils literal"><span class="pre">load_module</span></tt> method is called on each
+instance to ready the function&#8217;s code.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">Using preload in conjunction with a pooler helps to make sure that the
+initialization overhead will not impact the performance of the function&#8217;s
+first call.</p>
+</div>
+</div>
+<div class="section" id="postgres-pytypes">
+<span id="pg-pytypes"></span><h2>Postgres.pytypes<a class="headerlink" href="#postgres-pytypes" title="Permalink to this headline">¶</a></h2>
+<p>A decorator that uses <a class="reference internal" href="#postgres-convert-postgres-objects">Postgres.convert_postgres_objects</a>
+to convert the arguments given to the decorated function into standard Python
+objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@pytypes</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+       <span class="o">...</span>
+</pre></div>
+</div>
+<p>The decorator only converts objects to Python primitives.</p>
+</div>
+<div class="section" id="postgres-quote-ident">
+<span id="pg-quote-ident"></span><h2>Postgres.quote_ident<a class="headerlink" href="#postgres-quote-ident" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.quote_ident</span></tt> is an alias to the <tt class="docutils literal"><span class="pre">quote_ident</span></tt> function. It only
+takes a single argument, the identifer string to quote:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">quote_ident</span>
+
+<span class="nb">id</span> <span class="o">=</span> <span class="n">quote_ident</span><span class="p">(</span><span class="s">&#39;an&quot;identifier&#39;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="nb">id</span> <span class="o">==</span> <span class="s">&#39;&quot;an&quot;&quot;identifier&quot;&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-quote-literal">
+<span id="pg-quote-literal"></span><h2>Postgres.quote_literal<a class="headerlink" href="#postgres-quote-literal" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.quote_literal</span></tt> is an alias to the <tt class="docutils literal"><span class="pre">pg_catalog.quote_literal</span></tt> function.
+It only takes a single argument, the string to quote:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">quote_literal</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">quote_literal</span><span class="p">(</span><span class="s">&#39;an&quot;literal</span><span class="se">\&#39;</span><span class="s">string&#39;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">x</span> <span class="o">==</span> <span class="s">&quot;&quot;&quot;&#39;an&quot;literal&#39;&#39;string&#39;&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-quote-nullable">
+<span id="pg-quote-nullable"></span><h2>Postgres.quote_nullable<a class="headerlink" href="#postgres-quote-nullable" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">Postgres.quote_nullable</span></tt> is an alias to the
+<tt class="docutils literal"><span class="pre">pg_catalog.quote_nullable</span></tt> function. It only
+takes a single argument, the string to quote. If given
+<tt class="xref docutils literal"><span class="pre">None</span></tt>, the string <tt class="docutils literal"><span class="pre">'NULL'</span></tt> will be returned:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">quote_nullable</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">quote_nullable</span><span class="p">(</span><span class="s">&#39;an&quot;literal</span><span class="se">\&#39;</span><span class="s">string&#39;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">quote_nullable</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;NULL&#39;</span>
+<span class="k">assert</span> <span class="n">x</span> <span class="o">==</span> <span class="s">&quot;&quot;&quot;&#39;an&quot;literal&#39;&#39;string&#39;&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-sleep">
+<span id="pg-sleep"></span><h2>Postgres.sleep<a class="headerlink" href="#postgres-sleep" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">sleep(seconds_to_sleep</span> <span class="pre">:</span> <span class="pre">float)</span></tt></p>
+<p>Alias to the <tt class="docutils literal"><span class="pre">pg_sleep</span></tt> function. Takes a single argument, the amount of time
+to sleep and always returns <tt class="xref docutils literal"><span class="pre">None</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">sleep</span>
+
+<span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-statement-timestamp">
+<span id="pg-statement-timestamp"></span><h2>Postgres.statement_timestamp<a class="headerlink" href="#postgres-statement-timestamp" title="Permalink to this headline">¶</a></h2>
+<p>Get the statement start time&#8211;an alias to the <tt class="docutils literal"><span class="pre">statement_timestamp</span></tt> function.
+Takes no arguments and returns a <a class="reference external" href="postgres_types.html#pg-types-timestamptz"><em>Postgres.types.timestamptz</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">statement_timestamp</span>
+
+<span class="k">assert</span> <span class="n">sqleval</span><span class="p">(</span><span class="s">&#39;pg_catalog.statement_timestamp()&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">statement_timestamp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-transaction-timestamp">
+<span id="pg-transaction-timestamp"></span><h2>Postgres.transaction_timestamp<a class="headerlink" href="#postgres-transaction-timestamp" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">transaction_timestamp()</span></tt></p>
+<p>Get the transaction start time&#8211;an alias to the <tt class="docutils literal"><span class="pre">transaction_timestamp</span></tt> function.
+Takes no arguments and returns a <a class="reference external" href="postgres_types.html#pg-types-timestamptz"><em>Postgres.types.timestamptz</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">transaction_timestamp</span>
+
+<span class="k">assert</span> <span class="n">sqleval</span><span class="p">(</span><span class="s">&#39;now()&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">transaction_timestamp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgres-terminate-backend">
+<span id="pg-terminate-backend"></span><h2>Postgres.terminate_backend<a class="headerlink" href="#postgres-terminate-backend" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">terminate_backend(process_pid)</span></tt></p>
+<p>Terminate another backend process&#8211;alias to the <tt class="docutils literal"><span class="pre">pg_catalog.pg_terminate_backend</span></tt>
+function. Takes a single argument, the process id to terminate, and returns
+<tt class="docutils literal"><span class="pre">bool</span></tt> indicating whether the specified backend was successfully terminated:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">terminate_backend</span>
+
+<span class="n">terminate_backend</span><span class="p">(</span><span class="n">proc_pid</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Postgres Module</a><ul>
+<li><a class="reference external" href="#data">Data</a></li>
+<li><a class="reference external" href="#postgres-array">Postgres.Array</a></li>
+<li><a class="reference external" href="#postgres-cursor">Postgres.Cursor</a></li>
+<li><a class="reference external" href="#postgres-errordata">Postgres.ErrorData</a></li>
+<li><a class="reference external" href="#postgres-exception">Postgres.Exception</a></li>
+<li><a class="reference external" href="#postgres-function">Postgres.Function</a></li>
+<li><a class="reference external" href="#postgres-largeobject">Postgres.LargeObject</a></li>
+<li><a class="reference external" href="#postgres-object">Postgres.Object</a><ul>
+<li><a class="reference external" href="#default-operator-mapping">Default Operator Mapping</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#postgres-stateful">Postgres.Stateful</a></li>
+<li><a class="reference external" href="#postgres-statement">Postgres.Statement</a></li>
+<li><a class="reference external" href="#postgres-stopevent">Postgres.StopEvent</a></li>
+<li><a class="reference external" href="#postgres-string">Postgres.String</a></li>
+<li><a class="reference external" href="#postgres-transaction">Postgres.Transaction</a></li>
+<li><a class="reference external" href="#postgres-triggerdata">Postgres.TriggerData</a></li>
+<li><a class="reference external" href="#postgres-tupledesc">Postgres.TupleDesc</a></li>
+<li><a class="reference external" href="#postgres-type">Postgres.Type</a></li>
+<li><a class="reference external" href="#postgres-cancel-backend">Postgres.cancel_backend</a></li>
+<li><a class="reference external" href="#postgres-clearcache">Postgres.clearcache</a></li>
+<li><a class="reference external" href="#postgres-clock-timestamp">Postgres.clock_timestamp</a></li>
+<li><a class="reference external" href="#postgres-convert-postgres-objects">Postgres.convert_postgres_objects</a></li>
+<li><a class="reference external" href="#postgres-current-schemas">Postgres.current_schemas</a></li>
+<li><a class="reference external" href="#postgres-current-schemas-oid">Postgres.current_schemas_oid</a></li>
+<li><a class="reference external" href="#postgres-ereport">Postgres.ereport</a></li>
+<li><a class="reference external" href="#postgres-eval">Postgres.eval</a></li>
+<li><a class="reference external" href="#postgres-execute">Postgres.execute</a></li>
+<li><a class="reference external" href="#postgres-iterpytypes">Postgres.iterpytypes</a></li>
+<li><a class="reference external" href="#postgres-notify">Postgres.notify</a></li>
+<li><a class="reference external" href="#postgres-preload">Postgres.preload</a></li>
+<li><a class="reference external" href="#postgres-pytypes">Postgres.pytypes</a></li>
+<li><a class="reference external" href="#postgres-quote-ident">Postgres.quote_ident</a></li>
+<li><a class="reference external" href="#postgres-quote-literal">Postgres.quote_literal</a></li>
+<li><a class="reference external" href="#postgres-quote-nullable">Postgres.quote_nullable</a></li>
+<li><a class="reference external" href="#postgres-sleep">Postgres.sleep</a></li>
+<li><a class="reference external" href="#postgres-statement-timestamp">Postgres.statement_timestamp</a></li>
+<li><a class="reference external" href="#postgres-transaction-timestamp">Postgres.transaction_timestamp</a></li>
+<li><a class="reference external" href="#postgres-terminate-backend">Postgres.terminate_backend</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="changes.html"
+                                  title="previous chapter">Changes</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="postgres_types.html"
+                                  title="next chapter">Postgres.types Module</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/postgres.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="postgres_types.html" title="Postgres.types Module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="changes.html" title="Changes"
+             >previous</a> |</li>
+        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+    </div>
+  </body>
+</html>

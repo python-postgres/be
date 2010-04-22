@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Requirements &mdash; pg-python v1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pg-python v1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Programming" href="programming.html" />
+    <link rel="prev" title="pg-python" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="programming.html" title="Programming"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="pg-python"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="requirements">
+<h1>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h1>
+<p>This version of pg-python is known to work with the following versions of
+PostgreSQL:</p>
+<blockquote>
+<ul class="simple">
+<li>PostgreSQL 8.3</li>
+<li>PostgreSQL 8.4</li>
+<li>PostgreSQL 8.5 (Alias to 9.0)</li>
+<li>PostgreSQL 9.0</li>
+</ul>
+</blockquote>
+<p>And the following versions of Python:</p>
+<blockquote>
+<ul class="simple">
+<li>Python 3.1</li>
+</ul>
+</blockquote>
+<p>Python&#8217;s C-APIs are fairly stable, so newer versions of Python are expected to
+normally work. However, PostgreSQL&#8217;s C-APIs and header files can be adjusted
+from minor release to minor release. If the target version of PostgreSQL is not
+listed above, it should not be expected to work.</p>
+</div>
+<div class="section" id="administration">
+<h1>Administration<a class="headerlink" href="#administration" title="Permalink to this headline">¶</a></h1>
+<p>The administration of procedural language extensions can be tricky in some
+situations. If you have any questions, be sure to contact the mailing list:</p>
+<blockquote>
+<a class="reference external" href="mailto:python-general&#37;&#52;&#48;pgfoundry&#46;org">mailto:python-general<span>&#64;</span>pgfoundry<span>&#46;</span>org</a></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This chapter occasionally refers <tt class="docutils literal"><span class="pre">$PREFIX</span></tt>; this is referring to the
+location in which PostgreSQL is installed. When referenced, it is assumed
+that the installation did not modify the directory layout. In the event that
+the distribution or packager did modify the layout, it is important to
+reference the appropriate documentation in order to properly identify the
+corresponding locations.</p>
+</div>
+<div class="section" id="compilation">
+<h2>Compilation<a class="headerlink" href="#compilation" title="Permalink to this headline">¶</a></h2>
+<p>Currently, the only supported compilation method uses PostgreSQL&#8217;s PGXS
+makefile system. For compilation, the Python and PostgreSQL header files are
+necessary, so for some platforms, <em>it is important to install the Python</em>
+<em>and PostgreSQL developer packages</em>.</p>
+<div class="section" id="pgxs-build">
+<h3>PGXS Build<a class="headerlink" href="#pgxs-build" title="Permalink to this headline">¶</a></h3>
+<p>The first step for PGXS compilation is running the <tt class="docutils literal"><span class="pre">configure</span></tt> script.
+By default, the <tt class="docutils literal"><span class="pre">configure</span></tt> script identifies the PostgreSQL installation and
+the Python installation to use by executing the <tt class="docutils literal"><span class="pre">python3</span></tt> command and
+<tt class="docutils literal"><span class="pre">pg_config</span></tt> command. Whichever <tt class="docutils literal"><span class="pre">python3</span></tt> and <tt class="docutils literal"><span class="pre">pg_config</span></tt> executable
+comes first in the system&#8217;s path will be the target installation chosen by
+<tt class="docutils literal"><span class="pre">configure</span></tt>:</p>
+<div class="highlight-python"><pre>./configure</pre>
+</div>
+<p>Once configured, the makefile includes have been built, and the
+<tt class="docutils literal"><span class="pre">GNUmakefile</span></tt>&#8216;s functionality will be ready for use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Or &quot;gmake&quot; on some systems.</span>
+<span class="n">make</span>
+</pre></div>
+</div>
+<p>And finally, to install the built module:</p>
+<div class="highlight-python"><pre># Prefix with "sudo", if need be.
+make install</pre>
+</div>
+<p>There is only one file that needs to be installed, normally named <tt class="docutils literal"><span class="pre">python.so</span></tt>.
+<tt class="docutils literal"><span class="pre">make</span> <span class="pre">install</span></tt> will place it in the <tt class="docutils literal"><span class="pre">$PREFIX/lib/postgresql</span></tt> directory.</p>
+</div>
+</div>
+<div class="section" id="database-installation">
+<h2>Database Installation<a class="headerlink" href="#database-installation" title="Permalink to this headline">¶</a></h2>
+<p>Installation into a database is the last necessary step before a Python
+<tt class="docutils literal"><span class="pre">FUNCTION</span></tt> can be created. This is normally done by executing the following
+commands:</p>
+<div class="highlight-python"><pre>BEGIN;
+CREATE SCHEMA __python__;
+SET search_path TO __python__;
+CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+ LANGUAGE C AS 'python', 'pl_handler';
+CREATE FUNCTION validator(oid) RETURNS VOID
+ LANGUAGE C AS 'python', 'pl_validator';
+COMMIT;
+
+-- For 9.0 and greater.
+BEGIN;
+SET search_path TO __python__;
+CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+ LANGUAGE C AS 'python', 'pl_inline';
+CREATE LANGUAGE python
+ HANDLER handler INLINE inline VALIDATOR validator;
+COMMIT;
+
+-- For versions before 9.0.
+BEGIN;
+SET search_path TO __python__;
+CREATE LANGUAGE python
+ HANDLER handler VALIDATOR validator;
+COMMIT;</pre>
+</div>
+<p>The distinct schema is used hold the functions and for future expansion.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">If a language is installed into <tt class="docutils literal"><span class="pre">template1</span></tt>, all subsequently
+created databases will have the language installed automatically.</p>
+</div>
+<p>The above commands will only work if the extension module is installed into
+PostgreSQL&#8217;s library directory. Normally, <tt class="docutils literal"><span class="pre">$PREFIX/lib/postgresql</span></tt>. In cases
+where the extension does not exist in the default location, a full path to the
+library will need to be given to the <tt class="docutils literal"><span class="pre">CREATE</span> <span class="pre">FUNCTION</span></tt> commands:</p>
+<div class="highlight-python"><pre>CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+ LANGUAGE C AS '/full/path/to/python', 'pl_handler';
+CREATE FUNCTION validator(oid) RETURNS VOID
+ LANGUAGE C AS '/full/path/to/python', 'pl_validator';
+CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+ LANGUAGE C AS '/full/path/to/python', 'pl_inline';</pre>
+</div>
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>pg-python does not require any additional configuration once installed.
+However, much initialization overhead can be eliminated by preloading
+the extension using the <tt class="docutils literal"><span class="pre">shared_preload_libraries</span></tt> configuration parameter.</p>
+<p>Specifically:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">shared_preload_libraries</span> <span class="o">=</span> <span class="s">&#39;python&#39;</span>
+</pre></div>
+</div>
+<p>Using this will cause Python to be initialized when Postgres is started.</p>
+<div class="section" id="local-initialization">
+<h3>Local Initialization<a class="headerlink" href="#local-initialization" title="Permalink to this headline">¶</a></h3>
+<p>When Python is loaded, the <tt class="docutils literal"><span class="pre">init.py</span></tt> file in the data directory will be executed if it
+exists. The contents of this file will be executed in a new module named
+<tt class="docutils literal"><span class="pre">__pg_init__</span></tt>. The module is stored in <tt class="docutils literal"><span class="pre">sys.modules</span></tt>, but primarily for
+identifying that an <tt class="docutils literal"><span class="pre">init.py</span></tt> file was loaded.</p>
+<p>The primary purpose of the initialization file is to allow modules to be
+preloaded when the server is started. Writing functions that
+depend on objects created by <tt class="docutils literal"><span class="pre">init.py</span></tt> should be avoided.</p>
+<p>For <tt class="docutils literal"><span class="pre">init.py</span></tt> to provide any savings, it should be used
+in conjunction with the <tt class="docutils literal"><span class="pre">shared_preload_libraries</span></tt> configuration parameter.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When <tt class="docutils literal"><span class="pre">init.py</span></tt> is loaded, database access is prohibited.</p>
+</div>
+</div>
+</div>
+<div class="section" id="managing-multiple-versions">
+<h2>Managing Multiple Versions<a class="headerlink" href="#managing-multiple-versions" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This section covers advanced material.</p>
+</div>
+<p>In some situations, it may be necessary to have multiple builds of pg-python
+installed in the same PostgreSQL installation for upgrade purposes. When such
+cases arise, using a distinct name for the language is necessary.</p>
+<p>There are two routes that can be taken. The first is to rename the existing
+language making room for the new one, and the second is to use a different name
+for the new version. The best path depends on the situation.</p>
+<div class="section" id="renaming-the-existing-language">
+<h3>Renaming the Existing Language<a class="headerlink" href="#renaming-the-existing-language" title="Permalink to this headline">¶</a></h3>
+<p>Renaming the existing language is the proper choice when there is an
+incompatibility between the existing language and the new <em>target</em> language.
+This situation demands that functions be incrementally ported to the new
+version as time permits.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Renaming the existing language may require restart of the cluster.</p>
+</div>
+<p>The first step in renaming the existing language is to copy the
+original <tt class="docutils literal"><span class="pre">python.so</span></tt> so that it&#8217;s name is distinct from the
+one that is going to be installed. This can be done while the cluster is
+running:</p>
+<div class="highlight-python"><pre>cd $PREFIX/lib/postgresql/
+cp python.so python31.so</pre>
+</div>
+<p>The second step is to create the new language object. It is recommended to name
+it after the specific version of Python being used:</p>
+<div class="highlight-python"><pre>BEGIN;
+CREATE SCHEMA __python31__;
+SET search_path = __python31__;
+CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+ LANGUAGE C AS 'python31', 'pl_handler';
+CREATE FUNCTION validator(oid) RETURNS VOID
+ LANGUAGE C AS 'python31', 'pl_validator';
+COMMIT;
+
+-- For 9.0 and greater.
+BEGIN;
+SET search_path = __python31__;
+CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+ LANGUAGE C AS 'python31', 'pl_inline';
+CREATE LANGUAGE python31
+ HANDLER handler INLINE inline VALIDATOR validator;
+COMMIT;
+
+-- For versions before 9.0.
+BEGIN;
+SET search_path = __python31__;
+CREATE LANGUAGE python31
+ HANDLER handler VALIDATOR validator;
+COMMIT;</pre>
+</div>
+<p>Next, the existing functions need to have their language updated:</p>
+<div class="highlight-python"><pre>UPDATE pg_catalog.pg_proc
+SET prolang = (SELECT oid FROM pg_language WHERE lanname = 'python31')
+WHERE prolang = (SELECT oid FROM pg_language WHERE lanname = 'python');</pre>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It is best not to have other backends running while the above command is
+running.</p>
+</div>
+<p>And finally, the old language should be removed in order to make room for the
+new default:</p>
+<div class="highlight-python"><pre>SET search_path = __python__;
+DROP FUNCTION handler();
+DROP FUNCTION validator(oid);
+DROP FUNCTION inline(internal);
+RESET search_path;
+DROP SCHEMA __python__;</pre>
+</div>
+<p>With those steps complete, the language has been renamed, and the new language
+may be installed using the steps documented in <a class="reference internal" href="#compilation">Compilation</a> and
+<a class="reference internal" href="#database-installation">Database Installation</a>.</p>
+</div>
+<div class="section" id="using-a-custom-name-for-the-new-language">
+<h3>Using a Custom Name for the New Language<a class="headerlink" href="#using-a-custom-name-for-the-new-language" title="Permalink to this headline">¶</a></h3>
+<p>Using a custom name for the new language is the proper choice when necessary
+functionality is exclusively available in a past version of Python. Such cases
+are likely transient, but when they occur, they are best handled as an
+exception.</p>
+<p>Using a custom name for the language is significantly easier renaming an
+existing language. All that is required is that the built <tt class="docutils literal"><span class="pre">python.so</span></tt>
+file be manually into the <tt class="docutils literal"><span class="pre">$PREFIX/lib/postgresql</span></tt> directory under a new
+name:</p>
+<div class="highlight-python"><pre>cp python.so $PREFIX/lib/postgresql/python31.so</pre>
+</div>
+<p>Once complete, database installation can then be performed with a slight
+modification:</p>
+<div class="highlight-python"><pre>BEGIN;
+CREATE SCHEMA __python31__;
+SET search_path = __python31__;
+CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+ LANGUAGE C AS 'python31', 'pl_handler';
+CREATE FUNCTION validator(oid) RETURNS VOID
+ LANGUAGE C AS 'python31', 'pl_validator';
+COMMIT;
+
+-- For 9.0 and greater
+BEGIN;
+CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+ LANGUAGE C AS 'python31', 'pl_inline';
+CREATE LANGUAGE python31
+ HANDLER handler INLINE inline VALIDATOR validator;
+COMMIT;
+
+-- For versions before 9.0
+BEGIN;
+CREATE LANGUAGE python31
+ HANDLER handler VALIDATOR validator;
+COMMIT;</pre>
+</div>
+<p>Complete. The <tt class="docutils literal"><span class="pre">python31</span></tt> language will be ready for use alongside any others.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Requirements</a></li>
+<li><a class="reference external" href="#administration">Administration</a><ul>
+<li><a class="reference external" href="#compilation">Compilation</a><ul>
+<li><a class="reference external" href="#pgxs-build">PGXS Build</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#database-installation">Database Installation</a></li>
+<li><a class="reference external" href="#configuration">Configuration</a><ul>
+<li><a class="reference external" href="#local-initialization">Local Initialization</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#managing-multiple-versions">Managing Multiple Versions</a><ul>
+<li><a class="reference external" href="#renaming-the-existing-language">Renaming the Existing Language</a></li>
+<li><a class="reference external" href="#using-a-custom-name-for-the-new-language">Using a Custom Name for the New Language</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">pg-python</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="programming.html"
+                                  title="next chapter">Programming</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/admin.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="programming.html" title="Programming"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="pg-python"
+             >previous</a> |</li>
+        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+=======
+Gotchas
+=======
+
+In some cases, describing a more glaring issue in its native narrative or
+reference context doesn't provide the highlighting the issue deserves.
+This chapter is dedicated to such issues.
+
+PostgreSQL 8.3
+==============
+
+Issues specific to version 8.3 of PostgreSQL.
+
+Composite Equality
+------------------
+
+It's not supported. So in such cases::
+
+ tuple(composite_a) == tuple(composite_b)
+
+Will be necessary.

@@ -19,7 +19,7 @@ languages = {
 	'py_3_1': 'Python 3.1',
 }
 
-date = None
+date = 'Thu Apr 22 04:40:05 MST 2010'
 tags = set(('beta',))
 version_info = (1, 0, 0)
 version = '.'.join(map(str, version_info)) + (date is None and 'dev' or '')

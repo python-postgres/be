@@ -1,0 +1,25 @@
+=======
+Changes
+=======
+
+This changelog tracks the general events of the v1.0 branch of the pg-python
+project.
+
+1.0 in development
+==================
+
+pg-python marks a significant deviation from the original PL/Py direction.
+
+ - Python 3 only
+ - Functions [are] Modules; entry point based code execution
+ - PEP-302 __loader__'s are used to support tracebacks
+ - Uses SPI with some extensions
+ - Gets rid of the attempt at a rather confusing abstract Call type
+ - Improved Database Access interface (some consistency with py-postgresql)
+ - Internal Subtransactions are tracked and ensured complete on handler exit
+ - Improved native typing: arrays, composites, composite arrays.
+ - Removed HeapTuple interface type in favor of DatumTuples/Postgres.types.record
+ - PGXS based build
+ - Drops support for 8.0, 8.1, and 8.2 (the latter was never released or tagged)
+ - Default language name is now "python".
+ - Implement interrupt support
