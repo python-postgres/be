@@ -5,8 +5,8 @@ Changes
 This changelog tracks the general events of the v1.0 branch of the pg-python
 project.
 
-1.0 in development
-==================
+1.0 released on 2010-04-22
+==========================
 
 pg-python marks a significant deviation from the original PL/Py direction.
 
