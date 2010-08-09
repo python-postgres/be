@@ -170,7 +170,7 @@ Row triggers can be fired for each row that is inserted, updated, or
 deleted. The additional arguments given to a row trigger entry points
 are records of the target table's type--a subclass of
 :ref:`pg_types_record`.
-These arguments provide access the row being inserted, updated, or deleted.
+These arguments provide access to the row being inserted, updated, or deleted.
 
 Row Trigger Entry Points:
 
