@@ -799,7 +799,7 @@ the database access interfaces.
 Error Control
 =============
 
-When a database error is caused by use of a Postres interface, a
+When a database error is caused by use of a Postgres interface, a
 :ref:`pg_exception` is raised. After a database error occurs, access to the
 database is prohibited until the failed
 transaction state is corrected. The transaction state cannot be
