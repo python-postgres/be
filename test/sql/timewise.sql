@@ -16,10 +16,11 @@ def main(d):
 			'week',
 			'month',
 			'day',
-			'epoch',
 			'dayofweek',
 			'dayofyear',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
@@ -41,8 +42,9 @@ def main(d):
 			'second',
 			'millisecond',
 			'microsecond',
-			'epoch',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
@@ -65,8 +67,9 @@ def main(d):
 			'second',
 			'millisecond',
 			'microsecond',
-			'epoch',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
@@ -99,7 +102,6 @@ def main(d):
 			'week',
 			'month',
 			'day',
-			'epoch',
 			'hour',
 			'minute',
 			'second',
@@ -108,6 +110,8 @@ def main(d):
 			'dayofweek',
 			'dayofyear',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
@@ -140,7 +144,6 @@ def main(d):
 			'week',
 			'month',
 			'day',
-			'epoch',
 			'hour',
 			'minute',
 			'second',
@@ -149,6 +152,8 @@ def main(d):
 			'dayofweek',
 			'dayofyear',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
@@ -180,13 +185,14 @@ def main(d):
 			'quarter',
 			'month',
 			'day',
-			'epoch',
 			'hour',
 			'minute',
 			'second',
 			'millisecond',
 			'microsecond',
 		]
+	] + [
+		'epoch: {:.3f}'.format(d.epoch)
 	]
 $python$;
 
