@@ -1,0 +1,354 @@
+CREATE OR REPLACE FUNCTION replaces_self() RETURNS text LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield "foo"
+	yield "bar"
+$python$;
+SELECT i, replaces_self() FROM generate_series(0, 5) AS g(i);
+ i | replaces_self 
+---+---------------
+ 0 | foo
+ 1 | bar
+ 2 | foo
+ 3 | bar
+ 4 | foo
+ 5 | bar
+(6 rows)
+
+CREATE OR REPLACE FUNCTION replaces_self(i int) RETURNS text LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main(i):
+	yield "bar: %d,%d" % (i, (yield "foo: " + str(i))[0])
+$python$;
+-- getting new args, right?
+SELECT i, replaces_self(i) FROM generate_series(0, 5) AS g(i);
+ i | replaces_self 
+---+---------------
+ 0 | foo: 0
+ 1 | bar: 0,1
+ 2 | foo: 2
+ 3 | bar: 2,3
+ 4 | foo: 4
+ 5 | bar: 4,5
+(6 rows)
+
+CREATE OR REPLACE FUNCTION scount() RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	i=0
+	while True:
+		yield i
+		i = i + 1
+$python$;
+-- simple count-with-me
+SELECT scount() AS sc, i FROM generate_series(0, 20-1) AS g(i);
+ sc | i  
+----+----
+  0 |  0
+  1 |  1
+  2 |  2
+  3 |  3
+  4 |  4
+  5 |  5
+  6 |  6
+  7 |  7
+  8 |  8
+  9 |  9
+ 10 | 10
+ 11 | 11
+ 12 | 12
+ 13 | 13
+ 14 | 14
+ 15 | 15
+ 16 | 16
+ 17 | 17
+ 18 | 18
+ 19 | 19
+(20 rows)
+
+CREATE OR REPLACE FUNCTION srcount(i int) RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main(i):
+	n = 0
+	while True:
+		n = i + n
+		i, = (yield n)
+$python$;
+-- takes a parameter to work properly
+SELECT srcount(i) AS sc, i FROM generate_series(0, 20-1) AS g(i);
+ sc  | i  
+-----+----
+   0 |  0
+   1 |  1
+   3 |  2
+   6 |  3
+  10 |  4
+  15 |  5
+  21 |  6
+  28 |  7
+  36 |  8
+  45 |  9
+  55 | 10
+  66 | 11
+  78 | 12
+  91 | 13
+ 105 | 14
+ 120 | 15
+ 136 | 16
+ 153 | 17
+ 171 | 18
+ 190 | 19
+(20 rows)
+
+CREATE OR REPLACE FUNCTION srcount(i int, j int) RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main(i, j):
+	k = 0
+	while True:
+		k = k + 1
+		i, j = (yield i + j + k)
+$python$;
+-- takes a couple parameters
+SELECT srcount(i, 0) AS sc1, srcount(i, 10) AS sc2, i FROM generate_series(0, 20-1) AS g(i);
+ sc1 | sc2 | i  
+-----+-----+----
+   1 |  11 |  0
+   3 |  13 |  1
+   5 |  15 |  2
+   7 |  17 |  3
+   9 |  19 |  4
+  11 |  21 |  5
+  13 |  23 |  6
+  15 |  25 |  7
+  17 |  27 |  8
+  19 |  29 |  9
+  21 |  31 | 10
+  23 |  33 | 11
+  25 |  35 | 12
+  27 |  37 | 13
+  29 |  39 | 14
+  31 |  41 | 15
+  33 |  43 | 16
+  35 |  45 | 17
+  37 |  47 | 18
+  39 |  49 | 19
+(20 rows)
+
+-- non-composite stateful function used in materialization
+CREATE OR REPLACE FUNCTION mat_stateful() RETURNS text LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield 'should be seen'
+	yield 'should not be seen'
+$python$;
+-- it's not an SRF, but it's being materialized.
+-- This test makes sure that something surprising doesn't happen.
+SELECT mat_stateful();
+  mat_stateful  
+----------------
+ should be seen
+(1 row)
+
+SELECT * FROM mat_stateful();
+  mat_stateful  
+----------------
+ should be seen
+(1 row)
+
+CREATE OR REPLACE FUNCTION yay_stateful() RETURNS text language python as
+$$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield 'foo'
+$$;
+CREATE OR REPLACE FUNCTION load_yay_stateful() RETURNS text language python as
+$$
+def main():
+	fn = proc('yay_stateful()')
+	fn.load_module()
+	return 'success'
+$$;
+SELECT load_yay_stateful();
+ load_yay_stateful 
+-------------------
+ success
+(1 row)
+
+CREATE OR REPLACE FUNCTION call_yay_stateful() RETURNS text language python as
+$$
+import sys
+def main():
+	fn = proc('yay_stateful()')
+	assert fn() == 'foo'
+	fn_mod = sys.modules[fn.oidstr]
+	fn_mod.main()
+	return 'fail'
+$$;
+-- should bomb out; invalid context
+SELECT call_yay_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.call_yay_stateful()", line 7, in main
+    fn_mod.main()
+ RuntimeError: cannot call Stateful across execution contexts
+
+[public.call_yay_stateful()]
+-- CORNERS --
+-- not really stateful
+CREATE OR REPLACE FUNCTION not_stateful() RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	return "it lied"
+$python$;
+SELECT not_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: state source did not return an iterator
+
+[public.not_stateful()]
+-- not really stateful, but it is an iterator
+CREATE OR REPLACE FUNCTION kinda_stateful() RETURNS int LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	return iter("it lied")
+$python$;
+SELECT kinda_stateful();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+TypeError: stateful source did not produce an object with a 'send' method
+
+[public.kinda_stateful()]
+-- SRFs --
+-- Not that I would recommend it.
+CREATE OR REPLACE FUNCTION stateful_srf() RETURNS SETOF text LANGUAGE python AS
+$python$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield ("foo","bar")
+	yield ("fluffy","bunnies")
+$python$;
+SELECT stateful_srf() FROM generate_series(1, 2) AS g(i);
+ stateful_srf 
+--------------
+ foo
+ bar
+ fluffy
+ bunnies
+(4 rows)
+
+-- TRFs --
+-- Scary. I know.
+CREATE OR REPLACE FUNCTION stateful_trigger() RETURNS TRIGGER LANGUAGE python AS
+$python$
+from Postgres import NOTICE, Stateful
+
+@Stateful
+def before_insert(td, new):
+	assert new[0] == 'fluffy'
+	td, new = (yield ('foo',))
+	assert new[0] == 'bunnies'
+	yield ('bar',)
+	assert "fail" is True
+
+@Stateful
+def before_update(td, old, new):
+	NOTICE('foo')
+	td, old, new = yield new
+	NOTICE('bar')
+	yield new
+$python$;
+DROP TABLE IF EXISTS stateful_trigger_table CASCADE;
+NOTICE:  table "stateful_trigger_table" does not exist, skipping
+CREATE TABLE stateful_trigger_table(t text);
+CREATE TRIGGER stateful_trigger_trigger
+ BEFORE INSERT OR UPDATE ON stateful_trigger_table
+ FOR EACH ROW
+ EXECUTE PROCEDURE stateful_trigger();
+BEGIN;
+INSERT INTO stateful_trigger_table VALUES ('fluffy'), ('bunnies');
+SELECT * FROM stateful_trigger_table;
+  t  
+-----
+ foo
+ bar
+(2 rows)
+
+UPDATE stateful_trigger_table SET t = NULL;
+NOTICE:  foo
+NOTICE:  bar
+SELECT COUNT(t IS NULL) AS count FROM stateful_trigger_table;
+ count 
+-------
+     2
+(1 row)
+
+COMMIT;
+CREATE OR REPLACE FUNCTION too_much_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def too():
+	yield 5
+	yield 7
+
+@Stateful
+def main():
+	yield 1
+	yield too()
+$$;
+SELECT too_much_state() FROM generate_series(1, 10) AS g(i);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.too_much_state()", line 12, in main
+    yield too()
+ RuntimeError: cannot progress state belonging to another object
+
+[public.too_much_state()]
+CREATE OR REPLACE FUNCTION self_dependent_state() RETURNS int LANGUAGE python AS
+$$
+from Postgres import Stateful
+
+@Stateful
+def main():
+	yield main()
+$$;
+SELECT self_dependent_state();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.self_dependent_state()", line 6, in main
+    yield main()
+ RuntimeError: cannot execute Stateful while getting state
+
+[public.self_dependent_state()]
