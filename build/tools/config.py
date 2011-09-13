@@ -1,4 +1,5 @@
 import sys
+import os
 import os.path
 import uuid
 try:
@@ -31,8 +32,25 @@ emit('python_cflags', ' '.join([
 	]
 ))
 
+version = sysconfig.get_config_vars('VERSION')[0]
+libdir = sysconfig.get_config_vars('LIBDIR')[0]
+
+##
+# XXX: Look for pythonX.Ym
+# The OSX distribution appears to use the 'm' version by default,
+# so if there is no m version in the library directory, assume the
+# sans 'm' library is what we want.
+libpythonm = 'python' + version + 'm'
+for x in os.listdir(libdir):
+	if libpythonm in x:
+		# We found libpythonX.Ym.so in the LIBDIR.
+		libpy = '-l' + libpythonm
+		break
+else:
+	libpy = '-lpython' + version
+
 emit('python_ldflags', ' '.join([
-		'-L' + sysconfig.get_config_vars('LIBDIR')[0],
-		'-lpython' + sysconfig.get_config_vars('VERSION')[0],
+		'-L' + libdir,
+		libpy,
 	] + sysconfig.get_config_vars('SHLIBS', 'SYSLIBS', 'LDFLAGS')
 ))
