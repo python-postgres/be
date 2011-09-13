@@ -13,6 +13,7 @@ PostgreSQL:
 And the following versions of Python:
 
  - Python 3.1
+ - Python 3.2
 
 Python's C-APIs are fairly stable, so newer versions of Python are expected to
 normally work. However, PostgreSQL's C-APIs and header files can be adjusted

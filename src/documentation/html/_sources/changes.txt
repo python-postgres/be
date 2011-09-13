@@ -5,6 +5,14 @@ Changes
 This changelog tracks the general events of the v1.0 branch of the pg-python
 project.
 
+1.0.1 in development
+====================
+
+ - Fix builds against Python 3.2. pg-python needs to link against "python3.2m".
+ - Fix the 'configure' script to work properly on Solaris. (Patch by David Conners)
+ - Update tests to specify floating point precision for epoch representation.
+ - Register PostgreSQL 9.1 support.
+
 1.0 released on 2010-04-22
 ==========================
 

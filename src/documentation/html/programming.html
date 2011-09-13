@@ -1,25 +1,31 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Programming &mdash; pg-python v1.0.0 documentation</title>
+    <title>Programming &mdash; pg-python 1.0.1dev documentation</title>
+    
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.0',
-        COLLAPSE_MODINDEX: false,
+        VERSION:     '1.0.1dev',
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pg-python v1.0.0 documentation" href="index.html" />
+    <link rel="top" title="pg-python 1.0.1dev documentation" href="index.html" />
     <link rel="next" title="Gotchas" href="gotchas.html" />
     <link rel="prev" title="Requirements" href="admin.html" /> 
   </head>
@@ -36,7 +42,7 @@
         <li class="right" >
           <a href="admin.html" title="Requirements"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python 1.0.1dev documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -72,23 +78,23 @@ Python types and interface functions created by pg-python. In order to
 provide convenient access to often used objects, some
 additional built-ins are provided by pg-python.</p>
 <blockquote>
-<dl class="docutils">
+<div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">&#64;pytypes</span></tt></dt>
-<dd>Alias to <a class="reference external" href="postgres.html#pg-pytypes"><em>Postgres.pytypes</em></a>.</dd>
+<dd>Alias to <a class="reference internal" href="postgres.html#pg-pytypes"><em>Postgres.pytypes</em></a>.</dd>
 <dt><tt class="docutils literal"><span class="pre">prepare(sql_statement)</span></tt></dt>
-<dd>Alias to <a class="reference external" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a></dd>
+<dd>Alias to <a class="reference internal" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a></dd>
 <dt><tt class="docutils literal"><span class="pre">proc(procedure_id)</span></tt></dt>
 <dd>Function that takes <tt class="docutils literal"><span class="pre">pg_catalog.regprocedure</span></tt> text or a
-function <tt class="docutils literal"><span class="pre">Oid</span></tt> and returns the corresponding <a class="reference external" href="postgres.html#pg-function"><em>Postgres.Function</em></a>.</dd>
+function <tt class="docutils literal"><span class="pre">Oid</span></tt> and returns the corresponding <a class="reference internal" href="postgres.html#pg-function"><em>Postgres.Function</em></a>.</dd>
 <dt><tt class="docutils literal"><span class="pre">sqleval(sql_expr,</span> <span class="pre">*args)</span></tt></dt>
-<dd>Alias to <a class="reference external" href="postgres.html#pg-eval"><em>Postgres.eval</em></a>.</dd>
+<dd>Alias to <a class="reference internal" href="postgres.html#pg-eval"><em>Postgres.eval</em></a>.</dd>
 <dt><tt class="docutils literal"><span class="pre">sqlexec(str_of_sql_statements)</span></tt></dt>
-<dd>Execute multiple SQL statements. Alias to <a class="reference external" href="postgres.html#pg-execute"><em>Postgres.execute</em></a>.</dd>
+<dd>Execute multiple SQL statements. Alias to <a class="reference internal" href="postgres.html#pg-execute"><em>Postgres.execute</em></a>.</dd>
 <dt><tt class="docutils literal"><span class="pre">xact()</span></tt></dt>
 <dd>Context manager that starts and ends an internal subtransaction.
-Alias to <a class="reference external" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a>.</dd>
+Alias to <a class="reference internal" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a>.</dd>
 </dl>
-</blockquote>
+</div></blockquote>
 </div>
 <div class="section" id="normal-functions">
 <h2>Normal Functions<a class="headerlink" href="#normal-functions" title="Permalink to this headline">¶</a></h2>
@@ -184,7 +190,7 @@ def before_insert(td, new):
 $python$;</pre>
 </div>
 <p>When a trigger function&#8217;s entry point is invoked, it is given
-<em>at least</em> one argument, the <a class="reference external" href="postgres.html#pg-triggerdata"><em>Postgres.TriggerData</em></a> describing the event.
+<em>at least</em> one argument, the <a class="reference internal" href="postgres.html#pg-triggerdata"><em>Postgres.TriggerData</em></a> describing the event.
 Additional arguments given to the entry point, if any, depend on the entry
 point&#8211;each entry point takes a certain number of arguments that suites the
 event.</p>
@@ -193,11 +199,11 @@ event.</p>
 <p>Row triggers can be fired for each row that is inserted, updated, or
 deleted. The additional arguments given to a row trigger entry points
 are records of the target table&#8217;s type&#8211;a subclass of
-<a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a>.
-These arguments provide access the row being inserted, updated, or deleted.</p>
+<a class="reference internal" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a>.
+These arguments provide access to the row being inserted, updated, or deleted.</p>
 <p>Row Trigger Entry Points:</p>
 <blockquote>
-<dl class="docutils">
+<div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">before_insert(td,</span> <span class="pre">new):</span></tt></dt>
 <dd><p class="first">The <tt class="docutils literal"><span class="pre">new</span></tt> argument is the row that will be inserted.</p>
 <p class="last">Executed for each row, before the insertion is actually made. This entry
@@ -219,19 +225,19 @@ point can only suppress the manipulation.</p>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_insert(td,</span> <span class="pre">new):</span></tt></dt>
 <dd>Executed for each row, after the insert occurs. The
 <tt class="docutils literal"><span class="pre">new</span></tt> argument is the row that was inserted.
-<tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> be returned.</dd>
+<tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> be returned.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_update(td,</span> <span class="pre">old,</span> <span class="pre">new):</span></tt></dt>
 <dd>Executed for each row, after the update occurs. The
 <tt class="docutils literal"><span class="pre">old</span></tt> argument is the row that was altered into the
-<tt class="docutils literal"><span class="pre">new</span></tt> argument. <tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
+<tt class="docutils literal"><span class="pre">new</span></tt> argument. <tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_delete(td,</span> <span class="pre">old):</span></tt></dt>
 <dd>Executed for each row, after the delete occurs. The
 <tt class="docutils literal"><span class="pre">old</span></tt> argument is the row that was removed from the
-table. <tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
+table. <tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
 </dl>
-</blockquote>
-<p>The AFTER entry points require that the <tt class="xref docutils literal"><span class="pre">None</span></tt> object is
-returned. If <tt class="xref docutils literal"><span class="pre">None</span></tt> is not returned, the procedural
+</div></blockquote>
+<p>The AFTER entry points require that the <tt class="docutils literal"><span class="pre">None</span></tt> object is
+returned. If <tt class="docutils literal"><span class="pre">None</span></tt> is not returned, the procedural
 language will throw an error.</p>
 <div class="section" id="suppressing-manipulations">
 <h4>Suppressing Manipulations<a class="headerlink" href="#suppressing-manipulations" title="Permalink to this headline">¶</a></h4>
@@ -242,7 +248,7 @@ before the manipulation occurs. Specifically,
 <tt class="docutils literal"><span class="pre">before_delete</span></tt> are the only entry points that can cause
 suppression.</p>
 <p>In order to signal that suppression should occur, the called entry point
-will need to raise the <a class="reference external" href="postgres.html#pg-stopevent"><em>Postgres.StopEvent</em></a> exception:</p>
+will need to raise the <a class="reference internal" href="postgres.html#pg-stopevent"><em>Postgres.StopEvent</em></a> exception:</p>
 <div class="highlight-python"><pre>CREATE TABLE single_column(t text);
 INSERT INTO single_column VALUES ('removed'), ('kept');
 
@@ -275,7 +281,7 @@ updated, substitution can be performed by
 <em>returning the replacement row</em>. Substitution can only be used with row
 triggers that are timed before the manipulation. Specifically, only
 <tt class="docutils literal"><span class="pre">before_insert</span></tt> and <tt class="docutils literal"><span class="pre">before_update</span></tt>
-can perform row substitution. If <tt class="xref docutils literal"><span class="pre">None</span></tt> is returned,
+can perform row substitution. If <tt class="docutils literal"><span class="pre">None</span></tt> is returned,
 <em>the manipulation will continue unaltered</em>:</p>
 <div class="highlight-python"><pre>CREATE TABLE two_columns(i int, t text);
 
@@ -308,7 +314,7 @@ replacement. See <a class="reference internal" href="#composite-types">Composite
 <p class="first admonition-title">Tip</p>
 <p class="last">The <tt class="docutils literal"><span class="pre">replace</span></tt> and <tt class="docutils literal"><span class="pre">transform</span></tt> methods
 on records are often the most convenient mechanisms to create the
-appropriate substitute. See the <a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> reference
+appropriate substitute. See the <a class="reference internal" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> reference
 documentation for more details on how to use these methods.</p>
 </div>
 </div>
@@ -316,9 +322,9 @@ documentation for more details on how to use these methods.</p>
 <div class="section" id="statement-triggers">
 <h3>Statement Triggers<a class="headerlink" href="#statement-triggers" title="Permalink to this headline">¶</a></h3>
 <p>Like row-triggers, trigger functions called with statement orientation
-are given a <a class="reference external" href="postgres.html#pg-triggerdata"><em>Postgres.TriggerData</em></a> object as the first argument.
+are given a <a class="reference internal" href="postgres.html#pg-triggerdata"><em>Postgres.TriggerData</em></a> object as the first argument.
 Statement triggers timed after are given one or two additional
-<tt class="xref docutils literal"><span class="pre">None</span></tt> objects&#8211;two for update manipulations. These additional
+<tt class="docutils literal"><span class="pre">None</span></tt> objects&#8211;two for update manipulations. These additional
 arguments are given in order to accommodate for future functionality.</p>
 <p>The following example shows a statement trigger that can handle multiple
 event types:</p>
@@ -351,7 +357,7 @@ TRUNCATE monitored_table;</pre>
 </div>
 <p>Statement Trigger Entry Points:</p>
 <blockquote>
-<dl class="docutils">
+<div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">before_insert_statement(td):</span></tt></dt>
 <dd>Executed before each INSERT statement.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">before_update_statement(td):</span></tt></dt>
@@ -362,22 +368,22 @@ TRUNCATE monitored_table;</pre>
 <dd>Executed before each TRUNCATE statement.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_insert_statement(td,</span> <span class="pre">news):</span></tt></dt>
 <dd><p class="first">Executed after each INSERT statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">news</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">news</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_update_statement(td,</span> <span class="pre">olds,</span> <span class="pre">news):</span></tt></dt>
 <dd><p class="first">Executed after each UPDATE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> and <tt class="docutils literal"><span class="pre">news</span></tt> arguments are always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> and <tt class="docutils literal"><span class="pre">news</span></tt> arguments are always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_delete_statement(td,</span> <span class="pre">olds):</span></tt></dt>
 <dd><p class="first">Executed after each DELETE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_truncate_statement(td,</span> <span class="pre">olds):</span></tt></dt>
 <dd><p class="first">Executed after each TRUNCATE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 </dl>
-</blockquote>
+</div></blockquote>
 </div>
 </div>
 <div class="section" id="stateful-functions">
@@ -386,7 +392,7 @@ TRUNCATE monitored_table;</pre>
 <p class="first admonition-title">Note</p>
 <p class="last">Stateful functions are an advanced feature of pg-python.</p>
 </div>
-<p>Stateful functions are entry points decorated with <a class="reference external" href="postgres.html#pg-stateful"><em>Postgres.Stateful</em></a>.
+<p>Stateful functions are entry points decorated with <a class="reference internal" href="postgres.html#pg-stateful"><em>Postgres.Stateful</em></a>.
 When an entry point is decorated with <cite>Postgres.Stateful</cite>, the callable
 should return a state object. The state object is normally a
 generator object, but it can be any object that supports the generator
@@ -498,26 +504,26 @@ well before they are used.</p>
 Once loaded, function modules exist in <tt class="docutils literal"><span class="pre">sys.modules</span></tt> as regular modules do.
 The primary differences between regular Python modules and function modules
 are that the function module&#8217;s source is stored inside the database
-and the presence of <tt class="docutils literal"><span class="pre">__func__</span></tt>, a <a class="reference external" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object, in the module&#8217;s
+and the presence of <tt class="docutils literal"><span class="pre">__func__</span></tt>, a <a class="reference internal" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object, in the module&#8217;s
 dictionary. This object represents the Postgres function and provides the
 functionality needed to create the module object itself&#8211;it is also the
 module&#8217;s <tt class="docutils literal"><span class="pre">__loader__</span></tt>.</p>
 <p>A function module&#8217;s attributes:</p>
 <blockquote>
-<dl class="docutils">
+<div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">__name__</span></tt></dt>
 <dd>The function&#8217;s Oid as a string object. Used as the <tt class="docutils literal"><span class="pre">sys.modules</span></tt> key.</dd>
 <dt><tt class="docutils literal"><span class="pre">__loader__</span></tt></dt>
 <dd>The module&#8217;s PEP-302 loader.</dd>
 <dt><tt class="docutils literal"><span class="pre">__func__</span></tt></dt>
-<dd>The module&#8217;s <a class="reference external" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object.</dd>
+<dd>The module&#8217;s <a class="reference internal" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object.</dd>
 <dt><tt class="docutils literal"><span class="pre">__file__</span></tt></dt>
 <dd>The qualified regprocedure representation of the SQL function.</dd>
 </dl>
-</blockquote>
+</div></blockquote>
 <p>When a function is loaded, all of the necessary information is cached for
 re-use. The function module exists in <tt class="docutils literal"><span class="pre">sys.modules</span></tt> and it contains
-<tt class="docutils literal"><span class="pre">__func__</span></tt>. That <a class="reference external" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object contains all the
+<tt class="docutils literal"><span class="pre">__func__</span></tt>. That <a class="reference internal" href="postgres.html#pg-function"><em>Postgres.Function</em></a> object contains all the
 information needed to properly construct the arguments upon
 execution and what to do with the returned object.
 However, this information can change. If a function is replaced or a
@@ -533,10 +539,10 @@ caused by already initialized objects.</p>
 <div class="section" id="data-objects">
 <h2>Data Objects<a class="headerlink" href="#data-objects" title="Permalink to this headline">¶</a></h2>
 <p>When parameters are given to a function or rows are returned by a prepared
-statement, <a class="reference external" href="postgres.html#pg-object"><em>Postgres.Object</em></a> instances are used to represent the data.
-The only exception is that Python&#8217;s <tt class="xref docutils literal"><span class="pre">None</span></tt> is used to represent SQL NULLs.
+statement, <a class="reference internal" href="postgres.html#pg-object"><em>Postgres.Object</em></a> instances are used to represent the data.
+The only exception is that Python&#8217;s <tt class="docutils literal"><span class="pre">None</span></tt> is used to represent SQL NULLs.
 Some of these data objects have custom interfaces for convenient access to
-parts of the data. For example, <a class="reference external" href="postgres_types.html#pg-types-date"><em>Postgres.types.date</em></a>
+parts of the data. For example, <a class="reference internal" href="postgres_types.html#pg-types-date"><em>Postgres.types.date</em></a>
 objects have properties for getting the day, month, and year parts of the
 date.</p>
 <p>Data objects can make use of the operators that exist in the database.
@@ -549,7 +555,7 @@ comparisons.</p>
 <p class="last">Operators are greedy is the sense that they will implicitly convert a
 Python object to the type of the other operand before performing the
 operation. This only occurs when one of the operands is not
-a <a class="reference external" href="postgres.html#pg-object"><em>Postgres.Object</em></a>.</p>
+a <a class="reference internal" href="postgres.html#pg-object"><em>Postgres.Object</em></a>.</p>
 </div>
 <p>Data objects are local to the backend context, and most Python modules
 are written to expect Python types. Data objects should be converted
@@ -609,14 +615,14 @@ interfaces used in SQL:</p>
 <p>The <tt class="docutils literal"><span class="pre">sql_get_element</span></tt> method doesn&#8217;t raise index errors
 when the boundary is crossed by an index. It is consistent with how
 single elements are accessed using indirection in SQL.
-<tt class="xref docutils literal"><span class="pre">None</span></tt> is returned in cases where the requested element
+<tt class="docutils literal"><span class="pre">None</span></tt> is returned in cases where the requested element
 does not exist.</p>
-<p>See <a class="reference external" href="postgres.html#pg-array"><em>Postgres.Array</em></a> for more information about the array interfaces.</p>
+<p>See <a class="reference internal" href="postgres.html#pg-array"><em>Postgres.Array</em></a> for more information about the array interfaces.</p>
 </div>
 <div class="section" id="composite-types">
 <h3>Composite Types<a class="headerlink" href="#composite-types" title="Permalink to this headline">¶</a></h3>
 <p>Composite types are supported by subclasses of the
-<a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> type. Composite types are fairly interesting objects
+<a class="reference internal" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> type. Composite types are fairly interesting objects
 as they are both a sequence and a mapping. In the following examples, the
 composite type <tt class="docutils literal"><span class="pre">composite_test</span></tt> will be used to aid examples:</p>
 <div class="highlight-python"><pre>CREATE TYPE composite_test AS (i int, t text);</pre>
@@ -665,12 +671,12 @@ manipulation methods. There are two manipulation methods, <tt class="docutils li
 <p class="first admonition-title">Tip</p>
 <p class="last">These methods are particularly useful with <cite>Trigger Returning Functions</cite>.</p>
 </div>
-<p>See <a class="reference external" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> for more information.</p>
+<p>See <a class="reference internal" href="postgres_types.html#pg-types-record"><em>Postgres.types.record</em></a> for more information.</p>
 </div>
 </div>
 <div class="section" id="database-access">
 <h2>Database Access<a class="headerlink" href="#database-access" title="Permalink to this headline">¶</a></h2>
-<p>Database access is provided by <a class="reference external" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a> objects. Each created
+<p>Database access is provided by <a class="reference internal" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a> objects. Each created
 instance represents a single SQL statement that can take positional
 parameters and return rows.</p>
 <p>Statement objects have multiple methods that can execute the statement. The
@@ -692,7 +698,7 @@ is returned as a Python list:</p>
 </div>
 <p>Internally, a cursor is allocated when <tt class="docutils literal"><span class="pre">__call__</span></tt> is used,
 but all the rows are fetched and stored in the list. Most
-execution methods will return an actual <a class="reference external" href="postgres.html#pg-cursor"><em>Postgres.Cursor</em></a> object.
+execution methods will return an actual <a class="reference internal" href="postgres.html#pg-cursor"><em>Postgres.Cursor</em></a> object.
 The cursor that&#8217;s created will be configured to suite the request. When the <tt class="docutils literal"><span class="pre">rows</span></tt>
 execution method is used, the cursor returned can only be used as an
 iterable producing individual rows&#8211;the seek and read methods are not
@@ -780,17 +786,17 @@ returns rows. An example of <tt class="docutils literal"><span class="pre">load_
 -- third  | 3
 --(3 rows)</pre>
 </div>
-<p>See <a class="reference external" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a> and <a class="reference external" href="postgres.html#pg-cursor"><em>Postgres.Cursor</em></a> for further information about
+<p>See <a class="reference internal" href="postgres.html#pg-statement"><em>Postgres.Statement</em></a> and <a class="reference internal" href="postgres.html#pg-cursor"><em>Postgres.Cursor</em></a> for further information about
 the database access interfaces.</p>
 </div>
 <div class="section" id="error-control">
 <span id="errors"></span><h2>Error Control<a class="headerlink" href="#error-control" title="Permalink to this headline">¶</a></h2>
-<p>When a database error is caused by use of a Postres interface, a
-<a class="reference external" href="postgres.html#pg-exception"><em>Postgres.Exception</em></a> is raised. After a database error occurs, access to the
+<p>When a database error is caused by use of a Postgres interface, a
+<a class="reference internal" href="postgres.html#pg-exception"><em>Postgres.Exception</em></a> is raised. After a database error occurs, access to the
 database is prohibited until the failed
 transaction state is corrected. The transaction state cannot be
 corrected within the function unless the error occurs inside a
-<a class="reference external" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a> block:</p>
+<a class="reference internal" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a> block:</p>
 <div class="highlight-python"><pre>CREATE TEMP TABLE pkviolation (s SERIAL PRIMARY KEY);
 INSERT INTO pkviolation VALUES (DEFAULT);
 
@@ -819,7 +825,7 @@ SELECT * FROM pkviolation;
 -- 12
 --(2 rows)</pre>
 </div>
-<p><a class="reference external" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a> context managers can only be used once, so
+<p><a class="reference internal" href="postgres.html#pg-transaction"><em>Postgres.Transaction</em></a> context managers can only be used once, so
 <tt class="docutils literal"><span class="pre">xact</span></tt> should normally be directly invoked by the with-statement,
 <tt class="docutils literal"><span class="pre">with</span> <span class="pre">xact():</span></tt>.</p>
 <div class="admonition note">
@@ -828,8 +834,8 @@ SELECT * FROM pkviolation;
 the transaction block. <em>Attempting to interact with the database</em>
 <em>while in a failed transaction will result in another exception being raised.</em></p>
 </div>
-<p>Postgres errors can be raised from Python using <a class="reference external" href="postgres.html#pg-ereport"><em>Postgres.ereport</em></a>.
-However, the <a class="reference external" href="postgres.html#pg-error"><em>Postgres.ereport</em></a> wrapper is more convenient, so direct use
+<p>Postgres errors can be raised from Python using <a class="reference internal" href="postgres.html#pg-ereport"><em>Postgres.ereport</em></a>.
+However, the <a class="reference internal" href="postgres.html#pg-error"><em>Postgres.ereport</em></a> wrapper is more convenient, so direct use
 of <tt class="docutils literal"><span class="pre">ereport</span></tt> is <em>not</em> recommended. This
 can be used to construct custom errors with more useful information than the
 more verbose Python exception output:</p>
@@ -857,59 +863,59 @@ reported error message.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-            <h3><a href="index.html">Table Of Contents</a></h3>
-            <ul>
-<li><a class="reference external" href="">Programming</a><ul>
-<li><a class="reference external" href="#builtins">Builtins</a></li>
-<li><a class="reference external" href="#normal-functions">Normal Functions</a></li>
-<li><a class="reference external" href="#set-returning-functions">Set Returning Functions</a></li>
-<li><a class="reference external" href="#trigger-returning-functions">Trigger Returning Functions</a><ul>
-<li><a class="reference external" href="#row-triggers">Row Triggers</a><ul>
-<li><a class="reference external" href="#suppressing-manipulations">Suppressing Manipulations</a></li>
-<li><a class="reference external" href="#substituting-rows">Substituting Rows</a></li>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Programming</a><ul>
+<li><a class="reference internal" href="#builtins">Builtins</a></li>
+<li><a class="reference internal" href="#normal-functions">Normal Functions</a></li>
+<li><a class="reference internal" href="#set-returning-functions">Set Returning Functions</a></li>
+<li><a class="reference internal" href="#trigger-returning-functions">Trigger Returning Functions</a><ul>
+<li><a class="reference internal" href="#row-triggers">Row Triggers</a><ul>
+<li><a class="reference internal" href="#suppressing-manipulations">Suppressing Manipulations</a></li>
+<li><a class="reference internal" href="#substituting-rows">Substituting Rows</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#statement-triggers">Statement Triggers</a></li>
+<li><a class="reference internal" href="#statement-triggers">Statement Triggers</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#stateful-functions">Stateful Functions</a></li>
-<li><a class="reference external" href="#inline-execution">Inline Execution</a></li>
-<li><a class="reference external" href="#function-modules">Function Modules</a></li>
-<li><a class="reference external" href="#data-objects">Data Objects</a><ul>
-<li><a class="reference external" href="#array-types">Array Types</a></li>
-<li><a class="reference external" href="#composite-types">Composite Types</a></li>
+<li><a class="reference internal" href="#stateful-functions">Stateful Functions</a></li>
+<li><a class="reference internal" href="#inline-execution">Inline Execution</a></li>
+<li><a class="reference internal" href="#function-modules">Function Modules</a></li>
+<li><a class="reference internal" href="#data-objects">Data Objects</a><ul>
+<li><a class="reference internal" href="#array-types">Array Types</a></li>
+<li><a class="reference internal" href="#composite-types">Composite Types</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#database-access">Database Access</a></li>
-<li><a class="reference external" href="#error-control">Error Control</a></li>
+<li><a class="reference internal" href="#database-access">Database Access</a></li>
+<li><a class="reference internal" href="#error-control">Error Control</a></li>
 </ul>
 </li>
 </ul>
 
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="admin.html"
-                                  title="previous chapter">Requirements</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="gotchas.html"
-                                  title="next chapter">Gotchas</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="_sources/programming.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="admin.html"
+                        title="previous chapter">Requirements</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gotchas.html"
+                        title="next chapter">Gotchas</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/programming.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -926,12 +932,12 @@ reported error message.</p>
         <li class="right" >
           <a href="admin.html" title="Requirements"
              >previous</a> |</li>
-        <li><a href="index.html">pg-python v1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python 1.0.1dev documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-      &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+        &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1pre.
     </div>
   </body>
 </html>
