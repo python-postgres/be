@@ -7,9 +7,9 @@
 pg_config 2>/dev/null >/dev/null || ! echo >&2 "ERROR: could not find 'pg_config' executable" || exit 1
 python3 -c 'pass' || ! echo >&2 "ERROR: could not find 'python3' executable" || exit 1
 
-if test -e build/cache
+if test -d build/cache
 then
-	if test -e build/cache/__pg_python_build_cache__
+	if test -f build/cache/__pg_python_build_cache__
 	then
 		echo >&2 "LOG: removing previous build/cache"
 		rm -rf build/cache
@@ -27,7 +27,7 @@ touch build/cache/__pg_python_build_cache__
 
 echo >&2 "LOG: identifying requirements from environment"
 
-system=$(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)
+system=`(pg_config 2>&1 --version | python3 build/tools/pg_identify.py)`
 if test $? -ne 0
 then
 	exit 1
@@ -43,11 +43,14 @@ ln -s "test/expected/$system" expected || exit 1
 
 echo >&2 "LOG: building Makefile includes for PGXS build"
 echo >&2 "LOG: caching postgres.mk. derived from $(pg_config --bindir)/pg_config"
-echo >&2 " $(pg_config --version)"
-echo "PGXS := $(pg_config --pgxs)" >build/cache/postgres.mk
-cat "$(pg_config --pgxs)" >>build/cache/postgres.mk
-echo "pg_bindir := $(pg_config --bindir)" >>build/cache/postgres.mk
+
+echo >&2  '(pg_config --version)'
+
+echo "PGXS:=`(pg_config --pgxs)`" >build/cache/postgres.mk
+
+cat `(pg_config --pgxs)` >>build/cache/postgres.mk
+echo "pg_bindir :="`(pg_config --bindir)` >>build/cache/postgres.mk
 
 echo >&2 "LOG: caching python.mk. derived from $(python3 -c 'import sys; print(sys.executable)') "
-echo >&2 ' '$(python3 -c 'import sys; print(sys.version.replace("\n",""))')
+echo >&2 `(python3 -c 'import sys; print(sys.version.replace("\n",""))')`
 python3 build/tools/config.py >build/cache/python.mk
