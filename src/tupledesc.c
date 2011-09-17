@@ -85,7 +85,7 @@
 	FIELD(attinhcount, 17, Int32GetDatum) \
 	FIELD(attacl, 18, GetNULL) \
 	__VA_ARGS__
-#else
+#elif PG_VERSION_NUM < 90100
 /*
  * 8.5/9.0 and greater.
  */
@@ -109,6 +109,29 @@
 	FIELD(attinhcount, 17, Int32GetDatum) \
 	FIELD(attacl, 18, GetNULL) \
 	FIELD(attoptions, 19, PointerGetDatum) \
+	__VA_ARGS__
+#else
+#define FormData_pg_attribute_Fields(...) \
+	FIELD(attrelid, 1, ObjectIdGetDatum) \
+	FIELD(attname, 2, GetNAME) \
+	FIELD(atttypid, 3, ObjectIdGetDatum) \
+	FIELD(attstattarget, 4, Int32GetDatum) \
+	FIELD(attlen, 5, Int16GetDatum) \
+	FIELD(attnum, 6, Int16GetDatum) \
+	FIELD(attndims, 7, Int32GetDatum) \
+	FIELD(attcacheoff, 8, Int32GetDatum) \
+	FIELD(atttypmod, 9, Int32GetDatum) \
+	FIELD(attbyval, 10, BoolGetDatum) \
+	FIELD(attstorage, 11, CharGetDatum) \
+	FIELD(attalign, 12, CharGetDatum) \
+	FIELD(attnotnull, 13, BoolGetDatum) \
+	FIELD(atthasdef, 14, BoolGetDatum) \
+	FIELD(attisdropped, 15, BoolGetDatum) \
+	FIELD(attislocal, 16, BoolGetDatum) \
+	FIELD(attinhcount, 17, Int32GetDatum) \
+	FIELD(attcollation, 18, ObjectIdGetDatum) \
+	FIELD(attacl, 19, GetNULL) \
+	FIELD(attoptions, 20, PointerGetDatum) \
 	__VA_ARGS__
 #endif
 
