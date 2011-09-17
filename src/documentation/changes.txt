@@ -12,6 +12,7 @@ project.
  - Fix the 'configure' script to work properly on Solaris. (Patch by David Conners)
  - Update tests to specify floating point precision for epoch representation.
  - Register PostgreSQL 9.1 support.
+ - Update pg_attribute fields for 9.1.
 
 1.0 released on 2010-04-22
 ==========================
