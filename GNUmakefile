@@ -3,7 +3,9 @@ all: src/project.py.cfrag src/module.py.cfrag $(MODULE_big)
 # built by configure by build/tools/config.py
 include build/cache/python.mk
 
+EXTENSION := python
 MODULE_big := python
+DATA := python--$(project_version).sql
 
 OBJS = src/pl.o \
 src/do.o \

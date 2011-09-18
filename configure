@@ -54,3 +54,18 @@ echo "pg_bindir :="`(pg_config --bindir)` >>build/cache/postgres.mk
 echo >&2 "LOG: caching python.mk. derived from $(python3 -c 'import sys; print(sys.executable)') "
 echo >&2 `(python3 -c 'import sys; print(sys.version.replace("\n",""))')`
 python3 build/tools/config.py >build/cache/python.mk
+
+project_version=`python3 -c 'import sys; sys.path.append("./src"); import project; print(project.version)'`
+if test $system = 'pg_8_4' -o $system = 'pg_8_3'
+then
+	cp src/install_no_inline.sql python--$project_version.sql
+else
+	cp src/install_inline.sql python--$project_version.sql
+fi
+
+cat >python.control <<EOF
+default_version='$project_version'
+comment='procedural language extension for Python 3'
+encoding='utf-8'
+relocatable=true
+EOF
