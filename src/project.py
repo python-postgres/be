@@ -22,6 +22,6 @@ languages = {
 }
 
 date = None
-tags = set(())
+tags = set(('bugs','compensation'))
 version_info = (1, 0, 1)
 version = '.'.join(map(str, version_info)) + (date is None and 'dev' or '')
