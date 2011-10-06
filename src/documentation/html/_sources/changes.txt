@@ -8,11 +8,11 @@ project.
 1.0.1 released on 2011-09-24
 ============================
 
- - Fix builds against Python 3.2. pg-python needs to link against "python3.2m".
+ - Add support for CREATE EXTENSION.
  - Fix the 'configure' script to work properly on Solaris. (Patch by David Conners)
  - Update tests to specify floating point precision for epoch representation.
  - Parity: register PostgreSQL 9.1 support, and update pg_attribute fields.
- - Add support for CREATE EXTENSION.
+ - Parity: fix builds against Python 3.2. Build system now recognizes ABIFLAGS.
 
 1.0 released on 2010-04-22
 ==========================
