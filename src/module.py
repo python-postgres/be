@@ -574,7 +574,7 @@ def _pl_local_init(initfile = "init.py", eval = __builtins__.eval):
 			module.__builtins__ = __builtins__
 			eval(bc, module.__dict__, module.__dict__)
 		sys.modules['__pg_init__'] = module
-		LOG('loaded Python module "__pg_init__" (init.py)')
+		DEBUG('loaded Python module "__pg_init__" (init.py)')
 
 # clear non-default modules and run the init.py again
 def _pl_reload():

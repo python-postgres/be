@@ -843,7 +843,7 @@ _PG_init(void)
 		PyErr_ThrowPostgresError("could not set Postgres module in sys.modules");
 
 	RegisterXactCallback(pl_xact_hook, NULL);
-	ereport(LOG,(
+	ereport(DEBUG3,(
 			errmsg("initialized Python %s", Py_GetVersion())));
 
 	ob = PyObject_CallMethod(Py_Postgres_module, "_pl_local_init", "");
