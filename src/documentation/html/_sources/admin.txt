@@ -54,6 +54,48 @@ There is only one file that needs to be installed, normally named ``python.so``.
 Database Installation
 =====================
 
+In 9.1, database extensions were introduced. Since version 1.0.1 of pg-python,
+an installation script and control file is provided for use with ``CREATE EXTENSION``.
+
+.. note::
+	Each of the following sections on installation includes a step to create the
+	``__python__`` schema. The ``__python__`` schema is not required, but recommended
+	to help manage potential future features, and compensate for ambiguous procedure
+	names employed by pg-python.
+
+Extension Installation
+----------------------
+
+In 9.1 and later, the following should be ran::
+
+	CREATE SCHEMA __python__;
+	CREATE EXTENSION python SCHEMA __python__;
+
+Script Based Installation
+-------------------------
+
+For 9.0 and later the ``src/install_inline.sql`` file should be executed using
+``psql`` in order to include the inline handler::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i src/install_inline.sql
+
+For 8.4 and earlier, the ``src/install_no_inline.sql`` file should be executed::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i src/install_no_inline.sql
+
+Or, relative to the installation after ``make install``::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i $PREFIX/share/postgresql/extension/python--$VERSION.sql
+
+Manual Installation
+-------------------
+
 Installation into a database is the last necessary step before a Python
 ``FUNCTION`` can be created. This is normally done by executing the following
 commands::
@@ -135,7 +177,8 @@ Managing Multiple Versions
 ==========================
 
 .. warning::
-   This section covers advanced material.
+   This section covers advanced material, and primarily applies to version 9.0
+	and earlier of PostgreSQL.
 
 In some situations, it may be necessary to have multiple builds of pg-python
 installed in the same PostgreSQL installation for upgrade purposes. When such
