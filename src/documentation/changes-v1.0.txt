@@ -1,9 +1,11 @@
-=======
-Changes
-=======
+===============
+Changes in v1.0
+===============
 
-This changelog tracks the general events of the v1.0 branch of the pg-python
-project.
+1.0.2 in development
+====================
+
+ - Alter how changes are represented in documentation to simplify merging.
 
 1.0.1 released on 2011-09-24
 ============================
@@ -14,8 +16,8 @@ project.
  - Parity: register PostgreSQL 9.1 support, and update pg_attribute fields.
  - Parity: fix builds against Python 3.2. Build system now recognizes ABIFLAGS.
 
-1.0 released on 2010-04-22
-==========================
+1.0.0 released on 2010-04-22
+============================
 
 pg-python marks a significant deviation from the original PL/Py direction.
 

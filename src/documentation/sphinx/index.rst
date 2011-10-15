@@ -10,7 +10,6 @@ Contents
    admin
    programming
    gotchas
-   changes
 
 ^^^^^^^^^
 Reference
@@ -21,3 +20,12 @@ Reference
 
    postgres
    postgres_types
+
+^^^^^^^
+Changes
+^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+
+   changes-v1.0

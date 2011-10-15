@@ -3,16 +3,13 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Postgres Module &mdash; pg-python 1.0.1 documentation</title>
-    
+    <title>Postgres Module &mdash; pg-python v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -25,9 +22,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pg-python 1.0.1 documentation" href="index.html" />
+    <link rel="top" title="pg-python v1.0.1 documentation" href="index.html" />
     <link rel="next" title="Postgres.types Module" href="postgres_types.html" />
-    <link rel="prev" title="Changes" href="changes.html" /> 
+    <link rel="prev" title="Gotchas" href="gotchas.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +37,9 @@
           <a href="postgres_types.html" title="Postgres.types Module"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="changes.html" title="Changes"
+          <a href="gotchas.html" title="Gotchas"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">pg-python 1.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,15 +60,15 @@
 <dt><tt class="docutils literal"><span class="pre">Postgres.backend_start</span></tt></dt>
 <dd><p class="first">The <a class="reference internal" href="postgres_types.html#pg-types-timestamptz"><em>Postgres.types.timestamptz</em></a> specifying when the backend was started.
 Shorthand for getting the backend start time from <tt class="docutils literal"><span class="pre">pg_stat_activity</span></tt>.</p>
-<p class="last"><tt class="docutils literal"><span class="pre">None</span></tt> if not available.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">Postgres.client_addr</span></tt></dt>
 <dd><p class="first">The client&#8217;s address as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</p>
-<p class="last"><tt class="docutils literal"><span class="pre">None</span></tt> if not available.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">Postgres.client_port</span></tt></dt>
 <dd><p class="first">The client&#8217;s port as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</p>
-<p class="last"><tt class="docutils literal"><span class="pre">None</span></tt> if not available.</p>
+<p class="last"><tt class="xref docutils literal"><span class="pre">None</span></tt> if not available.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">Postgres.current_database</span></tt></dt>
 <dd>The name of the current database as a Python <tt class="docutils literal"><span class="pre">str</span></tt>.</dd>
@@ -224,7 +221,7 @@ used to create record objects produced by the statement.</p>
 <dt><tt class="docutils literal"><span class="pre">Cursor.direction</span></tt></dt>
 <dd>For scrollable cursors, this is a modifiable property used to
 control the direction of seek and read operations.
-<tt class="docutils literal"><span class="pre">True</span></tt> for forward, the default. <tt class="docutils literal"><span class="pre">False</span></tt> for backwards. The
+<tt class="xref docutils literal"><span class="pre">True</span></tt> for forward, the default. <tt class="xref docutils literal"><span class="pre">False</span></tt> for backwards. The
 configured direction affects seek, read, and next methods.</dd>
 <dt><tt class="docutils literal"><span class="pre">Cursor.chunksize</span></tt></dt>
 <dd><p class="first">For NO SCROLL cursors, this property is used to control the
@@ -241,7 +238,7 @@ consumption via <tt class="docutils literal"><span class="pre">__next__</span></
 <div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">Cursor.close()</span></tt></dt>
 <dd>Close the cursor, inhibiting further use. Returns
-<tt class="docutils literal"><span class="pre">None</span></tt>. Nothing happens if it is already closed.</dd>
+<tt class="xref docutils literal"><span class="pre">None</span></tt>. Nothing happens if it is already closed.</dd>
 <dt><tt class="docutils literal"><span class="pre">Cursor.clone()</span></tt></dt>
 <dd>Create a replica of the cursor using the same statement, method, and
 parameters. The new cursor is returned.</dd>
@@ -411,7 +408,7 @@ parameters taken by the function.</p>
 <blockquote>
 <div><dl class="docutils">
 <dt><tt class="docutils literal"><span class="pre">Function.is_package([fullname])</span></tt></dt>
-<dd>Always returns <tt class="docutils literal"><span class="pre">False</span></tt>.</dd>
+<dd>Always returns <tt class="xref docutils literal"><span class="pre">False</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">Function.get_source([fullname])</span></tt></dt>
 <dd><p class="first">Get the function&#8217;s source code.</p>
 <p class="last">The <tt class="docutils literal"><span class="pre">fullname</span></tt> parameter is optional, but if it is
@@ -510,42 +507,42 @@ functionality&#8211;notably, string types will map <tt class="docutils literal">
 <col width="50%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Python Operators</th>
+<tr><th class="head">Python Operators</th>
 <th class="head">Postgres Operators</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">+</span></tt>, __add__</td>
+<tr><td><tt class="docutils literal"><span class="pre">+</span></tt>, __add__</td>
 <td><tt class="docutils literal"><span class="pre">+</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">-</span></tt>, __sub__</td>
+<tr><td><tt class="docutils literal"><span class="pre">-</span></tt>, __sub__</td>
 <td><tt class="docutils literal"><span class="pre">-</span></tt></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">*</span></tt>, __mul__</td>
+<tr><td><tt class="docutils literal"><span class="pre">*</span></tt>, __mul__</td>
 <td><tt class="docutils literal"><span class="pre">*</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">/</span></tt>, __div__</td>
+<tr><td><tt class="docutils literal"><span class="pre">/</span></tt>, __div__</td>
 <td><tt class="docutils literal"><span class="pre">/</span></tt></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">%</span></tt>, __mod__</td>
+<tr><td><tt class="docutils literal"><span class="pre">%</span></tt>, __mod__</td>
 <td><tt class="docutils literal"><span class="pre">%</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">**</span></tt>, __pow__</td>
+<tr><td><tt class="docutils literal"><span class="pre">**</span></tt>, __pow__</td>
 <td><tt class="docutils literal"><span class="pre">^</span></tt></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">&amp;</span></tt>, __and__</td>
+<tr><td><tt class="docutils literal"><span class="pre">&amp;</span></tt>, __and__</td>
 <td><tt class="docutils literal"><span class="pre">&amp;</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">|</span></tt>, __or__</td>
+<tr><td><tt class="docutils literal"><span class="pre">|</span></tt>, __or__</td>
 <td><tt class="docutils literal"><span class="pre">|</span></tt></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">^</span></tt>, __xor__</td>
+<tr><td><tt class="docutils literal"><span class="pre">^</span></tt>, __xor__</td>
 <td><tt class="docutils literal"><span class="pre">#</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>, __lshift__</td>
+<tr><td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>, __lshift__</td>
 <td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt></td>
 </tr>
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>, __rshift__</td>
+<tr><td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>, __rshift__</td>
 <td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt></td>
 </tr>
 </tbody>
@@ -557,15 +554,15 @@ functionality&#8211;notably, string types will map <tt class="docutils literal">
 <col width="50%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Python Operators</th>
+<tr><th class="head">Python Operators</th>
 <th class="head">Postgres Operators</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><tt class="docutils literal"><span class="pre">-</span></tt>, __neg__</td>
+<tr><td><tt class="docutils literal"><span class="pre">-</span></tt>, __neg__</td>
 <td><tt class="docutils literal"><span class="pre">-</span></tt></td>
 </tr>
-<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">~</span></tt>, __invert__</td>
+<tr><td><tt class="docutils literal"><span class="pre">~</span></tt>, __invert__</td>
 <td><tt class="docutils literal"><span class="pre">~</span></tt></td>
 </tr>
 </tbody>
@@ -583,7 +580,7 @@ input function is always used.</p>
 <p>The <tt class="docutils literal"><span class="pre">mod</span></tt> keyword is optional and can be used to specify the typmod
 for the data. The given object is coerced to a
 <tt class="docutils literal"><span class="pre">Postgres.types.cstring.Array</span></tt> and given to the type&#8217;s typmodin
-function. If <tt class="docutils literal"><span class="pre">mod</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, the default, <tt class="docutils literal"><span class="pre">-1</span></tt> will
+function. If <tt class="docutils literal"><span class="pre">mod</span></tt> is <tt class="xref docutils literal"><span class="pre">None</span></tt>, the default, <tt class="docutils literal"><span class="pre">-1</span></tt> will
 ultimately be used.</p>
 </div></blockquote>
 </div></blockquote>
@@ -701,7 +698,7 @@ statement.</dd>
 <dd>The command tag of the statement.</dd>
 <dt><tt class="docutils literal"><span class="pre">Statement.parameters</span></tt></dt>
 <dd>The constant parameters given to the statement&#8217;s constructor.
-<tt class="docutils literal"><span class="pre">None</span></tt> if none.</dd>
+<tt class="xref docutils literal"><span class="pre">None</span></tt> if none.</dd>
 </dl>
 </div></blockquote>
 <p><strong>Methods</strong>:</p>
@@ -797,7 +794,7 @@ once on the same instance.</dd>
 the identified transaction state.</p>
 <p>If an exception is noted by the arguments or the transaction failed
 due to database error, the subtransaction will be rolled back. A
-<tt class="docutils literal"><span class="pre">False</span></tt> value will always be returned indicating that
+<tt class="xref docutils literal"><span class="pre">False</span></tt> value will always be returned indicating that
 the exception, if any, should be raised.</p>
 <p class="last">If no exception is noted and no database error occurred, the
 subtransaction will be committed.</p>
@@ -954,7 +951,7 @@ type, this property will be the same object as the instance.</dd>
 <dt><tt class="docutils literal"><span class="pre">Type.typnamespace</span></tt></dt>
 <dd>The type&#8217;s namespace Oid as a Python <tt class="docutils literal"><span class="pre">int</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">Type.descriptor</span></tt></dt>
-<dd>The type&#8217;s <cite>Postgres.TupleDesc</cite>. <tt class="docutils literal"><span class="pre">None</span></tt>, if the type is not a composite type.</dd>
+<dd>The type&#8217;s <cite>Postgres.TupleDesc</cite>. <tt class="xref docutils literal"><span class="pre">None</span></tt>, if the type is not a composite type.</dd>
 <dt><tt class="docutils literal"><span class="pre">Type.column_names</span></tt></dt>
 <dd><p class="first">The attribute names of the type&#8217;s TupleDesc in a Python tuple.
 Ordered by the attribute&#8217;s index.</p>
@@ -1061,42 +1058,42 @@ into standard Python types. A tuple with the converted objects is returned:</p>
 <col width="46%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Postgres Types</th>
+<tr><th class="head">Postgres Types</th>
 <th class="head">Python Types</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>bool</td>
+<tr><td>bool</td>
 <td>bool</td>
 </tr>
-<tr class="row-odd"><td>int2</td>
+<tr><td>int2</td>
 <td>int</td>
 </tr>
-<tr class="row-even"><td>int4</td>
+<tr><td>int4</td>
 <td>int</td>
 </tr>
-<tr class="row-odd"><td>int8</td>
+<tr><td>int8</td>
 <td>int</td>
 </tr>
-<tr class="row-even"><td>float4</td>
+<tr><td>float4</td>
 <td>float</td>
 </tr>
-<tr class="row-odd"><td>float8</td>
+<tr><td>float8</td>
 <td>float</td>
 </tr>
-<tr class="row-even"><td>char</td>
+<tr><td>char</td>
 <td>str</td>
 </tr>
-<tr class="row-odd"><td>bpchar</td>
+<tr><td>bpchar</td>
 <td>str</td>
 </tr>
-<tr class="row-even"><td>varchar</td>
+<tr><td>varchar</td>
 <td>str</td>
 </tr>
-<tr class="row-odd"><td>cstring</td>
+<tr><td>cstring</td>
 <td>str</td>
 </tr>
-<tr class="row-even"><td>text</td>
+<tr><td>text</td>
 <td>str</td>
 </tr>
 </tbody>
@@ -1204,7 +1201,7 @@ given as the <tt class="docutils literal"><span class="pre">sqlerrcode</span></t
 <p class="last"><em>This keyword is not accepted by Postgres.ereport. See the aliases listed above.</em></p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">inhibit_pl_context</span></tt></dt>
-<dd>If given <tt class="docutils literal"><span class="pre">True</span></tt>, the traceback and function identity
+<dd>If given <tt class="xref docutils literal"><span class="pre">True</span></tt>, the traceback and function identity
 will <em>not</em> be included in the CONTEXT portion of the report.</dd>
 </dl>
 </div></blockquote>
@@ -1225,7 +1222,7 @@ SQL-expression:</p>
 <span id="pg-execute"></span><h2>Postgres.execute<a class="headerlink" href="#postgres-execute" title="Permalink to this headline">¶</a></h2>
 <p>Execute multiple SQL statements in the given string. This function takes a
 single argument, a string containing the SQL statements to execute. This
-function always returns <tt class="docutils literal"><span class="pre">None</span></tt>:</p>
+function always returns <tt class="xref docutils literal"><span class="pre">None</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Postgres</span>
 <span class="n">Postgres</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
 <span class="s">       CREATE TEMP TABLE t (i int);</span>
@@ -1349,7 +1346,7 @@ It only takes a single argument, the string to quote:</p>
 <p><tt class="docutils literal"><span class="pre">Postgres.quote_nullable</span></tt> is an alias to the
 <tt class="docutils literal"><span class="pre">pg_catalog.quote_nullable</span></tt> function. It only
 takes a single argument, the string to quote. If given
-<tt class="docutils literal"><span class="pre">None</span></tt>, the string <tt class="docutils literal"><span class="pre">'NULL'</span></tt> will be returned:</p>
+<tt class="xref docutils literal"><span class="pre">None</span></tt>, the string <tt class="docutils literal"><span class="pre">'NULL'</span></tt> will be returned:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">quote_nullable</span>
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">quote_nullable</span><span class="p">(</span><span class="s">&#39;an&quot;literal</span><span class="se">\&#39;</span><span class="s">string&#39;</span><span class="p">)</span>
@@ -1363,7 +1360,7 @@ takes a single argument, the string to quote. If given
 <span id="pg-sleep"></span><h2>Postgres.sleep<a class="headerlink" href="#postgres-sleep" title="Permalink to this headline">¶</a></h2>
 <p><tt class="docutils literal"><span class="pre">sleep(seconds_to_sleep</span> <span class="pre">:</span> <span class="pre">float)</span></tt></p>
 <p>Alias to the <tt class="docutils literal"><span class="pre">pg_sleep</span></tt> function. Takes a single argument, the amount of time
-to sleep and always returns <tt class="docutils literal"><span class="pre">None</span></tt>:</p>
+to sleep and always returns <tt class="xref docutils literal"><span class="pre">None</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">Postgres</span> <span class="kn">import</span> <span class="n">sleep</span>
 
 <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
@@ -1458,8 +1455,8 @@ function. Takes a single argument, the process id to terminate, and returns
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="changes.html"
-                        title="previous chapter">Changes</a></p>
+  <p class="topless"><a href="gotchas.html"
+                        title="previous chapter">Gotchas</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="postgres_types.html"
                         title="next chapter">Postgres.types Module</a></p>
@@ -1471,7 +1468,7 @@ function. Takes a single argument, the process id to terminate, and returns
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" size="18" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -1495,14 +1492,14 @@ function. Takes a single argument, the process id to terminate, and returns
           <a href="postgres_types.html" title="Postgres.types Module"
              >next</a> |</li>
         <li class="right" >
-          <a href="changes.html" title="Changes"
+          <a href="gotchas.html" title="Gotchas"
              >previous</a> |</li>
-        <li><a href="index.html">pg-python 1.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1pre.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

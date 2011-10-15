@@ -3,16 +3,13 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Programming &mdash; pg-python 1.0.1 documentation</title>
-    
+    <title>Programming &mdash; pg-python v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -25,7 +22,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pg-python 1.0.1 documentation" href="index.html" />
+    <link rel="top" title="pg-python v1.0.1 documentation" href="index.html" />
     <link rel="next" title="Gotchas" href="gotchas.html" />
     <link rel="prev" title="Requirements" href="admin.html" /> 
   </head>
@@ -42,7 +39,7 @@
         <li class="right" >
           <a href="admin.html" title="Requirements"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">pg-python 1.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -225,19 +222,19 @@ point can only suppress the manipulation.</p>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_insert(td,</span> <span class="pre">new):</span></tt></dt>
 <dd>Executed for each row, after the insert occurs. The
 <tt class="docutils literal"><span class="pre">new</span></tt> argument is the row that was inserted.
-<tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> be returned.</dd>
+<tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> be returned.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_update(td,</span> <span class="pre">old,</span> <span class="pre">new):</span></tt></dt>
 <dd>Executed for each row, after the update occurs. The
 <tt class="docutils literal"><span class="pre">old</span></tt> argument is the row that was altered into the
-<tt class="docutils literal"><span class="pre">new</span></tt> argument. <tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
+<tt class="docutils literal"><span class="pre">new</span></tt> argument. <tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_delete(td,</span> <span class="pre">old):</span></tt></dt>
 <dd>Executed for each row, after the delete occurs. The
 <tt class="docutils literal"><span class="pre">old</span></tt> argument is the row that was removed from the
-table. <tt class="docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
+table. <tt class="xref docutils literal"><span class="pre">None</span></tt> <em>must</em> must be returned.</dd>
 </dl>
 </div></blockquote>
-<p>The AFTER entry points require that the <tt class="docutils literal"><span class="pre">None</span></tt> object is
-returned. If <tt class="docutils literal"><span class="pre">None</span></tt> is not returned, the procedural
+<p>The AFTER entry points require that the <tt class="xref docutils literal"><span class="pre">None</span></tt> object is
+returned. If <tt class="xref docutils literal"><span class="pre">None</span></tt> is not returned, the procedural
 language will throw an error.</p>
 <div class="section" id="suppressing-manipulations">
 <h4>Suppressing Manipulations<a class="headerlink" href="#suppressing-manipulations" title="Permalink to this headline">¶</a></h4>
@@ -281,7 +278,7 @@ updated, substitution can be performed by
 <em>returning the replacement row</em>. Substitution can only be used with row
 triggers that are timed before the manipulation. Specifically, only
 <tt class="docutils literal"><span class="pre">before_insert</span></tt> and <tt class="docutils literal"><span class="pre">before_update</span></tt>
-can perform row substitution. If <tt class="docutils literal"><span class="pre">None</span></tt> is returned,
+can perform row substitution. If <tt class="xref docutils literal"><span class="pre">None</span></tt> is returned,
 <em>the manipulation will continue unaltered</em>:</p>
 <div class="highlight-python"><pre>CREATE TABLE two_columns(i int, t text);
 
@@ -324,7 +321,7 @@ documentation for more details on how to use these methods.</p>
 <p>Like row-triggers, trigger functions called with statement orientation
 are given a <a class="reference internal" href="postgres.html#pg-triggerdata"><em>Postgres.TriggerData</em></a> object as the first argument.
 Statement triggers timed after are given one or two additional
-<tt class="docutils literal"><span class="pre">None</span></tt> objects&#8211;two for update manipulations. These additional
+<tt class="xref docutils literal"><span class="pre">None</span></tt> objects&#8211;two for update manipulations. These additional
 arguments are given in order to accommodate for future functionality.</p>
 <p>The following example shows a statement trigger that can handle multiple
 event types:</p>
@@ -368,19 +365,19 @@ TRUNCATE monitored_table;</pre>
 <dd>Executed before each TRUNCATE statement.</dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_insert_statement(td,</span> <span class="pre">news):</span></tt></dt>
 <dd><p class="first">Executed after each INSERT statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">news</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">news</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_update_statement(td,</span> <span class="pre">olds,</span> <span class="pre">news):</span></tt></dt>
 <dd><p class="first">Executed after each UPDATE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> and <tt class="docutils literal"><span class="pre">news</span></tt> arguments are always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> and <tt class="docutils literal"><span class="pre">news</span></tt> arguments are always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_delete_statement(td,</span> <span class="pre">olds):</span></tt></dt>
 <dd><p class="first">Executed after each DELETE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">def</span> <span class="pre">after_truncate_statement(td,</span> <span class="pre">olds):</span></tt></dt>
 <dd><p class="first">Executed after each TRUNCATE statement.</p>
-<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">olds</span></tt> argument is always <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -540,7 +537,7 @@ caused by already initialized objects.</p>
 <h2>Data Objects<a class="headerlink" href="#data-objects" title="Permalink to this headline">¶</a></h2>
 <p>When parameters are given to a function or rows are returned by a prepared
 statement, <a class="reference internal" href="postgres.html#pg-object"><em>Postgres.Object</em></a> instances are used to represent the data.
-The only exception is that Python&#8217;s <tt class="docutils literal"><span class="pre">None</span></tt> is used to represent SQL NULLs.
+The only exception is that Python&#8217;s <tt class="xref docutils literal"><span class="pre">None</span></tt> is used to represent SQL NULLs.
 Some of these data objects have custom interfaces for convenient access to
 parts of the data. For example, <a class="reference internal" href="postgres_types.html#pg-types-date"><em>Postgres.types.date</em></a>
 objects have properties for getting the day, month, and year parts of the
@@ -615,7 +612,7 @@ interfaces used in SQL:</p>
 <p>The <tt class="docutils literal"><span class="pre">sql_get_element</span></tt> method doesn&#8217;t raise index errors
 when the boundary is crossed by an index. It is consistent with how
 single elements are accessed using indirection in SQL.
-<tt class="docutils literal"><span class="pre">None</span></tt> is returned in cases where the requested element
+<tt class="xref docutils literal"><span class="pre">None</span></tt> is returned in cases where the requested element
 does not exist.</p>
 <p>See <a class="reference internal" href="postgres.html#pg-array"><em>Postgres.Array</em></a> for more information about the array interfaces.</p>
 </div>
@@ -906,7 +903,7 @@ reported error message.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" size="18" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -932,12 +929,12 @@ reported error message.</p>
         <li class="right" >
           <a href="admin.html" title="Requirements"
              >previous</a> |</li>
-        <li><a href="index.html">pg-python 1.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pg-python v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2010, James William Pye &lt;x@jwp.name&gt;.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1pre.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>
