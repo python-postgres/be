@@ -21,7 +21,7 @@ languages = {
 	'py_3_2': 'Python 3.2',
 }
 
-date = 'Sat Sep 24 12:00:00 2011'
-tags = set(('bugs','parity'))
-version_info = (1, 0, 1)
+date = None
+tags = set(('bugs',))
+version_info = (1, 0, 2)
 version = '.'.join(map(str, version_info)) + (date is None and 'dev' or '')
