@@ -4,6 +4,10 @@
 name = 'pg-python'
 identity = 'http://python.projects.postgresql.org/backend'
 author = 'James William Pye <x@jwp.name>'
+abstract = 'PostgreSQL procedural language extension embedding Python 3'
+license = 'bsd'
+
+bugtracker = "http://github.com/jwp/pg-python/issues/"
 
 systems = {
 	'pg_8_3': 'PostgreSQL 8.3',

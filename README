@@ -1,4 +1,4 @@
-pg-python is a Python procedural language extension for PostgreSQL.
+pg-python is a PostgreSQL procedural language extension embedding Python 3.
 
 If the environment is configured to meet pg-python's expectations, the following
 should work::
@@ -8,7 +8,7 @@ should work::
  sudo make install
  psql -f src/install.sql
 
-It assumes the *target* pg_config and python3 executables are in $PATH.
+It assumes the *target* `pg_config` and `python3` executables are in $PATH.
 
 See src/documentation/admin.txt for detailed instructions on
 compilation and database installation.
