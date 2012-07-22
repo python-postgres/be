@@ -1,6 +1,9 @@
-===============
+=========
+Reference
+=========
+
 Postgres Module
-===============
+^^^^^^^^^^^^^^^
 
 The ``Postgres`` module reference.
 
@@ -1455,9 +1458,8 @@ function. Takes a single argument, the process id to terminate, and returns
  terminate_backend(proc_pid)
 
 
-=====================
 Postgres.types Module
-=====================
+^^^^^^^^^^^^^^^^^^^^^
 
 ``Postgres.types`` is a psuedo-module used to facilite import statements so
 that data types in the ``pg_catalog`` schema can be easily referenced from
