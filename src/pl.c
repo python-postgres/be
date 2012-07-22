@@ -1130,7 +1130,7 @@ srf_vpcinit(PG_FUNCTION_ARGS)
 	{
 		int r;
 
-		r = PySet_Add(TransactionScope, fn_info->fi_internal_state);
+		r = Py_XACTREF(fn_info->fi_internal_state);
 		Py_DECREF(fn_info->fi_internal_state);
 		if (r == -1)
 		{
@@ -1180,8 +1180,7 @@ srf_vpcnext(PG_FUNCTION_ARGS)
 		 * This can cause a success to fail.
 		 * If it fails on top of an existing exception, fine.
 		 */
-		PySet_Discard(TransactionScope, fn_info->fi_internal_state);
-
+		Py_DEXTREF(fn_info->fi_internal_state);
 		fn_info->fi_internal_state = NULL;
 		fcinfo->isnull = true;
 
@@ -1376,7 +1375,7 @@ initialize(PG_FUNCTION_ARGS)
 			module = run_PyPgFunction_module(func); /* ereport's on failure */
 		else
 		{
-			r = PySet_Add(TransactionScope, module);
+			r = Py_XACTREF(module);
 			Py_DECREF(module);
 			if (r == -1)
 			{
@@ -1389,7 +1388,7 @@ initialize(PG_FUNCTION_ARGS)
 		 * Add func to the transaction scope now.
 		 * func has been ACQUIRE'd by the handler, so don't DECREF.
 		 */
-		r = PySet_Add(TransactionScope, func);
+		r = Py_XACTREF(func);
 		if (r == -1)
 		{
 			PyErr_ThrowPostgresError(
@@ -1421,7 +1420,7 @@ initialize(PG_FUNCTION_ARGS)
 				if (td == NULL)
 					PyErr_ThrowPostgresError("could not create Postgres.TriggerData object");
 
-				r = PySet_Add(TransactionScope, td);
+				r = Py_XACTREF(td);
 				Py_DECREF(td);
 				if (r == -1)
 					PyErr_ThrowPostgresError("could not add trigger data to transaction scope");
@@ -1489,7 +1488,7 @@ initialize(PG_FUNCTION_ARGS)
 			 */
 			if (pinput != fn_info->fi_input)
 			{
-				r = PySet_Add(TransactionScope, pinput);
+				r = Py_XACTREF(pinput);
 				Py_DECREF(pinput);
 
 				if (r == -1)
@@ -1507,7 +1506,7 @@ initialize(PG_FUNCTION_ARGS)
 			 */
 			if (poutput != fn_info->fi_output)
 			{
-				r = PySet_Add(TransactionScope, poutput);
+				r = Py_XACTREF(poutput);
 				Py_DECREF(poutput);
 
 				if (r == -1)
@@ -1549,7 +1548,7 @@ initialize(PG_FUNCTION_ARGS)
 					PyErr_ThrowPostgresError(
 						"could not construct expected result type");
 
-				r = PySet_Add(TransactionScope, output);
+				r = Py_XACTREF(output);
 				Py_DECREF(output);
 				if (r == -1)
 				{
@@ -1706,9 +1705,14 @@ pl_handler(PG_FUNCTION_ARGS)
 			pl_execution_context = previous;
 
 			/*
+			 * Restore the caller's memory context.
+			 */
+			MemoryContextSwitchTo(current_exec_state.return_memory_context);
+
+			/*
 			 * Special case relays as there is a Python exception available
 			 * for us to use. This failure case happens when DatumNew causes
-			 * a Python exception.
+			 * a *Python* exception.
 			 */
 			if (_PG_ERROR_IS_RELAY())
 			{
@@ -1721,7 +1725,6 @@ pl_handler(PG_FUNCTION_ARGS)
 				FlushErrorState();
 
 				/* Restore the caller's memory context. */
-				MemoryContextSwitchTo(current_exec_state.return_memory_context);
 				PyErr_ThrowPostgresErrorWithContext(
 					ERRCODE_PYTHON_EXCEPTION,
 					"function raised a Python exception",
@@ -1734,11 +1737,6 @@ pl_handler(PG_FUNCTION_ARGS)
 			}
 
 			_PYRO_DEALLOCATE(); /* release references held by owner and pop */
-
-			/*
-			 * Restore the caller's memory context.
-			 */
-			MemoryContextSwitchTo(current_exec_state.return_memory_context);
 
 			/*
 			 * Should have been converted by now.
