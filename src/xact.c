@@ -20,6 +20,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/ist.h"
@@ -38,10 +39,10 @@ xact_enter(PyObj self)
 	if (DB_IS_NOT_READY())
 		return(NULL);
 
-	if (!pl_ist_begin(PyPgTransaction_GetState(self)))
+	if (!ist_begin(PyPgTransaction_GetState(self)))
 		return(NULL);
-	PyPgTransaction_SetId(self, pl_ist_count);
-	PyPgTransaction_SetState(self, pl_ist_open);
+	PyPgTransaction_SetId(self, ist_count);
+	PyPgTransaction_SetState(self, ist_open);
 
 	Py_INCREF(Py_None);
 	return(Py_None);
@@ -69,19 +70,19 @@ xact_exit(PyObj self, PyObj args)
 	if (typ == Py_None)
 	{
 		/* Attempt commit */
-		if (!pl_ist_commit(xid, state))
+		if (!ist_commit(xid, state))
 		{
-			PyPgTransaction_SetState(self, pl_ist_aborted);
+			PyPgTransaction_SetState(self, ist_aborted);
 			return(NULL);
 		}
-		PyPgTransaction_SetState(self, pl_ist_committed);
+		PyPgTransaction_SetState(self, ist_committed);
 	}
 	else
 	{
 		/* Exception occurred, abort. */
-		if (!pl_ist_abort(xid, state))
+		if (!ist_abort(xid, state))
 			return(NULL);
-		PyPgTransaction_SetState(self, pl_ist_aborted);
+		PyPgTransaction_SetState(self, ist_aborted);
 	}
 
 	Py_INCREF(Py_None);
@@ -165,7 +166,7 @@ PyPgTransaction_NEW(PyTypeObject *subtype)
 	rob = subtype->tp_alloc(subtype, 0);
 	if (rob != NULL)
 	{
-		PyPgTransaction_SetState(rob, pl_ist_new);
+		PyPgTransaction_SetState(rob, ist_new);
 		PyPgTransaction_SetId(rob, 0);
 	}
 

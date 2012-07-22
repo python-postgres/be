@@ -308,11 +308,11 @@ def main():
 	)
 $python$;
 SELECT check_exc_access();
-                                                           check_exc_access                                                            
----------------------------------------------------------------------------------------------------------------------------------------
+                                                    check_exc_access                                                     
+-------------------------------------------------------------------------------------------------------------------------
  code:22331
  message:message
- details:{'function': '<Postgres.ereport>', 'line': 1, 'detail': 'detail', 'context': 'context', 'filename': 'pg-python/src/module.c'}
+ details:{'function': '<Postgres.ereport>', 'line': 1, 'detail': 'detail', 'context': 'context', 'filename': 'module.c'}
  errno:0
  severity:ERROR
 (5 rows)
@@ -422,13 +422,13 @@ Traceback (most recent call last):
  Postgres.Exception
 
 [public.custom_error(boolean)]
-LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
+LOCATION:  <Postgres.ereport>, module.c:1
 SELECT custom_error(false);
 ERROR:  AAAAA: message
 DETAIL:  detail
 HINT:  hint
 CONTEXT:  context
-LOCATION:  <Postgres.ereport>, pg-python/src/module.c:1
+LOCATION:  <Postgres.ereport>, module.c:1
 \set VERBOSITY default
 -- Ignore the inhibit_pl_context setting when it's not a Postgres.Exception.
 CREATE OR REPLACE FUNCTION inhibited_pl_context_pyerr() RETURNS VOID LANGUAGE python AS

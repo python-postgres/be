@@ -3,8 +3,8 @@ pg-python architecture
 
 This README provides a high-level overview of the implementation.
 
-Native Typing
--------------
+Native Type Interfaces
+----------------------
 
 pg-python was designed with the goal of providing Python interfaces to
 PostgreSQL objects--often conceptual rather than literal. This marks a sharp
@@ -14,8 +14,8 @@ instances of "interface types" are used to represent values coming from the
 database. Conversion mechanisms are, however, provided through standard language
 interfaces as Postgres objects are not often directly usable by Python libraries.
 
-Native typing provides Python interfaces to Postgres types using Python types.
-This is achieved by extending the PyTypeObject structure with Postgres type
+Native Type Interfaces provides Python interfaces to Postgres types using Python
+types. This is achieved by extending the PyTypeObject structure with Postgres type
 information(PyPgTypeInfo) extracted from a type's corresponding pg_type row.
 Those types are 'Postgres.Type' objects. Postgres.Type's are conceptual, that is,
 they are *not* instances of the 'pg_type' relation type.
@@ -37,7 +37,7 @@ Error Management
 
 pg-python handles database errors by raising a Python exception representing
 the error. By doing this, pg-python must record when this has been done so that
-future database actions can be prohibited. The `pl_state` global is used to
+future database actions can be prohibited. The `ext_state` global is used to
 track the error state of the PL.
 
 When a database error(ereport, elog) occurs, pl_state is altered to indicate

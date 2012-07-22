@@ -24,6 +24,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/function.h"
@@ -401,7 +402,7 @@ load_rows(PyObj self, PyObj row_iter, uint32 *total)
 	int r = 0;
 	SPIPlanPtr plan;
 
-	Assert(!pl_state);
+	Assert(!ext_state);
 	Assert(PyIter_Check(row_iter));
 
 	plan = PyPgStatement_GetPlan(self);
@@ -928,7 +929,7 @@ PyPgStatement_NEW(PyTypeObject *subtype, PyObj source, PyObj parameters)
 	PyObj rob, source_str;
 	PyObj output = NULL;
 
-	Assert(!pl_state);
+	Assert(!ext_state);
 
 	source_str = source;
 	Py_INCREF(source_str);
@@ -1055,7 +1056,7 @@ make_plan(PyObj self, bool with_scroll)
 	volatile SPIPlanPtr splan = NULL;
 	PyObj source_str = PyPgStatement_GetString(self);
 
-	Assert(!pl_state);
+	Assert(!ext_state);
 	/* it should return rows if we are SCROLLing... */
 	Assert(!with_scroll || (with_scroll && PyPgStatement_ReturnsRows(self)));
 

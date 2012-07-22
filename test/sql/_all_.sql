@@ -1,3 +1,5 @@
+-- repeatedly run this in a session; watch memory usage
+-- advanced memory leak detection >8)
 \i array.sql
 \i bytea.sql
 \i composite.sql

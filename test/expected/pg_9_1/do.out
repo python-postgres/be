@@ -18,9 +18,9 @@ $$ LANGUAGE python;
 ERROR:  do-raised-error
 CONTEXT:  [exception from Python]
 Traceback (most recent call last):
-   File "[Postgres]", line 136, in main
+   File "[Postgres]", line 140, in main
     l.load_module()
-   File "[Postgres]", line 130, in load_module
+   File "[Postgres]", line 134, in load_module
     eval(self.get_code(), self.module.__dict__, self.module.__dict__)
    File "[do-block-2]", line 3, in <module>
     Postgres.ERROR("do-raised-error")
@@ -70,9 +70,9 @@ $more$ LANGUAGE python;
 "
 [exception from Python]
 Traceback (most recent call last):
-   File "[Postgres]", line 136, in main
+   File "[Postgres]", line 140, in main
     l.load_module()
-   File "[Postgres]", line 130, in load_module
+   File "[Postgres]", line 134, in load_module
     eval(self.get_code(), self.module.__dict__, self.module.__dict__)
    File "[do-block-7]", line 3, in <module>
     Postgres.ERROR("how does the traceback look?")
@@ -83,9 +83,9 @@ Traceback (most recent call last):
 [__inline_executor__]
 [exception from Python]
 Traceback (most recent call last):
-   File "[Postgres]", line 136, in main
+   File "[Postgres]", line 140, in main
     l.load_module()
-   File "[Postgres]", line 130, in load_module
+   File "[Postgres]", line 134, in load_module
     eval(self.get_code(), self.module.__dict__, self.module.__dict__)
    File "[do-block-6]", line 7, in <module>
     """)()

@@ -7,22 +7,27 @@
 extern "C" {
 #endif
 
+extern PyObj PYSTR(exec);
+extern PyObj Py_builtins_module;
+extern PyObj Py_compile_ob;
+extern PyObj Py_linecache_updatecache_ob;
+
 typedef struct PyPgFunction {
 	PyObject_HEAD
-	Oid					fn_oid;					/* pg_proc entry Oid */
+	Oid					fn_oid;				/* pg_proc entry Oid */
 	Oid					fn_lang;				/* pg_proc.prolang */
-	Oid					fn_namespace;			/* pg_proc.pronamespace */
+	Oid					fn_namespace;		/* pg_proc.pronamespace */
 	TransactionId		fn_xmin;				/* Stored xmin of the pg_proc row */
-	ItemPointerData		fn_tid;					/* The pointer to the pg_proc row */
+	ItemPointerData		fn_tid;			/* The pointer to the pg_proc row */
 	PyObj				fn_oid_str;				/* PyUnicode version of fn_oid */
 	PyObj				fn_oid_int;				/* PyLong version fn_oid */
 	bool				fn_retset;				/* Set Returning Function */
 	bool				fn_stateful;			/* Function returns send'able iterator */
-	char            	fn_volatile;			/* provolatile field */
+	char            	fn_volatile;		/* provolatile field */
 	PyObj				fn_input;				/* PyPgTupleDesc */
 	PyObj				fn_output;				/* PyPgType */
-	PGFunction 			fn_pointer;				/* PGFunction */
-	PyObj				fn_nspname_str;			/* namespace string object */
+	PGFunction 			fn_pointer;			/* PGFunction */
+	PyObj				fn_nspname_str;		/* namespace string object */
 	PyObj				fn_filename_str;		/* regprocedure-like identity of the function */
 	PyObj				fn_prosrc_str;			/* the function's source */
 } * PyPgFunction;

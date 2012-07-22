@@ -8,14 +8,21 @@
 extern "C" {
 #endif
 
+void error_init_tracebacks(void);
+
+extern PyObj PYSTR(pg_errordata);
+extern PyObj PYSTR(pg_inhibit_pl_context);
+
+extern PyObj PyExc_PostgresException;
+
 /*
  * Should appear in a condition before most PG_TRY() blocks accessible from
  * Python.
  */
 #define DB_IS_NOT_READY() \
-	(pl_state == pl_in_failed_transaction ? PyErr_SetInFailedTransaction() : ( \
-		pl_state != pl_ready_for_access ? PyErr_SetDatabaseAccessDenied() : pl_state \
-	))
+	(ext_state == xact_failed ? PyErr_SetInFailedTransaction() : ( \
+	(ext_state != ext_ready ? PyErr_SetDatabaseAccessDenied() : ext_state \
+)))
 
 /*
  * Returns true on success and false when a Python exception is set.
@@ -60,9 +67,9 @@ void PyErr_EmitPostgresWarning(const char *errmsg);
 
 /*
  * Convert the Postgres error to a Python exception and mark database as being
- * in error(pl_state != pl_ready_for_access).
+ * in error(ext_state != pl_ready_for_access).
  */
-void PyErr_SetPgError(bool ignore_pl_state); /* PyErr_Occurred() != NULL afterwards. */
+void PyErr_SetPgError(bool ignore_ext_state); /* PyErr_Occurred() != NULL afterwards. */
 
 /*
  * When a Postgres ERROR is thrown in a function that cannot raise it,

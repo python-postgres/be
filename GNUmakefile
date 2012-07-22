@@ -7,12 +7,10 @@ EXTENSION := python
 MODULE_big := python
 DATA := python--$(project_version).sql
 
-OBJS = src/pl.o \
-src/do.o \
-src/exit.o \
+OBJS = src/extension.o \
+src/pl.o src/do.o src/stateful.o \
 src/python.o src/postgres.o \
 src/module.o \
-src/stateful.o \
 src/errordata.o src/triggerdata.o \
 src/ist.o src/xact.o \
 src/error.o \
@@ -38,7 +36,7 @@ ifeq ($(PLPY_STRANGE_THINGS), 1)
 override CPPFLAGS := -DPLPY_STRANGE_THINGS $(CPPFLAGS)
 endif
 
-override CPPFLAGS := $(python_cflags) $(CPPFLAGS) -I./src/include
+override CPPFLAGS := -g $(python_cflags) $(CPPFLAGS) -I./src/include
 override SHLIB_LINK := $(python_ldflags) $(CPPFLAGS) $(SHLIB_LINK)
 
 # Convert the characters in the file into a comma separated list of

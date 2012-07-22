@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+extern PyObj Py_Postgres_module;
+
 /*
  * X-Macro of built-ins, expand with PyPg##X##_Type
  */

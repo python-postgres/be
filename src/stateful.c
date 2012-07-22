@@ -16,8 +16,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/stateful.h"
 

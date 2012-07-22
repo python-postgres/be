@@ -41,9 +41,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
-#include "pypg/pl.h"
+#include "pypg/extension.h"
 #include "pypg/error.h"
 #include "pypg/tupledesc.h"
 #include "pypg/type/type.h"
@@ -56,6 +54,7 @@
 #include "pypg/type/timewise.h"
 #include "pypg/type/system.h"
 
+static PyObj type_anonymous_composites = NULL;
 static PyObj type_cache = NULL;
 /*
  * Initialized in PyPgType_Init for tupledesc.c.
@@ -372,7 +371,7 @@ fill_pg_type(PyPgTypeInfo typinfo)
 
 	Assert(typinfo != NULL);
 	Assert(OidIsValid(typinfo->typoid));
-	Assert(!pl_state);
+	Assert(!ext_state);
 
 	typinfo->typoid_PyLong = NULL;
 	typinfo->typnamespace_PyLong = NULL;
@@ -1071,7 +1070,7 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 	 * only need to decref triple from here out
 	 */
 
-	r = PyDict_Contains(Py_anonymous_composites, triple);
+	r = PyDict_Contains(type_anonymous_composites, triple);
 	if (r < 0)
 	{
 		Py_DECREF(triple);
@@ -1081,7 +1080,7 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 	{
 		PyObj curtd;
 
-		rob = PyDict_GetItem(Py_anonymous_composites, triple);
+		rob = PyDict_GetItem(type_anonymous_composites, triple);
 		if (rob == NULL)
 		{
 			Py_DECREF(triple);
@@ -1117,7 +1116,7 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 			 * Error while checking if it's current?
 			 * Let's just assume it's invalid now.
 			 */
-			PyDict_DelItem(Py_anonymous_composites, triple);
+			PyDict_DelItem(type_anonymous_composites, triple);
 			return(NULL);
 		}
 		PG_END_TRY();
@@ -1137,7 +1136,7 @@ PyPgType_AnonymousComposite(PyObj tupdesc, PyObj typname)
 		{
 			PG_TRY();
 			{
-				if (PyDict_SetItem(Py_anonymous_composites, triple, rob))
+				if (PyDict_SetItem(type_anonymous_composites, triple, rob))
 				{
 					/* Try to continue anyways. */
 					PyErr_Clear();
@@ -2171,6 +2170,11 @@ int
 PyPgType_Init(void)
 {
 	PyObj rectype;
+
+	Py_XDECREF(type_anonymous_composites);
+	type_anonymous_composites = PyDict_New();
+	if (type_anonymous_composites == NULL)
+		return(-1);
 
 	Py_XDECREF(type_cache);
 	type_cache = PyDict_New();

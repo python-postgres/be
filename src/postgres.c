@@ -30,9 +30,8 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
 #include "pypg/error.h"
 #include "pypg/tupledesc.h"
 #include "pypg/type/type.h"

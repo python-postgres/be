@@ -14,10 +14,10 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
+#include "pypg/extension.h"
+#include "pypg/pl.h"
 #include "pypg/triggerdata.h"
 #include "pypg/type/type.h"
-#include "pypg/externs.h"
 
 static PyObj
 trigdata_get_rel_nspname(PyObj td, void *arg)

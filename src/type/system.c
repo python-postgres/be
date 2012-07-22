@@ -38,6 +38,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/type/type.h"
 #include "pypg/type/object.h"
 #include "pypg/type/array.h"

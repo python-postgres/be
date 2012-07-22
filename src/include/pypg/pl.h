@@ -7,42 +7,63 @@
 extern "C" {
 #endif
 
-void _PG_init(void);
-void pl_first_call(void);
-
-PyObj pl_call_state_get(void);
-void pl_call_state_save(PyObj);
+extern PyObj Py_ReturnArgs;
+extern PyObj PyExc_PostgresStopEvent;
 
 Datum pl_validator(PG_FUNCTION_ARGS);
 Datum pl_handler(PG_FUNCTION_ARGS);
 
 /*
- * Allows DB interface points to identify if it can proceed.
+ * volatility of the current function.
+ * Cannot go from stable or immutable to volatile.
  */
-typedef enum {
-	/*
-	 * State used for between transaction work.
-	 */
-	pl_outside_transaction = -2,
-	/*
-	 * _PG_init hasn't finished.
-	 */
-	pl_not_initialized = -1,
-	pl_ready_for_access = 0,
+extern char fn_volatile;
 
-	/*
-	 * Interaction with database interfaces are prohibited.
-	 */
-	pl_in_failed_transaction = 1,
+#define PL_INTERNAL() \
+	IDSTR(__func__)
 
-	/*
-	 * An unnatural state used to indicate two things:
-	 *  1. on_proc_exit handler has been called
-	 *  2. the PL's internal state cannot be trusted.
-	 */
-	pl_terminated = 3,
-} pl_state_t;
-extern pl_state_t pl_state;
+#define PL_ENTRY_POINTS() \
+	IDSTR(main) \
+	IDSTR(send) \
+	IDSTR(before_insert) \
+	IDSTR(before_update) \
+	IDSTR(before_delete) \
+	IDSTR(after_insert) \
+	IDSTR(after_update) \
+	IDSTR(after_delete) \
+	IDSTR(before_insert_statement) \
+	IDSTR(before_update_statement) \
+	IDSTR(before_delete_statement) \
+	IDSTR(before_truncate_statement) \
+	IDSTR(after_insert_statement) \
+	IDSTR(after_update_statement) \
+	IDSTR(after_delete_statement) \
+	IDSTR(after_truncate_statement)
+
+#define PL_TRIGGER_ORIENTATIONS() \
+	IDSTR(ROW) \
+	IDSTR(STATEMENT)
+
+#define PL_TRIGGER_TIMINGS() \
+	IDSTR(BEFORE) \
+	IDSTR(AFTER)
+
+#define PL_MANIPULATIONS() \
+	IDSTR(INSERT) \
+	IDSTR(UPDATE) \
+	IDSTR(DELETE) \
+	IDSTR(TRUNCATE)
+
+#define IDSTR(NAME) extern PyObj NAME##_str_ob;
+PL_INTERNAL()
+PL_ENTRY_POINTS()
+PL_MANIPULATIONS()
+PL_TRIGGER_ORIENTATIONS()
+PL_TRIGGER_TIMINGS()
+#undef IDSTR
+
+PyObj pl_call_state_get(void);
+void pl_call_state_save(PyObj);
 
 /*
  * Structure used to hold information about the execution state of the
@@ -88,7 +109,7 @@ struct pl_fn_info {
 	 * That is, the references to all the PyObject's stored here are owned by
 	 * the TransactionScope set object. At the end of the transaction, that
 	 * set object is cleared, and the objects referenced here may no longer
-	 * exist.
+	 * exist. (Py_XACTREF(ob) and Py_DEXTREF(ob) manage add/remove)
 	 */
 	unsigned long fi_xid;		/* pl_xid that the cache was created in */
 	PyObject *fi_func;			/* PyPgFunction */
@@ -113,7 +134,7 @@ struct pl_fn_info {
  * [currently only used by the inline executor]
  */
 #define FN_INFO_NEEDS_REFRESH(FN_INFO) \
-	(fn_info == NULL || (fn_info->fi_xid != 1 && fn_info->fi_xid != pl_xact_count))
+	(fn_info == NULL || (fn_info->fi_xid != 1 && fn_info->fi_xid != ext_xact_count))
 
 #ifdef __cplusplus
 }

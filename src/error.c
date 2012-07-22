@@ -22,13 +22,47 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
 #include "pypg/errcodes.h"
 #include "pypg/error.h"
 #include "pypg/errordata.h"
 #include "pypg/function.h"
+
+PyObj PYSTR(pg_errordata) = NULL;
+PyObj PYSTR(pg_inhibit_pl_context) = NULL;
+
+PyObj PyExc_PostgresException = NULL;
+
+static PyObj FormatTraceback = NULL;
+
+void
+error_init_tracebacks(void)
+{
+	PyObj ob;
+
+	/*
+	 * Get the 'format_exc' callable.
+	 *
+	 * Use ereport here because this is the initialization of the facility that
+	 * PyErr_ThrowPostgresError uses to build the errcontext().
+	 */
+	ob = PyImport_ImportModule("traceback");
+	if (ob == NULL)
+		ereport(ERROR,(
+			errcode(ERRCODE_PYTHON_ERROR),
+			errmsg("failed to import Python 'traceback' module")
+		));
+
+	Py_XDECREF(FormatTraceback);
+	FormatTraceback = Py_ATTR(ob, "format_exception");
+	Py_DECREF(ob);
+	if (FormatTraceback == NULL)
+		ereport(ERROR,(
+			errcode(ERRCODE_PYTHON_ERROR),
+			errmsg("failed to get 'format_exception' from Python traceback module")
+		));
+}
 
 /*
  * Given a str(code characters), or an Python int(sixbit representation),
@@ -290,9 +324,9 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 	PyErr_NormalizeException(&exc, &val, &tb);
 	if (val != NULL)
 	{
-		if (PyObject_HasAttr(val, pg_errordata_str_ob))
+		if (PYSTR(pg_errordata) && PyObject_HasAttr(val, PYSTR(pg_errordata)))
 		{
-			errdata_ob = PyObject_GetAttr(val, pg_errordata_str_ob);
+			errdata_ob = PyObject_GetAttr(val, PYSTR(pg_errordata));
 			if (errdata_ob == Py_None)
 			{
 				Py_DECREF(errdata_ob);
@@ -303,11 +337,11 @@ PyErr_ThrowPostgresErrorWithContext(int code, const char *errstr, struct pl_exec
 		/*
 		 * Exception specific override for inhibit_pl_context?
 		 */
-		if (PyObject_HasAttr(val, pg_inhibit_pl_context_str_ob))
+		if (PYSTR(pg_inhibit_pl_context) && PyObject_HasAttr(val, PYSTR(pg_inhibit_pl_context)))
 		{
 			PyObj no_tb_ob;
 
-			no_tb_ob = PyObject_GetAttr(val, pg_inhibit_pl_context_str_ob);
+			no_tb_ob = PyObject_GetAttr(val, PYSTR(pg_inhibit_pl_context));
 			if (no_tb_ob == Py_True)
 				inhibit_pl_context = true;
 			else if (no_tb_ob == Py_False)
@@ -510,7 +544,7 @@ PyErr_SetPgError(bool inhibit_warning)
 	 */
 	if (!inhibit_warning)
 	{
-		if (pl_state == pl_in_failed_transaction)
+		if (ext_state == xact_failed)
 		{
 			/*
 			 * If this is ever emitted, it is likely a programming error(PL level).
@@ -525,8 +559,8 @@ PyErr_SetPgError(bool inhibit_warning)
 			}
 		}
 
-		if (pl_state == pl_ready_for_access)
-			pl_state = pl_in_failed_transaction;
+		if (ext_state == ext_ready)
+			ext_state = xact_failed;
 	}
 
 	/*
@@ -629,7 +663,7 @@ PyErr_EmitPgErrorAsWarning(const char *msg)
 		PyErr_Fetch(&exc, &val, &tb);
 
 		/*
-		 * Don't modify pl_state.
+		 * Don't modify ext_state.
 		 */
 		PyErr_SetPgError(true);
 

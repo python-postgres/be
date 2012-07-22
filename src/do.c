@@ -23,8 +23,8 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
+#include "pypg/extension.h"
+#include "pypg/module.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/ist.h"
@@ -172,8 +172,8 @@ pl_inline(PG_FUNCTION_ARGS)
 
 	if (pl_inline_executor_fcinfo.flinfo == NULL)
 	{
-		if (pl_state == pl_not_initialized)
-			pl_first_call();
+		if (ext_state == init_pending)
+			ext_entry();
 
 		/*
 		 * Initialize the pseudo-function for executing DO-blocks.

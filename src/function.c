@@ -36,8 +36,7 @@
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/pl.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
+#include "pypg/extension.h"
 #include "pypg/error.h"
 #include "pypg/type/type.h"
 #include "pypg/type/object.h"
@@ -45,6 +44,11 @@
 #include "pypg/type/record.h"
 #include "pypg/tupledesc.h"
 #include "pypg/function.h"
+
+PyObj Py_builtins_module = NULL;
+PyObj Py_compile_ob = NULL;
+PyObj PYSTR(exec) = NULL;
+PyObj Py_linecache_updatecache_ob = NULL;
 
 /*
  * PyPgFunction_get_source - get the function's prosrc
@@ -93,9 +97,9 @@ PyPgFunction_get_code(PyObj func)
 
 	PyTuple_SET_ITEM(cargs, 0, prosrc);
 	PyTuple_SET_ITEM(cargs, 1, PyPgFunction_GetFilename(func));
-	PyTuple_SET_ITEM(cargs, 2, exec_str_ob);
+	PyTuple_SET_ITEM(cargs, 2, PYSTR(exec));
 	Py_INCREF(PyPgFunction_GetFilename(func));
-	Py_INCREF(exec_str_ob);
+	Py_INCREF(PYSTR(exec));
 
 	rob = PyObject_CallObject(Py_compile_ob, cargs);
 	Py_DECREF(cargs);
@@ -124,6 +128,9 @@ PyPgFunction_load_module(PyObj func)
 
 	modules = PyImport_GetModuleDict();
 
+	/*
+	 * Module already loaded? Return it.
+	 */
 	rv = PySequence_Contains(modules, PyPgFunction_GetPyUnicodeOid(func));
 	if (rv == -1)
 		return(NULL);
@@ -131,10 +138,58 @@ PyPgFunction_load_module(PyObj func)
 	{
 		/*
 		 * If this returns NULL, it's probably some weird race condition...
-		 * The check above said it exists, so let's trust it.
+		 * The check above said it exists, so let's trust it...
 		 */
 		return(PyObject_GetItem(modules, PyPgFunction_GetPyUnicodeOid(func)));
 	}
+
+	modname = PyPgFunction_GetPyUnicodeOid(func);
+	Py_INCREF(modname);
+	PyObject_StrBytes(&modname);
+	if (modname == NULL)
+		return(NULL);
+
+	/*
+	 * No module present, initialize a new one.
+	 */
+	module = PyModule_New(PyBytes_AS_STRING(modname));
+	Py_DECREF(modname);
+	if (module == NULL)
+		return(NULL);
+	/* Use the  */
+	d = PyModule_GetDict(module);
+	if (d == NULL)
+	{
+		elog(WARNING, "could not get Python module dictionary");
+		Py_DECREF(module);
+		return(NULL);
+	}
+
+	/*
+	 * __loader__ PEP302 support.
+	 * This is what linecache uses to access the function's source
+	 */
+	if (PyDict_SetItemString(d, "__loader__", func) != 0)
+	{
+		/*
+		 * linecache can't do anything if there's no loader.
+		 */
+		Py_DECREF(module);
+		return(NULL);
+	}
+
+	if (PyDict_SetItemString(d, "__file__", PyPgFunction_GetFilename(func)) != 0)
+		goto fail;
+	if (PyDict_SetItemString(d, "__builtins__", Py_builtins_module) != 0)
+		goto fail;
+	if (PyDict_SetItemString(d, "__func__", func) != 0)
+		goto fail;
+
+	/*
+	 * Module has to exist in sys.modules before code is loaded.
+	 */
+	if (PyObject_SetItem(modules, PyPgFunction_GetPyUnicodeOid(func), module) != 0)
+		goto fail;
 
 	/*
 	 * Hasn't been loaded into sys.modules yet.
@@ -142,53 +197,17 @@ PyPgFunction_load_module(PyObj func)
 
 	code = PyPgFunction_get_code(func);
 	if (code == NULL)
-		return(NULL);
-
-	modname = PyPgFunction_GetPyUnicodeOid(func);
-	Py_INCREF(modname);
-	PyObject_StrBytes(&modname);
-	if (modname == NULL)
-	{
-		Py_DECREF(code);
-		return(NULL);
-	}
-
-	module = PyModule_New(PyBytes_AS_STRING(modname));
-	Py_DECREF(modname);
-	if (module == NULL)
-	{
-		Py_DECREF(code);
-		return(NULL);
-	}
-
-	d = PyModule_GetDict(module);
-	if (PyDict_SetItemString(d, "__builtins__", Py_builtins_module) != 0)
-		goto fail;
-	/*
-	 * __loader__ PEP302 support.
-	 * This is what linecache uses to access the function's source
-	 */
-	if (PyDict_SetItemString(d, "__loader__", func) != 0)
-		goto fail;
-	if (PyDict_SetItemString(d, "__func__", func) != 0)
-		goto fail;
-	if (PyDict_SetItemString(d, "__file__", PyPgFunction_GetFilename(func)) != 0)
-		goto fail;
-
-	/*
-	 * Module has to exist in sys.modules before code evaluates.
-	 */
-	if (PyObject_SetItem(modules, PyPgFunction_GetPyUnicodeOid(func), module) != 0)
 		goto fail;
 
 	/*
 	 * Module context, therefore locals and globals are the same object.
 	 */
-	evalr = PyEval_EvalCode((PyCodeObject *) code, d, d);
+	evalr = PyEval_EvalCode(code, d, d);
 	if (evalr == NULL)
 	{
 		/*
-		 * Code evaluation failed. Remove the junk module from sys.modules.
+		 * Code evaluation failed.
+		 * Remove the junk module from sys.modules *after* updating linecache.
 		 */
 		PyObject_DelItem(modules, PyPgFunction_GetPyUnicodeOid(func));
 		goto fail;
@@ -198,9 +217,25 @@ PyPgFunction_load_module(PyObj func)
 
 	return(module);
 fail:
-	Py_DECREF(code);
-	Py_DECREF(module);
-	return(NULL);
+	/*
+	 * Something went wrong.
+	 * Update the linecache so that the source is accessible.
+	 */
+	Assert(d != NULL);
+	/*
+	 * Ignore any errors here; should cause a context chain.
+	 */
+	{
+		PyObj exc, val, tb;
+		PyErr_Fetch(&exc, &val, &tb);
+		PyObject_CallFunction(Py_linecache_updatecache_ob, "OO",
+			PyPgFunction_GetFilename(func), d);
+		PyErr_Restore(exc,val,tb);
+
+		Py_XDECREF(code);
+		Py_XDECREF(module);
+		return(NULL);
+	}
 }
 
 /*

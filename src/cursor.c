@@ -33,8 +33,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/function.h"
@@ -760,7 +759,7 @@ cursor_dealloc(PyObj self)
 		/*
 		 * Don't bother closing the cursor unless we're inside a transaction.
 		 */
-		if (pl_state >= 0)
+		if (ext_state >= 0)
 		{
 			MemoryContext former = CurrentMemoryContext;
 
@@ -1019,7 +1018,7 @@ PyPgCursor_NEW(
 	PyPgCursor_SetOutput(rob, output);
 
 	PyPgCursor_SetChunksize(rob, chunksize);
-	PyPgCursor_SetXid(rob, pl_xact_count);
+	PyPgCursor_SetXid(rob, ext_xact_count);
 
 	PG_TRY();
 	{
@@ -1046,7 +1045,7 @@ PyPgCursor_NEW(
 		p = SPI_cursor_open(NULL, plan, datums, cnulls, PL_FN_READONLY());
 		PyPgCursor_SetPortal(rob, p);
 		PyPgCursor_SetName(rob, MemoryContextStrdup(PythonMemoryContext, p->name));
-		PyPgCursor_SetXid(rob, pl_xact_count);
+		PyPgCursor_SetXid(rob, ext_xact_count);
 
 		FreeDatumsAndNulls(freemap, datums, nulls);
 		datums = NULL;

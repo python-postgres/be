@@ -3,8 +3,9 @@
 ##
 __file__ = '[Postgres]'
 import sys
-import contextlib
 import io
+import functools
+import warnings
 
 class StringModule(object):
 	"""
@@ -40,7 +41,6 @@ __loader__ = StringModule('Postgres', __get_Postgres_source__)
 project = StringModule('Postgres.project', __get_Postgres_project_source__)
 project = project.load_module()
 
-# Don't add anything here unless you don't mind updating the expected output.
 severities = dict([
 	(k, CONST[k]) for k in (
 		"DEBUG5",
@@ -95,15 +95,19 @@ def show_python_warning(message, category, filename,
 	lineno, file=None, line=None,
 	_warn_ = WARNING, _state_ = make_sqlstate('01PPY')
 ):
+	"""
+	Override for the :py:mod:`warnings` module's
+	:py:func:`warnings.showwarning` function.
+
+	This allows Python warnings to be propagated to the client.
+	"""
 	if category.__module__ == 'builtins':
 		mod = ''
 	else:
 		mod = category.__module__ + '.'
 	ctx = '%s:%s: %s%s' %(filename, lineno, mod, category.__name__)
 	_warn_(message, context = ctx, sqlerrcode = _state_)
-import warnings
 warnings.showwarning = show_python_warning
-del warnings
 
 class InlineExecutor(object):
 	"""
@@ -135,9 +139,6 @@ class InlineExecutor(object):
 		l = typ(str(prosrc))
 		l.load_module()
 
-def _return_arg(arg):
-	return arg
-
 _preload_get_procs = """
 SELECT
 	pg_proc.oid
@@ -148,9 +149,12 @@ WHERE
 	pg_proc.prolang = $1 AND
 	pg_namespace.nspname = $2
 """
-def preload(*args, pg_language_oid = None):
+def preload(*args, pg_language_oid = None, _query = _preload_get_procs):
 	"""
 	Preload all the Python functions in the specified schemas.
+
+	Using this with INLINE execution can provide a convenient means
+	to keep subsequent loading override down.
 	"""
 	if pg_language_oid is None:
 		# has to be done at runtime; __get_func__().language
@@ -160,9 +164,10 @@ def preload(*args, pg_language_oid = None):
 		lanoid = pg_language_oid
 	for x in args:
 		funcs = map(lambda y: Function(y[0]),
-			Statement(_preload_get_procs, lanoid, x))
+			Statement(_query, lanoid, x))
 		for z in funcs:
 			z.load_module()
+del _preload_get_procs # keep module namespace clean
 
 ##
 # Override stdio objects to give the client information
@@ -221,7 +226,10 @@ _pytypes_map = {
 	CONST['CHAROID'] : str,
 	CONST['BPCHAROID'] : str,
 }
-def convert_postgres_objects(seq, get_converter = _pytypes_map.get):
+def convert_postgres_objects(seq,
+	get_converter = _pytypes_map.get,
+	_reflect = lambda x: x
+):
 	"""
 	Convert all the given Postgres objects in the sequence to
 	corresponding Python objects.
@@ -232,12 +240,11 @@ def convert_postgres_objects(seq, get_converter = _pytypes_map.get):
 		# If it's a Postgres.Type, use the Base.oid as the key.
 		get_converter(
 			(x.__class__.__class__ is Type and x.__class__.Base.oid or 0),
-			_return_arg)(x)
+			_reflect)(x)
 		for x in seq
 	])
 
-from functools import partial
-iterpytypes = partial(map, convert_postgres_objects)
+iterpytypes = functools.partial(map, convert_postgres_objects)
 
 class pytypes(tuple):
 	def __new__(typ, ob):
@@ -251,7 +258,7 @@ def eval(sql, *args):
 class Types(object):
 	__name__ = 'Postgres.types'
 	__doc__ = 'types module emulator'
-	__path__ = None
+	__path__ = []
 	__regtype = None
 
 	def __init__(self):
@@ -261,7 +268,8 @@ class Types(object):
 		if attname.startswith('__'):
 			return super(self).__getattr__(self, attname)
 		try:
-			return Type(self.__regtype('pg_catalog.' + attname))
+			r = Type(self.__regtype('pg_catalog.' + attname))
+			return r
 		except:
 			raise AttributeError("could not create type instance")
 
@@ -336,6 +344,7 @@ class Exception(Exception):
 		return self.pg_errordata.message
 
 	def __init__(self, pg_errordata = None):
+		super().__init__(pg_errordata)
 		self.pg_errordata = pg_errordata
 
 	def __str__(self):
@@ -530,7 +539,7 @@ _original_modules = set(sys.modules.keys())
 _original_modules.add('Postgres')
 
 # called the first time the language is invoked to finalize the module/env
-def _pl_first_call():
+def _entry():
 	try:
 		# Is the ServerEncoding usable?
 		'1234567890'.encode(encoding)
@@ -562,9 +571,11 @@ def _pl_first_call():
 	__builtins__.sqlexec = execute
 
 # execute the init.py file relative to the cluster
-def _pl_local_init(initfile = "init.py", eval = __builtins__.eval):
+def _init(module, initfile = "init.py", eval = __builtins__.eval):
 	from types import ModuleType
 	import os.path
+
+	# Run the init.py file.
 	if os.path.exists(initfile):
 		# XXX: Do permission check on init.py
 		with open(initfile) as init_file:
@@ -576,19 +587,27 @@ def _pl_local_init(initfile = "init.py", eval = __builtins__.eval):
 		sys.modules['__pg_init__'] = module
 		DEBUG('loaded Python module "__pg_init__" (init.py)')
 
-# clear non-default modules and run the init.py again
-def _pl_reload():
-	# XXX: NOT USED
-	r = set(sys.modules.keys()) - _original_modules
-	for x in r:
-		del sys.modules[x]
-	_pl_local_init()
+	# Install this module into the sys.modules dictionary.
+	sys.modules['Postgres'] = module
+
+	import linecache
+	return (
+		Exception,
+		StopEvent,
+		__builtins__.compile,
+		_tuplewrap,
+		'inhibit_pl_context',
+		'exec',
+		__builtins__,
+		'pg_errordata',
+		linecache.updatecache,
+	)
 
 # Clear the linecache in order to avoid
 # situations where a stale entry exists.
 # This helps ensure that the common case of repeat CREATE OR REPLACE's
 # show the right lines when they blow up--incremental corrections.
-def _pl_eox():
+def _xact_exit():
 	try:
 		import linecache
 		linecache.clearcache()
@@ -596,7 +615,7 @@ def _pl_eox():
 		# ignore if linecache doesn't exist
 		pass
 
-def _pl_on_proc_exit():
+def _exit():
 	try:
 		import atexit
 		try:

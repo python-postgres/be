@@ -22,6 +22,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/errordata.h"
 #include "pypg/error.h"

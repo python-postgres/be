@@ -45,7 +45,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/strings.h"
+#include "pypg/extension.h"
 #include "pypg/pl.h"
 #include "pypg/errordata.h"
 #include "pypg/triggerdata.h"
@@ -67,21 +67,8 @@
 #include "pypg/cursor.h"
 #include "pypg/module.h"
 #include "pypg/xact.h"
-#include "pypg/exit.h"
-
-PG_MODULE_MAGIC;
-
-PyMODINIT_FUNC init_Postgres(void);
-
-const char *python_server_encoding = NULL;
 
 struct pl_exec_state *pl_execution_context = NULL;
-/*
- * Used to track if the handler was entered inside
- * the transaction. If this count is zero, there is
- * no need to run GC when the transaction ends.
- */
-static unsigned long handler_count = 0;
 
 /*
  * SXD() - Used to provide *some* information about what the PL is doing.
@@ -94,38 +81,13 @@ static unsigned long handler_count = 0;
 #define SXD(DESCR) pl_execution_context->description = DESCR
 
 /*
- * This is used to determine whether pl_first_call needs to
- * be called and whether the pl is inside a failed transaction.
+ * Used by SRFs
  */
-pl_state_t pl_state = pl_not_initialized;
-
-/*
- * Number of transactions that the PL participated in.
- *
- * Used to identify whether or not Portals or fn_extra should be ignored.
- *
- * It's started at 2 so that we can use 1 for some special cases.
- */
-unsigned long pl_xact_count = 2;
-
-/*
- * Primarily used to hold Postgres.Object !typbyval Datums.
- */
-MemoryContext PythonMemoryContext = NULL, PythonWorkMemoryContext = NULL;
-
-/*
- * Postgres.StopEvent
- */
-static PyObj PyExc_PostgresStopEvent = NULL;
-
-PyObj FormatTraceback = NULL;
-PyObj PyExc_PostgresException = NULL;
 PyObj Py_ReturnArgs = NULL;
-PyObj TransactionScope = NULL;
-PyObj Py_builtins_module = NULL;
-PyObj Py_Postgres_module = NULL;
-PyObj Py_compile_ob = NULL;
-PyObj Py_anonymous_composites = NULL;
+/*
+ * Postgres.StopEvent (triggers)
+ */
+PyObj PyExc_PostgresStopEvent = NULL;
 
 /*
  * common, persistent, global strings(PyUnicode).
@@ -138,99 +100,12 @@ PyObj Py_anonymous_composites = NULL;
  * etc..
  */
 #define IDSTR(NAME) PyObj NAME##_str_ob = NULL;
-PYPG_REQUISITE_NAMES()
-PYPG_ENTRY_POINTS()
-MANIPULATIONS()
-TRIGGER_ORIENTATIONS()
-TRIGGER_TIMINGS()
+PL_INTERNAL()
+PL_ENTRY_POINTS()
+PL_MANIPULATIONS()
+PL_TRIGGER_ORIENTATIONS()
+PL_TRIGGER_TIMINGS()
 #undef IDSTR
-
-/*
- * check_state
- *
- * Validate that all ISTs have been closed, and that the 
- * PL has not recognized an error condition without a Python
- * exception.
- *
- * The elevel is used to allow a WARNING to be issued instead of
- * an error in cases where an ERROR condition is already present.
- * That is, a Python exception occurred *and* there were open
- * subtransactions.
- */
-static void
-check_state(int elevel, unsigned long previous_ist_count)
-{
-	/*
-	 * Subtransaction and Error state checks.
-	 *
-	 * First, check the IST count. If there are open ISTs, abort them and
-	 * report the inappropriate exit state using an error or a warning
-	 * if the PL is failing out.
-	 */
-	Assert(elevel == ERROR || elevel == WARNING);
-
-	if (pl_ist_count > previous_ist_count)
-	{
-		unsigned long dif = pl_ist_count - previous_ist_count;
-
-		/*
-		 * Abort the lingering subtransactions.
-		 */
-		pl_ist_reset(dif);
-
-		/*
-		 * Restore the count to where it was before entering Python code.
-		 */
-		pl_ist_count = previous_ist_count;
-
-		if (pl_state > 0)
-		{
-			/* reset the indicator; error is being indicated */
-			/* However, do so before warning in case of interrupt. */
-			pl_state = pl_ready_for_access;
-
-			/*
-			 * Only warn about the failure as the savepoint exception is
-			 * the appropriate error to thrown in this situation.
-			 */
-
-			HOLD_INTERRUPTS();
-			ereport(WARNING,(
-				errcode(ERRCODE_PYTHON_PROTOCOL_VIOLATION),
-				errmsg("function failed to propagate error state")
-			));
-			RESUME_INTERRUPTS();
-		}
-
-		if (elevel == WARNING)
-			HOLD_INTERRUPTS();
-		ereport(elevel,(
-			errcode(ERRCODE_SAVEPOINT_EXCEPTION),
-			errmsg("function failed to exit all subtransactions"),
-			errdetail("The %lu remaining subtransactions have been aborted.", dif)
-		));
-		if (elevel == WARNING)
-			RESUME_INTERRUPTS();
-	}
-
-	/*
-	 * The Python code caused a database error, but did not raise it or
-	 * any other error. It protests that things are fine, but it was noted
-	 * earlier to not be the case.
-	 * [Only an IST-Abort can "correct" the error conditon without ultimately
-	 * emitting an error.]
-	 */
-	if (pl_state > 0)
-	{
-		pl_state = pl_ready_for_access; /* reset the indicator; error will be raised */
-
-		ereport(ERROR,(
-			errcode(ERRCODE_PYTHON_PROTOCOL_VIOLATION),
-			errmsg("function failed to propagate error state"),
-			errhint("A subtransaction can be used to recover from database errors.")
-		));
-	}
-}
 
 /*
  * Call the function's load_module() method.
@@ -241,7 +116,7 @@ check_state(int elevel, unsigned long previous_ist_count)
 static PyObj
 run_PyPgFunction_module(PyObj func)
 {
-	unsigned long stored_ist_count = pl_ist_count;
+	unsigned long stored_ist_count = ist_count;
 	PyObj rob;
 
 	Assert(func != NULL);
@@ -256,10 +131,10 @@ run_PyPgFunction_module(PyObj func)
 		 * Error is being indicated via a thrown Python exception,
 		 * only correct and warn about the issue, if necessary.
 		 */
-		if (pl_state > 0)
-			pl_state = pl_ready_for_access;
+		if (ext_state > 0)
+			ext_state = ext_ready;
 
-		check_state(WARNING, stored_ist_count);
+		ext_check_state(WARNING, stored_ist_count);
 
 		PyErr_ThrowPostgresError(
 			"could not load Python function's module object");
@@ -271,7 +146,7 @@ run_PyPgFunction_module(PyObj func)
 		 * This is kept in the transaction scope for now until
 		 * it actually gets into sys.modules.
 		 */
-		if (PySet_Add(TransactionScope, rob) == -1)
+		if (Py_XACTREF(rob) == -1)
 		{
 			Py_DECREF(rob);
 			PyErr_ThrowPostgresError(
@@ -283,7 +158,7 @@ run_PyPgFunction_module(PyObj func)
 		 * The module body can start ISTs, so the count and state needs to be
 		 * validated.
 		 */
-		check_state(ERROR, stored_ist_count);
+		ext_check_state(ERROR, stored_ist_count);
 	}
 
 	return(rob);
@@ -474,546 +349,8 @@ srf_eccb(Datum arg)
 	/*
 	 * XXX: Perhaps too optimistic about this not failing.
 	 */
-	PySet_Discard(TransactionScope, fn_info->fi_internal_state);
+	Py_DEXTREF(fn_info->fi_internal_state);
 	fn_info->fi_internal_state = NULL;
-}
-
-static void
-increment_xact_count(void)
-{
-	/*
-	 * increment pl_xact_count
-	 */
-	++pl_xact_count;
-	if (pl_xact_count == 0)
-	{
-		pl_xact_count = 2;
-
-		HOLD_INTERRUPTS();
-		ereport(WARNING, (errmsg("internal transaction counter wrapped")));
-		RESUME_INTERRUPTS();
-	}
-}
-
-static void
-pl_xact_hook(XactEvent xev, void *arg)
-{
-	/*
-	 * Expecting _PG_init to have already been called.
-	 */
-	Assert(Py_IsInitialized());
-
-	switch (xev)
-	{
-		case XACT_EVENT_COMMIT:
-		case XACT_EVENT_PREPARE:
-		case XACT_EVENT_ABORT:
-		{
-			/*
-			 * Restore the count after GC has run.
-			 * During GC, it *is* possible for ereport(WARNING) to be emitted.
-			 */
-			uint32 stored_InterruptHoldoffCount = InterruptHoldoffCount;
-
-			/*
-			 * If the handler hasn't been ran in this transaction, don't bother running
-			 * GC and cache clears.
-			 */
-			if (handler_count == 0)
-				return;
-			handler_count = 0;
-
-			/*
-			 * A residual KeyboardInterrupt may exist.
-			 */
-			if (pl_state == pl_in_failed_transaction)
-			{
-				/*
-				 * It won't set an interrupt exception if handler_count is zero.
-				 */
-				if (Py_MakePendingCalls())
-				{
-					/*
-					 * Some other pending call raised an exception.
-					 */
-					PyErr_EmitPgErrorAsWarning(
-						"unexpected Python exception between transactions");
-				}
-
-				PyErr_Clear();
-				pl_state = pl_ready_for_access;
-			}
-
-			/*
-			 * Any Python error should have been converted to a Postgres error and
-			 * cleared before getting here.
-			 */
-			Assert(!PyErr_Occurred());
-
-			increment_xact_count();
-
-			/*
-			 * Reset PL state.
-			 */
-			pl_ist_count = 0;
-			if (pl_state == pl_ready_for_access)
-				pl_state = pl_outside_transaction;
-
-			PG_TRY();
-			{
-				PyObj rob;
-				/*
-				 * These are not expected elog() out, but protect against
-				 * it anyways as arbitrary code is being ran.
-				 * [think ob.__del__()]
-				 */
-				rob = PyObject_CallMethod(Py_Postgres_module, "_pl_eox", "");
-				if (rob != NULL)
-					Py_DECREF(rob);
-				else
-				{
-					PyErr_RelayException();
-				}
-			}
-			PG_CATCH();
-			{
-				PyErr_EmitPgErrorAsWarning(
-					"unexpected Python exception between transactions");
-			}
-			PG_END_TRY();
-
-			PG_TRY();
-			{
-				/*
-				 * *Very* unlikely to error out, but protect anyways as this
-				 * can execute arbitrary code.
-				 */
-				PySet_Clear(TransactionScope);
-				PyGC_Collect();
-			}
-			PG_CATCH();
-			{
-				PyErr_EmitPgErrorAsWarning("unexpected error between transactions");
-			}
-			PG_END_TRY();
-
-			if (pl_state == pl_outside_transaction)
-				pl_state = pl_ready_for_access;
-
-			InterruptHoldoffCount = stored_InterruptHoldoffCount;
-		}
-		break;
-	}
-}
-
-/*
- * Used to track if `set_interrupt` is already pending.
- */
-static bool interrupt_set = false;
-
-static int
-set_interrupt(void *ignored)
-{
-	int r = -1;
-
-	if (handler_count == 0)
-	{
-		/*
-		 * Not in Python? Don't set the error.
-		 */
-		r = 0;
-	}
-	else
-	{
-		PG_TRY();
-		{
-			CHECK_FOR_INTERRUPTS();
-		}
-		PG_CATCH();
-		{
-			/*
-			 * Inhibit the warning, the interrupt may be overriding
-			 * an existing exception.
-			 */
-			PyErr_SetPgError(true);
-		}
-		PG_END_TRY();
-	}
-
-	/*
-	 * It can set the interrupt again.
-	 */
-	interrupt_set = false;
-
-	/*
-	 * It is inside the Python interpreter, so the cleared interrupt
-	 * is merely converted like any other PG error.
-	 */
-	return(-1);
-}
-
-static pqsigfunc SIGINT_original = NULL;
-static void
-pl_sigint(SIGNAL_ARGS)
-{
-	SIGINT_original(postgres_signal_arg);
-	/*
-	 * If cancelling and there has been PL activity.
-	 */
-	if (QueryCancelPending && handler_count && PyEval_GetFrame() != NULL && interrupt_set == false)
-	{
-		pl_state = pl_in_failed_transaction;
-		interrupt_set = true;
-	    Py_AddPendingCall(set_interrupt, NULL);
-	}
-}
-
-static pqsigfunc SIGTERM_original = NULL;
-static void
-pl_sigterm(SIGNAL_ARGS)
-{
-	SIGTERM_original(postgres_signal_arg);
-	/*
-	 * If dying and there has been PL activity.
-	 */
-	if (ProcDiePending && handler_count && PyEval_GetFrame() != NULL && interrupt_set == false)
-	{
-		pl_state = pl_in_failed_transaction;
-		interrupt_set = true;
-	    Py_AddPendingCall(set_interrupt, NULL);
-	}
-}
-
-/*
- * Portions of _PG_init have been written with the thought that it may, one day,
- * be useful to be able to completely re-initialize the PL. Additionally, if
- * init were to fail due to a transient error, it is able to fully recover with
- * a subsequent, successful run.
- */
-void
-_PG_init(void)
-{
-	PyObj ob, modules;
-	static wchar_t progname[] = {
-		'p','o','s','t','g','r','e','s',0
-	};
-
-	/*
-	 * Identify the proper Python encoding name to use to encode/decode strings.
-	 */
-#define IDSTR(PGID, PYID) \
-	case PGID: python_server_encoding = PYID; break;
-
-	switch (GetDatabaseEncoding())
-	{
-		PG_SERVER_ENCODINGS()
-
-		default:
-			/*
-			 * XXX: *Most* PG encodings are supported by Python.
-			 */
-			ereport(ERROR,(
-				errmsg("cannot use server encoding with Python"),
-				errhint("The database cluster must be created using a different encoding.")
-			));
-		break;
-	}
-#undef IDSTR
-
-	/*
-	 * Memory Context for Python objects that have
-	 * pointers referring to PostgreSQL objects/data.
-	 *
-	 * Intended to be permanent.
-	 */
-	if (PythonMemoryContext != NULL)
-	{
-		MemoryContext tmp = PythonMemoryContext;
-		PythonMemoryContext = NULL;
-		MemoryContextDelete(tmp);
-	}
-	PythonMemoryContext = AllocSetContextCreate(TopMemoryContext,
-		"PythonMemoryContext",
-		ALLOCSET_DEFAULT_MINSIZE,
-		ALLOCSET_DEFAULT_INITSIZE,
-		ALLOCSET_DEFAULT_MAXSIZE);
-
-	PythonWorkMemoryContext = AllocSetContextCreate(PythonMemoryContext,
-		"PythonWorkMemoryContext",
-		ALLOCSET_DEFAULT_MINSIZE,
-		ALLOCSET_DEFAULT_INITSIZE,
-		ALLOCSET_DEFAULT_MAXSIZE);
-
-	Py_SetProgramName(progname);
-	Py_Initialize();
-	if (!Py_IsInitialized())
-		elog(ERROR, "could not initialize Python");
-
-	/*
-	 * Get the 'format_exc' callable.
-	 *
-	 * Use ereport here because this is the initialization of the facility that
-	 * PyErr_ThrowPostgresError uses to build the errcontext().
-	 */
-	ob = PyImport_ImportModule("traceback");
-	if (ob == NULL)
-		ereport(ERROR,(
-			errcode(ERRCODE_PYTHON_ERROR),
-			errmsg("failed to import Python 'traceback' module")
-		));
-	Py_XDECREF(FormatTraceback);
-	FormatTraceback = Py_ATTR(ob, "format_exception");
-	Py_DECREF(ob);
-	if (FormatTraceback == NULL)
-		ereport(ERROR,(
-			errcode(ERRCODE_PYTHON_ERROR),
-			errmsg("failed to get 'format_exception' from Python traceback module")
-		));
-
-	/*
-	 * Setup encoding aliases. Without these, PyObject_StrBytes() will probably
-	 * not function properly.
-	 */
-
-	/*
-	 * We now have traceback functionality, so PyErr_ThrowPostgresError is the
-	 * appropriate reporting mechanism from here out.
-	 */
-
-	Py_XDECREF(TransactionScope);
-	TransactionScope = PySet_New(NULL);
-	if (TransactionScope == NULL)
-		PyErr_ThrowPostgresError("could not create transaction set object");
-
-	Py_XDECREF(Py_builtins_module);
-	Py_builtins_module = PyImport_ImportModule("builtins");
-	if (Py_builtins_module == NULL)
-		PyErr_ThrowPostgresError("could not import Python builtins module");
-
-	/*
-	 * We use this instead of a C-API because it takes PyUnicode.
-	 */
-	Py_XDECREF(Py_compile_ob);
-	Py_compile_ob = PyObject_GetAttrString(Py_builtins_module, "compile");
-	if (Py_compile_ob == NULL)
-		PyErr_ThrowPostgresError("could not get builtins.compile object");
-
-#define IDSTR(NAME) \
-	Py_XDECREF(NAME##_str_ob); \
-	NAME##_str_ob = PyUnicode_FromString(#NAME); \
-	if (NAME##_str_ob == NULL) \
-		PyErr_ThrowPostgresError("could not create requisite string object \"" #NAME "\"");
-	PYPG_REQUISITE_NAMES();
-	PYPG_ENTRY_POINTS();
-	MANIPULATIONS()
-	TRIGGER_ORIENTATIONS();
-	TRIGGER_TIMINGS();
-#undef IDSTR
-
-	Py_XDECREF(Py_Postgres_module);
-	Py_Postgres_module = init_Postgres();
-	if (Py_Postgres_module == NULL)
-		PyErr_ThrowPostgresError("could not initialize Postgres module");
-
-	Py_XDECREF(PyExc_PostgresException);
-	PyExc_PostgresException = PyObject_GetAttrString(
-		Py_Postgres_module, "Exception");
-	if (PyExc_PostgresException == NULL)
-		PyErr_ThrowPostgresError(
-			"could not get Postgres.Exception object");
-
-	Py_XDECREF(PyExc_PostgresStopEvent);
-	PyExc_PostgresStopEvent = PyObject_GetAttrString(
-		Py_Postgres_module, "StopEvent");
-	if (PyExc_PostgresStopEvent == NULL)
-		PyErr_ThrowPostgresError("could not get the Postgres.StopEvent exception");
-
-	Py_XDECREF(Py_ReturnArgs);
-	Py_ReturnArgs = PyObject_GetAttrString(Py_Postgres_module, "_return_args");
-	if (Py_ReturnArgs == NULL)
-		PyErr_ThrowPostgresError("could not get Postgres._return_args function");
-
-	Py_XDECREF(Py_anonymous_composites);
-	Py_anonymous_composites = PyDict_New();
-	if (Py_anonymous_composites == NULL)
-		PyErr_ThrowPostgresError("could not create anonymous composites dictionary object");
-
-	modules = PyImport_GetModuleDict();
-	if (PyObject_SetItem(modules, Postgres_str_ob, Py_Postgres_module) < 0)
-		PyErr_ThrowPostgresError("could not set Postgres module in sys.modules");
-
-	RegisterXactCallback(pl_xact_hook, NULL);
-	ereport(DEBUG3,(
-			errmsg("initialized Python %s", Py_GetVersion())));
-
-	ob = PyObject_CallMethod(Py_Postgres_module, "_pl_local_init", "");
-	if (ob == NULL)
-	{
-		UnregisterXactCallback(pl_xact_hook, NULL);
-		PyErr_ThrowPostgresError(_("could not complete local initialation"));
-	}
-	Py_DECREF(ob);
-
-	/*
-	 * Calls Postgres._pl_on_proc_exit
-	 */
-	on_proc_exit(pl_exit, (Datum) 0);
-}
-
-/*
- * pl_first_call - completes the initialization of the language
- *
- * this runs the sys cache hits that could not be done in _PG_init.
- */
-void
-pl_first_call(void)
-{
-	HeapTuple db;
-	PyObj ob;
-
-	/*
-	 * Expects _PG_init() has been called.
-	 */
-	Assert(Py_IsInitialized());
-
-	if (SIGINT_original == NULL)
-		SIGINT_original = pqsignal(SIGINT, pl_sigint);
-	if (SIGTERM_original == NULL)
-		SIGTERM_original = pqsignal(SIGTERM, pl_sigterm);
-
-	Py_XDECREF(py_my_datname_str_ob);
-	py_my_datname_str_ob = NULL;
-
-	/*
-	 * _PG_init does not have cache/database access, so initialize that here.
-	 */
-	db = SearchSysCache(DATABASEOID, MyDatabaseId, 0, 0, 0);
-	if (!HeapTupleIsValid(db))
-		elog(ERROR, "could not get pg_database row for %u", MyDatabaseId);
-
-	py_my_datname_str_ob = PyUnicode_FromCString(
-		NameStr(((Form_pg_database) GETSTRUCT(db))->datname)
-	);
-	ReleaseSysCache(db);
-
-	if (py_my_datname_str_ob == NULL)
-		PyErr_ThrowPostgresError("create not create database name string");
-
-	if (PyModule_AddObject(Py_Postgres_module, "current_database", py_my_datname_str_ob) == -1)
-	{
-		PyErr_ThrowPostgresError(
-			"could not set \"current_database\" constant");
-	}
-	Py_INCREF(py_my_datname_str_ob);
-
-	/* client_addr */
-	if (MyProcPort != NULL && MyProcPort->remote_host != NULL)
-	{
-		if (PyModule_AddStringConstant(
-				Py_Postgres_module, "client_addr", MyProcPort->remote_host))
-		{
-			PyErr_ThrowPostgresError("could not set \"client_addr\" constant");
-		}
-	}
-	else
-	{
-		/*
-		 * otherwise None
-		 */
-		if (PyModule_AddObject(
-				Py_Postgres_module, "client_addr", Py_None))
-		{
-			PyErr_ThrowPostgresError("could not set \"client_addr\" constant");
-		}
-		Py_INCREF(Py_None);
-	}
-
-	/* client_port */
-	if (MyProcPort != NULL && MyProcPort->remote_port != NULL)
-	{
-		if (PyModule_AddStringConstant(
-				Py_Postgres_module, "client_port", MyProcPort->remote_port))
-		{
-			PyErr_ThrowPostgresError("could not set \"client_port\" constant");
-		}
-	}
-	else
-	{
-		/*
-		 * otherwise None
-		 */
-		if (PyModule_AddObject(
-				Py_Postgres_module, "client_port", Py_None))
-		{
-			PyErr_ThrowPostgresError("could not set \"client_port\" constant");
-		}
-		Py_INCREF(Py_None);
-	}
-
-	if (PyModule_AddStringConstant(
-			Py_Postgres_module, "encoding", python_server_encoding))
-	{
-		PyErr_ThrowPostgresError("could not set \"encoding\" constant");
-	}
-
-	/*
-	 * State needs to be ready from here out.
-	 * Reset to pl_not_initialized on failure.
-	 */
-	pl_state = pl_ready_for_access;
-
-	if (PyPgType_Init() == -1)
-	{
-		pl_state = pl_not_initialized;
-		PyErr_ThrowPostgresError("could not initialize built-in types");
-	}
-
-	/* backend_start (needs types to be initialized) */
-	if (MyProcPort != NULL)
-	{
-		PyObj ob;
-		ob = PyPgObject_New(&PyPg_timestamptz_Type,
-								TimestampTzGetDatum(MyProcPort->SessionStartTime));
-		if (ob == NULL)
-		{
-			pl_state = pl_not_initialized;
-			PyErr_ThrowPostgresError("could not create \"backend_start\" object");
-		}
-		else
-		{
-			if (PyModule_AddObject(
-					Py_Postgres_module, "backend_start", ob))
-			{
-				Py_DECREF(ob);
-				pl_state = pl_not_initialized;
-				PyErr_ThrowPostgresError("could not set \"backend_start\" constant");
-			}
-		}
-	}
-	else
-	{
-		/*
-		 * otherwise None
-		 */
-		if (PyModule_AddObject(
-				Py_Postgres_module, "backend_start", Py_None))
-		{
-			pl_state = pl_not_initialized;
-			PyErr_ThrowPostgresError("could not set \"backend_start\" constant");
-		}
-		Py_INCREF(Py_None);
-	}
-
-	ob = PyObject_CallMethod(Py_Postgres_module, "_pl_first_call", "");
-	if (ob == NULL)
-	{
-		/*
-		 * Initialization failed.
-		 */
-		pl_state = pl_not_initialized;
-		PyErr_ThrowPostgresError("module \"Postgres\" failed to initialize");
-	}
-	Py_DECREF(ob);
 }
 
 /*
@@ -1030,8 +367,8 @@ pl_validator(PG_FUNCTION_ARGS)
 	Assert(fn_oid != InvalidOid);
 	Assert(Py_IsInitialized());
 
-	if (pl_state == pl_not_initialized)
-		pl_first_call();
+	if (ext_state == init_pending)
+		ext_entry();
 
 	func = PyPgFunction_FromOid(fn_oid);
 	if (func == NULL)
@@ -1782,7 +1119,7 @@ srf_vpcinit(PG_FUNCTION_ARGS)
 	 * It's arbitrary code, so validate the IST count.
 	 * (The object returned by main could be anything)
 	 */
-	stored_ist_count = pl_ist_count;
+	stored_ist_count = ist_count;
 	fn_info->fi_internal_state = PyObject_GetIter(rob);
 	Py_DECREF(rob);
 	if (fn_info->fi_internal_state == NULL)
@@ -1802,7 +1139,7 @@ srf_vpcinit(PG_FUNCTION_ARGS)
 		}
 	}
 
-	check_state(ERROR, stored_ist_count);
+	ext_check_state(ERROR, stored_ist_count);
 
 	/*
 	 * Remove the iterator from the TransactionScope when the
@@ -1919,8 +1256,8 @@ initialize(PG_FUNCTION_ARGS)
 	 */
 	if (FN_INFO_NEEDS_REFRESH(fn_info))
 	{
-		if (pl_state == pl_not_initialized)
-			pl_first_call();
+		if (ext_state == init_pending)
+			ext_entry();
 
 		if (fn_info == NULL)
 		{
@@ -2227,7 +1564,7 @@ initialize(PG_FUNCTION_ARGS)
 		 * Used to identify that the fn_info needs to be refreshed.
 		 * (References in fn_extra are held by TransactionScope)
 		 */
-		fn_info->fi_xid = pl_xact_count;
+		fn_info->fi_xid = ext_xact_count;
 	}
 	else
 	{
@@ -2258,13 +1595,11 @@ pl_handler(PG_FUNCTION_ARGS)
 		NULL, CurrentMemoryContext, NULL,
 	};
 
-	++handler_count;
-
 	/*
 	 * This stored count is used to identify that all
 	 * opened subtransactions have been closed on handler exit.
 	 */
-	stored_ist_count = pl_ist_count;
+	stored_ist_count = ist_count;
 	pl_execution_context = &current_exec_state;
 	SXD("entering Python handler");
 
@@ -2348,12 +1683,12 @@ pl_handler(PG_FUNCTION_ARGS)
 		PG_CATCH();
 		{
 			/*
-			 * It's already failing, so use check_state(WARNING, ...)
+			 * It's already failing, so use ext_check_state(WARNING, ...)
 			 *
-			 * This will keep check_state() from ever raising an error here.
+			 * This will keep ext_check_state() from ever raising an error here.
 			 */
-			if (pl_state > 0)
-				pl_state = pl_ready_for_access;
+			if (ext_state > 0)
+				ext_state = ext_ready;
 
 			/*
 			 * Be sure to cleanup.
@@ -2366,7 +1701,7 @@ pl_handler(PG_FUNCTION_ARGS)
 			 * count is off. Either the user did something wrong, or
 			 * the interpreter exited via longjmp(PL programming error).
 			 */
-			check_state(WARNING, stored_ist_count);
+			ext_check_state(WARNING, stored_ist_count);
 
 			pl_execution_context = previous;
 
@@ -2426,10 +1761,10 @@ pl_handler(PG_FUNCTION_ARGS)
 	Assert(!PyErr_Occurred());
 
 	/*
-	 * If there are any open ISTs or pl_state != pl_ready_for_access,
+	 * If there are any open ISTs or ext_state != ext_ready,
 	 * raise an exception.
 	 */
-	check_state(ERROR, stored_ist_count);
+	ext_check_state(ERROR, stored_ist_count);
 
 	return(rd);
 }

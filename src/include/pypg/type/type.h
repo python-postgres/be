@@ -7,6 +7,12 @@
 extern "C" {
 #endif
 
+/* Used by typmodin */
+extern PyObj PyPg_cstring_Array_Type;
+
+/* Used by tupledesc.c */
+extern PyObj PyPg_pg_attribute_Type;
+
 /*
  * Use the contrived typtype field to distinguish arrays.
  * [issubclass could be used, but this is quick]

@@ -7,9 +7,11 @@
 extern "C" {
 #endif
 
+#define PYSTR(NAME) py_##NAME##_str_ob
+
 typedef PyObject * PyObj;
 
-extern PyObj Py_builtins_module, Py_compile_ob, Py_exec_str_ob;
+extern PyObj Py_builtins_module, Py_compile_ob, PYSTR(exec);
 extern const char *python_server_encoding;
 
 PyObj PyObject_AsASCIIString(PyObj stringable_ob);

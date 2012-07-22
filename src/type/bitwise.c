@@ -44,7 +44,7 @@
 
 #include "pypg/python.h"
 #include "pypg/postgres.h"
-#include "pypg/pl.h"
+#include "pypg/extension.h"
 #include "pypg/error.h"
 #include "pypg/type/type.h"
 #include "pypg/type/object.h"

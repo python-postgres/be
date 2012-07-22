@@ -47,15 +47,14 @@
  * Just about everything gets included here;
  * this is the module initialization file.
  */
-#include "pypg/module.h"
 #include "pypg/python.h"
 #include "pypg/postgres.h"
+#include "pypg/extension.h"
+#include "pypg/module.h"
 #include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/errordata.h"
 #include "pypg/triggerdata.h"
-#include "pypg/strings.h"
-#include "pypg/externs.h"
 
 #include "pypg/type/type.h"
 #include "pypg/type/object.h"
@@ -239,7 +238,7 @@ py_ereport(PyObj self, PyObj args, PyObj kw)
 					PyObj exc, val, tb;
 					PyErr_Fetch(&exc, &val, &tb);
 					PyErr_NormalizeException(&exc, &val, &tb);
-					PyObject_SetAttr(val, pg_inhibit_pl_context_str_ob, Py_True);
+					PyObject_SetAttr(val, PYSTR(pg_inhibit_pl_context), Py_True);
 					PyErr_Restore(exc, val, tb);
 				}
 
@@ -437,7 +436,7 @@ py_current_schemas(PyObj self, PyObj args)
  * Utility function to be used with map() in order to wrap an object in a tuple.
  */
 static PyObj
-_return_args(PyObj self, PyObj args)
+_tuplewrap(PyObj self, PyObj args)
 {
 	Py_INCREF(args);
 	return(args);
@@ -989,7 +988,7 @@ static PyMethodDef PyPgModule_Methods[] = {
 	{"current_schemas", (PyCFunction) py_current_schemas, METH_VARARGS,
 		PyDoc_STR("get a tuple of names representing the current search_path")},
 
-	{"_return_args", (PyCFunction) _return_args, METH_VARARGS,
+	{"_tuplewrap", (PyCFunction) _tuplewrap, METH_VARARGS,
 		PyDoc_STR("wrap the argument in a tuple")},
 	{"make_sqlstate", (PyCFunction) py_make_sqlstate, METH_O,
 		PyDoc_STR("convert a string into an SQL-state integer")},
@@ -1067,15 +1066,15 @@ init_Postgres(void)
 	if (mod == NULL)
 		return(NULL);
 
-	ob = PyDict_New();
-	if (ob == NULL)
-		goto fail;
-
 	/*
 	 * Build CONST dictionary.
 	 *
 	 * For each constant, set it in `ob`.
 	 */
+	ob = PyDict_New();
+	if (ob == NULL)
+		goto fail;
+
 #	define TARGET ob
 #	define APFUNC PyMapping_SetItemString
 #		include "constants.c"
@@ -1112,12 +1111,18 @@ init_Postgres(void)
 	 * Run the pure-Python code in the new module's context.
 	 * (See ./module.py for source)
 	 */
-	md = PyModule_GetDict(mod);
-	PyDict_SetItemString(md, "__builtins__", Py_builtins_module);
+	ob = PyImport_ImportModule("builtins");
+	if (ob == NULL)
+		goto fail;
+	/* steals ref */
+	if (PyModule_AddObject(mod, "__builtins__", ob))
+		goto fail;
+
 	ob = Py_CompileString(module_python, "[Postgres]", Py_file_input);
 	if (ob == NULL)
 		goto fail;
-	md = PyEval_EvalCode((PyCodeObject *) ob, md, md);
+	md = PyModule_GetDict(mod);
+	md = PyEval_EvalCode(ob, md, md);
 	Py_XDECREF(md);
 	Py_DECREF(ob);
 

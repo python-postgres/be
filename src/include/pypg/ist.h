@@ -7,13 +7,13 @@
 extern "C" {
 #endif
 
-extern unsigned long pl_ist_count; /* The current "xid". */
+extern unsigned long ist_count; /* The current "xid". */
 
 /* IST states */
-#define pl_ist_open 'O'
-#define pl_ist_committed 'C'
-#define pl_ist_aborted 'X'
-#define pl_ist_new ' '
+#define ist_open 'O'
+#define ist_committed 'C'
+#define ist_aborted 'X'
+#define ist_new ' '
 
 /*
  * Aborts the current transaction.
@@ -21,7 +21,7 @@ extern unsigned long pl_ist_count; /* The current "xid". */
  *
  * ON ERROR: Returns false and sets a Python exception.
  */
-bool pl_ist_abort(unsigned long xid, char state);
+bool ist_abort(unsigned long xid, char state);
 
 
 /*
@@ -31,22 +31,22 @@ bool pl_ist_abort(unsigned long xid, char state);
  *
  * ON ERROR: Returns false and sets a Python exception.
  */
-bool pl_ist_commit(unsigned long xid, char state);
+bool ist_commit(unsigned long xid, char state);
 
 /*
- * Start a new IST. Increments pl_ist_count by one.
+ * Start a new IST. Increments ist_count by one.
  * Provides appropriate errors when given inappropriate state.
  *
  * ON ERROR: Returns false and sets a Python exception.
  */
-bool pl_ist_begin(char state);
+bool ist_begin(char state);
 
 /*
- * Used in cases were the stored_ist_count != pl_ist_count
+ * Used in cases were the stored_ist_count != ist_count
  *
  * ON ERROR: Postgres elog
  */
-void pl_ist_reset(unsigned long n_to_abort);
+void ist_reset(unsigned long n_to_abort);
 
 #ifdef __cplusplus
 }

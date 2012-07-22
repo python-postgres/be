@@ -91,7 +91,7 @@ int PyPgCursor_Close(PyObj self);
 #define PyPgCursor_GetDirection(SELF) (PyPgCursor_GetChunksize(SELF) == -1 ? false : true)
 
 #define PyPgCursor_IsClosed(SELF) ( \
-	(PyPgCursor_GetXid(SELF) != pl_xact_count) || \
+	(PyPgCursor_GetXid(SELF) != ext_xact_count) || \
 	!PortalIsValid(PyPgCursor_GetPortal(SELF)))
 
 #ifdef __cplusplus
