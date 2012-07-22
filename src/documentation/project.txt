@@ -7,6 +7,11 @@ pg-python is a PostgreSQL procedural language extension embedding Python 3.
 Procedural language extensions are dynamically loaded libraries that can enable
 the use of a language within PostgreSQL, normally by creating SQL FUNCTIONs.
 
+Requirements
+============
+
+.. include:: requirements.itxt
+
 Gotchas
 =======
 
@@ -22,3 +27,13 @@ It's not supported. So in such cases::
  tuple(composite_a) == tuple(composite_b)
 
 Will be necessary.
+
+Changes v1.1
+============
+
+ Deprecations
+  Removed Support for PostgreSQL 8.3
+
+ Internal
+  Refactor pl.c into pl.c and extension.c.
+  Preparation for fdw.c.

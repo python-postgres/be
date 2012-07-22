@@ -22,7 +22,7 @@ master_doc = 'index'
 # General substitutions.
 import project as proj
 project = proj.name
-copyright = '2010, ' + proj.author
+copyright = '2010, ' + proj.meaculpa
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.

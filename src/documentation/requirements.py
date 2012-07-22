@@ -7,10 +7,6 @@ sys.path.insert(0, dirname(dirname(realpath(__file__))))
 import project
 
 req_template = """
-============
-Requirements
-============
-
 This version of pg-python is known to work with the following versions of
 PostgreSQL:
 

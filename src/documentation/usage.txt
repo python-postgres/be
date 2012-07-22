@@ -1,6 +1,6 @@
-===========
-Programming
-===========
+=====
+Usage
+=====
 
 Python functions are Python modules that can be created using the
 standard CREATE FUNCTION syntax::

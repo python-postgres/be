@@ -1,5 +1,3 @@
-.. include:: intro.txt
-
 ^^^^^^^^
 Contents
 ^^^^^^^^
@@ -7,25 +5,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   project
    admin
-   programming
-   gotchas
-
-^^^^^^^^^
-Reference
-^^^^^^^^^
-
-.. toctree::
-   :maxdepth: 2
-
-   postgres
-   postgres_types
-
-^^^^^^^
-Changes
-^^^^^^^
-
-.. toctree::
-   :maxdepth: 1
-
-   changes-v1.0
+   usage
+   reference

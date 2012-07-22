@@ -1,19 +1,16 @@
-============
-Requirements
-============
-
 This version of pg-python is known to work with the following versions of
 PostgreSQL:
 
- - PostgreSQL 8.3
  - PostgreSQL 8.4
  - PostgreSQL 9.0
  - PostgreSQL 9.1
+ - PostgreSQL 9.2
 
 And the following versions of Python:
 
  - Python 3.1
  - Python 3.2
+ - Python 3.3
 
 Python's C-APIs are fairly stable, so newer versions of Python are expected to
 normally work. However, PostgreSQL's C-APIs and header files can be adjusted

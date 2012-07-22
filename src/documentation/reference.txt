@@ -1453,3 +1453,438 @@ function. Takes a single argument, the process id to terminate, and returns
  from Postgres import terminate_backend
  
  terminate_backend(proc_pid)
+
+
+=====================
+Postgres.types Module
+=====================
+
+``Postgres.types`` is a psuedo-module used to facilite import statements so
+that data types in the ``pg_catalog`` schema can be easily referenced from
+Python code::
+
+ from Postgres.types import bytea, circle
+
+This chapter discusses some of the interfaces provided on those data types.
+
+
+.. _pg_types_date:
+
+Postgres.types.date
+===================
+
+The :ref:`pg_type` for the ``pg_catalog.date`` data type::
+
+ from Postgres.types import date
+ d = date('2000-01-01')
+ assert d.year == 2000
+ assert d.month == 1
+ assert d.day == 1
+
+**Properties:**
+
+ ``date.millennium``
+  The 'millennium' part as a Python int.
+
+ ``date.century``
+  The 'century' part as a Python int.
+
+ ``date.decade``
+  The 'decade' part as a Python int.
+
+ ``date.year``
+  The 'year' part as a Python int.
+
+ ``date.quarter``
+  The 'quarter' part as a Python int.
+
+ ``date.week``
+  The 'week' part as a Python int.
+
+ ``date.month``
+  The 'month' part as a Python int.
+
+ ``date.day``
+  The 'day' part as a Python int.
+
+ ``date.dayofyear``
+  The 'doy' part as a Python int.
+
+ ``date.dayofweek``
+  The 'dow' part as a Python int.
+
+ ``date.epoch``
+  The 'epoch' part as a Python float.
+
+Postgres.types.interval
+=======================
+
+The :ref:`pg_type` for the ``pg_catalog.interval`` data type::
+
+ from Postgres.types import interval
+ 
+ i = interval('10 years 1 months 2 days 3 hours 4 minutes 5 seconds')
+ 
+ assert i.year == 10
+ assert i.month == 1
+ assert i.day == 2
+ assert i.hour == 3
+ assert i.minute == 4
+ assert i.second == 5
+
+**Properties:**
+
+ ``millennium``
+  The 'millennium' part as a Python int.
+ ``century``
+  The 'century' part as a Python int.
+ ``decade``
+  The 'decade' part as a Python int.
+ ``year``
+  The 'year' part as a Python int.
+ ``quarter``
+  The 'quarter' part as a Python int.
+ ``week``
+  The 'week' part as a Python int.
+ ``month``
+  The 'month' part as a Python int.
+ ``day``
+  The 'day' part as a Python int.
+ ``hour``
+  The 'hour' part as a Python int.
+ ``minute``
+  The 'minute' part as a Python int.
+ ``second``
+  The 'second' part as a Python int.
+ ``millisecond``
+  The 'millisecond' part as a Python int.
+ ``microsecond``
+  The 'microsecond' part as a Python int.
+ ``timezone``
+  The 'timezone' part as a Python int.
+ ``epoch``
+  The 'epoch' part as a Python float.
+
+
+.. _pg_types_record:
+
+Postgres.types.record
+=====================
+
+The :ref:`pg_type` instance for the ``pg_catalog.record`` data type.
+This type is used as the abstract base type for all composite types.
+
+Subclasses of this type are used to represent table types. These types are
+used by :ref:`programming_trf` in order to represent the data given
+to the row-level entry points.
+
+**Constructors:**
+
+ ``record(sequence)``
+  Create an instance of the record using the given sequence. The length
+  of the sequence *must* be equal to the number of attributes in the record.
+
+ ``record(dictionary)``
+  Create an instance of the record using the given dictionary. The keys of
+  the dictionary must map to an attribute name. Any unspecified attributes
+  will be initialized to ``NULL``.
+
+ ``record(str)``
+  Create an instance of the record using a string. This string is given to
+  the record's type input function.
+
+Only subclasses ``Postgres.types.record`` can be *directly* instantiated.
+
+**Properties:**
+
+ ``record.column_types``
+  A tuple of :ref:`pg_type` instances. The index of
+  each item corresponds to the column type.
+
+  This property is available on record subclasses *and* instances thereof.
+
+ ``record.column_names``
+  A tuple of strings naming the columns of the composite.
+
+  This property is available on record subclasses *and* instances thereof.
+
+ ``record.pg_column_types``
+  A tuple of type Oid's specifying the column types.
+
+  This property is available on record subclasses *and* instances thereof.
+
+ ``record.descriptor``
+  A `Postgres.TupleDesc` object describing the composite.
+
+  This property is available on record subclasses *and* instances thereof.
+
+**Methods:**
+
+ ``record.replace(*args, **kw)``
+  Replace the attributes of the record instance using the arguments. A
+  new instance will be returned.
+
+  If positional arguments are given, the index of each argument will correspond
+  with the attribute that will be replaced using the argument.
+
+  If keyword arguments are given, each keyword corresponds to the
+  attribute that will be replaced using the attribute's name::
+
+   BEGIN;
+   CREATE TYPE py_test_ctyp AS (i int, t text, f float);
+   CREATE FUNCTION modify_fields(py_test_ctyp)
+   RETURNS py_test_ctyp
+   LANGUAGE python AS
+   $python$
+   def main(x):
+   	return x.replace(None, 'text', f = 1.423)
+   $python$;
+
+   SELECT modify_fields(ROW(100, 'not-this-text', NULL)::py_test_ctyp);
+   -- modify_fields 
+   -----------------
+   -- (,text,1.423)
+   ABORT;
+
+ ``record.transform(*args, **kw)``
+  Transform the attributes of the record instance using the callable arguments. A
+  new instance will be returned. Similar to replace, but arguments must be
+  callables that can take a single parameter.
+
+  If positional arguments are given, the index of each argument will correspond
+  with the attribute that will be transformed using the callable argument.
+  If the argument is ``None``, the attribute will not be
+  changed.
+
+  If keyword arguments are given, each keyword corresponds to the
+  attribute that will be transformed using the callable::
+        
+   BEGIN;
+   CREATE TYPE py_test_ctyp2 AS (i int, t text, f float);
+   CREATE FUNCTION transform_fields(py_test_ctyp2)
+   RETURNS py_test_ctyp2
+   LANGUAGE python AS
+   $python$
+   def main(x):
+   	return x.transform(None, lambda x: x + ' ! appended text', f = lambda x: x / 2.0)
+   $python$;
+
+   SELECT transform_fields(ROW(200, 'text', 27)::py_test_ctyp2);
+   --         transform_fields          
+   -------------------------------------
+   -- (200,"text ! appended text",13.5)
+   ABORT;
+      
+ ``record.keys()``
+  Returns the ``column_names`` tuple.
+
+ ``record.values()``
+  Returns the record object.
+
+ ``record.items()``
+  Returns iterator producing tuples whose first item is the attribute
+  name, and whose second item the associated value.
+ 
+  The iterator produces the pairs using the index order of the
+  attributes.
+
+ ``record.__getitem__(idx_or_slice), record[idx_or_slice]``
+  Return the attributes in the record associated with index or slice. If a
+  slice is requested, a Python tuple of `Postgres.Object` instances will be returned.
+
+  Attributes can be referenced by name or index as records are both a
+  sequence and a mapping.
+ 
+ ``record.__len__(), len(record)``
+  Return the number of attributes in the record.
+
+Postgres.types.time
+===================
+
+The :ref:`pg_type` for the ``pg_catalog.time`` data type::
+
+ from Postgres.types import time
+ t = time('12:00:00')
+ assert t.hour == 12
+ assert t.minute == 0
+ assert t.second == 0
+
+Properties:
+ ``time.hour``
+  The 'hour' part as a Python int.
+ ``time.minute``
+  The 'minute' part as a Python int.
+ ``time.second``
+  The 'second' part as a Python int.
+ ``time.millisecond``
+  The 'millisecond' part as a Python int.
+ ``time.microsecond``
+  The 'microsecond' part as a Python int.
+ ``time.epoch``
+  The 'epoch' part as a Python float.
+
+Postgres.types.timestamp
+========================
+
+The `Postgres.Type` for the ``pg_catalog.timestamp`` data type::
+
+ from Postgres.types import timestamp
+ ts = timestamp('2000-01-01 12:00:00')
+ assert ts.year == 2000
+ assert ts.month == 1
+ assert ts.day == 1
+ assert ts.hour == 12
+ assert ts.minute == 0
+ assert ts.second == 0
+
+**Properties:**
+
+ ``millennium``
+  The 'millennium' part as a Python int.
+ ``century``
+  The 'century' part as a Python int.
+ ``decade``
+  The 'decade' part as a Python int.
+ ``year``
+  The 'year' part as a Python int.
+ ``quarter``
+  The 'quarter' part as a Python int.
+ ``week``
+  The 'week' part as a Python int.
+ ``month``
+  The 'month' part as a Python int.
+ ``day``
+  The 'day' part as a Python int.
+ ``dayofyear``
+  The 'doy' part as a Python int.
+ ``dayofweek``
+  The 'dow' part as a Python int.
+ ``hour``
+  The 'hour' part as a Python int.
+ ``minute``
+  The 'minute' part as a Python int.
+ ``second``
+  The 'second' part as a Python int.
+ ``millisecond``
+  The 'millisecond' part as a Python int.
+ ``microsecond``
+  The 'microsecond' part as a Python int.
+ ``epoch``
+  The 'epoch' part as a Python float.
+
+Postgres.types.timetz
+=====================
+
+The `Postgres.Type` for the ``pg_catalog.timetz`` data type::
+
+ from Postgres.types import timetz
+ t = time('12:00:00+00')
+ assert t.hour == 12
+ assert t.minute == 0
+ assert t.second == 0
+ assert t.timezone == 0
+
+**Properties:**
+
+ ``hour``
+  The 'hour' part as a Python int.
+ ``minute``
+  The 'minute' part as a Python int.
+ ``second``
+  The 'second' part as a Python int.
+ ``millisecond``
+  The 'millisecond' part as a Python int.
+ ``microsecond``
+  The 'microsecond' part as a Python int.
+ ``epoch``
+  The 'epoch' part as a Python float.
+ ``timezone``
+  The 'timezone' part as a Python int.
+
+
+.. _pg_types_timestamptz:
+
+Postgres.types.timestamptz
+==========================
+
+The `Postgres.Type` for the ``pg_catalog.timestamptz`` data type::
+
+ from Postgres.types import timestamptz
+ ts = timestamptz('2000-01-01 12:00:00')
+ assert ts.year == 2000
+ assert ts.month == 1
+ assert ts.day == 1
+ assert ts.hour == 12
+ assert ts.minute == 0
+ assert ts.second == 0
+
+**Properties**:
+
+ ``timestamptz.millennium``
+  The 'millennium' part as a Python int.
+
+ ``timestamptz.century``
+  The 'century' part as a Python int.
+
+ ``timestamptz.decade``
+  The 'decade' part as a Python int.
+
+ ``timestamptz.year``
+  The 'year' part as a Python int.
+
+ ``timestamptz.quarter``
+  The 'quarter' part as a Python int.
+
+ ``timestamptz.week``
+  The 'week' part as a Python int.
+
+ ``timestamptz.month``
+  The 'month' part as a Python int.
+
+ ``timestamptz.day``
+  The 'day' part as a Python int.
+
+ ``timestamptz.dayofyear``
+  The 'doy' part as a Python int.
+
+ ``timestamptz.dayofweek``
+  The 'dow' part as a Python int.
+
+ ``timestamptz.hour``
+  The 'hour' part as a Python int.
+
+ ``timestamptz.minute``
+  The 'minute' part as a Python int.
+
+ ``timestamptz.second``
+  The 'second' part as a Python int.
+
+ ``timestamptz.millisecond``
+  The 'millisecond' part as a Python int.
+
+ ``timestamptz.microsecond``
+  The 'microsecond' part as a Python int.
+
+ ``timestamptz.timezone``
+  The 'timezone' part as a Python int.
+
+ ``timestamptz.epoch``
+  The 'epoch' part as a Python float.
+
+Postgres.types.xid
+==================
+
+The `Postgres.Type` for the ``pg_catalog.xid`` data type::
+
+ from Postgres.types import xid
+ x = xid.current()
+
+**Constructors**:
+
+ ``xid.current()``
+  Create a new instance using the current transaction
+  identifier(``GetCurrentTransactionId``).
+
+ ``xid.current_sub()``
+  Create a new instance using the current subtransaction
+  identifier(``GetCurrentSubTransactionId``).
