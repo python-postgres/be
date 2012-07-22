@@ -1,10 +1,12 @@
-pg-python architecture
-======================
+=========
+Mechanics
+=========
 
-This README provides a high-level overview of the implementation.
+This chapter discusses some of the internal mechanics and design decisions
+of pg-python.
 
 Native Type Interfaces
-----------------------
+======================
 
 pg-python was designed with the goal of providing Python interfaces to
 PostgreSQL objects--often conceptual rather than literal. This marks a sharp
@@ -33,14 +35,14 @@ Postgres object is present, the other operand will be converted to that type.
 
 
 Error Management
-----------------
+================
 
 pg-python handles database errors by raising a Python exception representing
 the error. By doing this, pg-python must record when this has been done so that
 future database actions can be prohibited. The `ext_state` global is used to
 track the error state of the PL.
 
-When a database error(ereport, elog) occurs, pl_state is altered to indicate
+When a database error(ereport, elog) occurs, ext_state is altered to indicate
 that subsequent use of database functionality should be restricted by an
 exception being raised. The "DB_IS_NOT_READY()" macro should be used at the
 beginning of every Python interface that requires that the database is in a
@@ -71,7 +73,7 @@ The following error codes have been added:
   and it should be raised (Python) or thrown (Postgres) accordingly.
 
 Transaction Management (Internal Subtransactions)
--------------------------------------------------
+=================================================
 
 Subtransactions are managed using a simple counter. Each Postgres.Transaction
 instance will get a local transaction identifier that is used to validate that
@@ -79,7 +81,7 @@ transactions are exited in the appropriate order.
 
 
 Prepared Statements and Cursors (SPI)
--------------------------------------
+=====================================
 
 Database access is implemented using two types: the Postgres.Statement and the
 Postgres.Cursor.
@@ -93,7 +95,7 @@ scrollable cursor is created, the seek and read methods are available for use.
 
 
 Postgres Interface Module
--------------------------
+=========================
 
 All Postgres interfaces are provided using the "Postgres" module. This is a
 built-in module that is extended with the contents of the "module.py" file.
@@ -103,7 +105,7 @@ high-level initialization(@pytypes is implemented in pure-Python).
 
 
 First Call Initialization
--------------------------
+=========================
 
 Much of the PL is initialized in _PG_init. However, it is possible for _PG_init
 to be executed outside of a transaction(preloading), which means that we cannot
@@ -114,7 +116,7 @@ pseudo-module.
 
 
 Inline Execution
-----------------
+================
 
 DO statements are handled using a fake PyPgFunction object--that is, there is no
 corresponding pg_proc entry. The function's module is set to the InlineExecutor
@@ -124,7 +126,7 @@ takes a single argument, the source to execute.
 
 
 Interrupt Support
------------------
+=================
 
 Interrupts are supported by overriding the default signal handlers for SIGTERM
 and SIGINT. While scary at first, these overrides are *not* installed unless the

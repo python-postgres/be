@@ -2,43 +2,20 @@
 Usage
 =====
 
-Python functions are Python modules that can be created using the
-standard CREATE FUNCTION syntax::
+This chapter discusses how to install and use pg-python.
 
- CREATE FUNCTION funcname(args)
- RETURNS return_type LANGUAGE python AS
- $python$
- import Postgres
+Extension Installation
+======================
 
- def main(*args):
- 	return value
- $python$;
+Extension installation consists of two primary steps, installation of the
+extension module on the file system--which may involve compilation--and
+installation of the procedural language or foreign data wrapper.
 
-When a Python function is called using SQL, the function's module is imported,
-and the entry point is called--normally ``main``.
+This section often refers to an shell variable "$PREFIX". This is referencing
+the prefix that PostgreSQL was installed into.
 
-.. note::
-   The term "Python function" is often used in reference to an SQL function
-   object whose language is ``python``.
-
-Administration
-==============
-
-The administration of procedural language extensions can be tricky in some
-situations. If you have any questions, be sure to contact the mailing list:
-
- mailto:python-general@pgfoundry.org
-
-.. note::
-   This chapter occasionally refers ``$PREFIX``; this is referring to the
-   location in which PostgreSQL is installed. When referenced, it is assumed
-   that the installation did not modify the directory layout. In the event that
-   the distribution or packager did modify the layout, it is important to
-   reference the appropriate documentation in order to properly identify the
-   corresponding locations.
-
-Compilation
------------
+Compilation and Installation
+----------------------------
 
 Currently, the only supported compilation method uses PostgreSQL's PGXS
 makefile system. For compilation, the Python and PostgreSQL header files are
@@ -77,250 +54,32 @@ Database Installation
 In 9.1, database extensions were introduced. Since version 1.0.1 of pg-python,
 an installation script and control file is provided for use with ``CREATE EXTENSION``.
 
-.. note::
-	Each of the following sections on installation includes a step to create the
-	``__python__`` schema. The ``__python__`` schema is not required, but recommended
-	to help manage potential future features, and compensate for ambiguous procedure
-	names employed by pg-python.
-
-Extension Installation
-~~~~~~~~~~~~~~~~~~~~~~
-
 In 9.1 and later, the following should be ran::
 
 	CREATE SCHEMA __python__;
 	CREATE EXTENSION python SCHEMA __python__;
 
-Script Based Installation
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating a Function
+===================
 
-For 9.0 and later the ``src/install_inline.sql`` file should be executed using
-``psql`` in order to include the inline handler::
+Python functions are Python modules that can be created using the
+standard CREATE FUNCTION syntax::
 
-	CREATE SCHEMA __python__;
-	SET search_path TO __python__;
-	\i src/install_inline.sql
+ CREATE FUNCTION funcname(args)
+ RETURNS return_type LANGUAGE python AS
+ $python$
+ import Postgres
 
-For 8.4 and earlier, the ``src/install_no_inline.sql`` file should be executed::
+ def main(*args):
+ 	return value
+ $python$;
 
-	CREATE SCHEMA __python__;
-	SET search_path TO __python__;
-	\i src/install_no_inline.sql
-
-Or, relative to the installation after ``make install``::
-
-	CREATE SCHEMA __python__;
-	SET search_path TO __python__;
-	\i $PREFIX/share/postgresql/extension/python--$VERSION.sql
-
-Manual Installation
-~~~~~~~~~~~~~~~~~~~
-
-Installation into a database is the last necessary step before a Python
-``FUNCTION`` can be created. This is normally done by executing the following
-commands::
-
- BEGIN;
- CREATE SCHEMA __python__;
- SET search_path TO __python__;
- CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
-  LANGUAGE C AS 'python', 'pl_handler';
- CREATE FUNCTION validator(oid) RETURNS VOID
-  LANGUAGE C AS 'python', 'pl_validator';
- COMMIT;
- 
- -- For 9.0 and greater.
- BEGIN;
- SET search_path TO __python__;
- CREATE FUNCTION inline(INTERNAL) RETURNS VOID
-  LANGUAGE C AS 'python', 'pl_inline';
- CREATE LANGUAGE python
-  HANDLER handler INLINE inline VALIDATOR validator;
- COMMIT;
- 
- -- For versions before 9.0.
- BEGIN;
- SET search_path TO __python__;
- CREATE LANGUAGE python
-  HANDLER handler VALIDATOR validator;
- COMMIT;
-
-The distinct schema is used hold the functions and for future expansion.
-
-.. tip::
-   If a language is installed into ``template1``, all subsequently
-   created databases will have the language installed automatically.
-
-The above commands will only work if the extension module is installed into
-PostgreSQL's library directory. Normally, ``$PREFIX/lib/postgresql``. In cases
-where the extension does not exist in the default location, a full path to the
-library will need to be given to the ``CREATE FUNCTION`` commands::
-
- CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
-  LANGUAGE C AS '/full/path/to/python', 'pl_handler';
- CREATE FUNCTION validator(oid) RETURNS VOID
-  LANGUAGE C AS '/full/path/to/python', 'pl_validator';
- CREATE FUNCTION inline(INTERNAL) RETURNS VOID
-  LANGUAGE C AS '/full/path/to/python', 'pl_inline';
-
-Configuration
--------------
-
-pg-python does not require any additional configuration once installed.
-However, much initialization overhead can be eliminated by preloading
-the extension using the ``shared_preload_libraries`` configuration parameter.
-
-Specifically::
-
- shared_preload_libraries = 'python'
-
-Using this will cause Python to be initialized when Postgres is started.
-
-Local Initialization
-~~~~~~~~~~~~~~~~~~~~
-
-When Python is loaded, the ``init.py`` file in the data directory will be executed if it
-exists. The contents of this file will be executed in a new module named
-``__pg_init__``. The module is stored in ``sys.modules``, but primarily for
-identifying that an ``init.py`` file was loaded.
-
-The primary purpose of the initialization file is to allow modules to be
-preloaded when the server is started. Writing functions that
-depend on objects created by ``init.py`` should be avoided.
-
-For ``init.py`` to provide any savings, it should be used
-in conjunction with the ``shared_preload_libraries`` configuration parameter.
-
-.. note:: When ``init.py`` is loaded, database access is prohibited.
-
-Managing Multiple Versions
---------------------------
-
-.. warning::
-   This section covers advanced material, and primarily applies to version 9.0
-	and earlier of PostgreSQL.
-
-In some situations, it may be necessary to have multiple builds of pg-python
-installed in the same PostgreSQL installation for upgrade purposes. When such
-cases arise, using a distinct name for the language is necessary.
-
-There are two routes that can be taken. The first is to rename the existing
-language making room for the new one, and the second is to use a different name
-for the new version. The best path depends on the situation.
-
-Renaming the Existing Language
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Renaming the existing language is the proper choice when there is an
-incompatibility between the existing language and the new *target* language.
-This situation demands that functions be incrementally ported to the new
-version as time permits.
+When a Python function is called using SQL, the function's module is imported,
+and the entry point is called--normally ``main``.
 
 .. note::
-   Renaming the existing language may require restart of the cluster.
-
-The first step in renaming the existing language is to copy the
-original ``python.so`` so that it's name is distinct from the
-one that is going to be installed. This can be done while the cluster is
-running::
-
- cd $PREFIX/lib/postgresql/
- cp python.so python31.so
-
-The second step is to create the new language object. It is recommended to name
-it after the specific version of Python being used::
-
- BEGIN;
- CREATE SCHEMA __python31__;
- SET search_path = __python31__;
- CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
-  LANGUAGE C AS 'python31', 'pl_handler';
- CREATE FUNCTION validator(oid) RETURNS VOID
-  LANGUAGE C AS 'python31', 'pl_validator';
- COMMIT;
- 
- -- For 9.0 and greater.
- BEGIN;
- SET search_path = __python31__;
- CREATE FUNCTION inline(INTERNAL) RETURNS VOID
-  LANGUAGE C AS 'python31', 'pl_inline';
- CREATE LANGUAGE python31
-  HANDLER handler INLINE inline VALIDATOR validator;
- COMMIT;
- 
- -- For versions before 9.0.
- BEGIN;
- SET search_path = __python31__;
- CREATE LANGUAGE python31
-  HANDLER handler VALIDATOR validator;
- COMMIT;
-
-Next, the existing functions need to have their language updated::
-
- UPDATE pg_catalog.pg_proc
- SET prolang = (SELECT oid FROM pg_language WHERE lanname = 'python31')
- WHERE prolang = (SELECT oid FROM pg_language WHERE lanname = 'python');
-
-.. warning::
-   It is best not to have other backends running while the above command is
-   running.
-
-And finally, the old language should be removed in order to make room for the
-new default::
-
- SET search_path = __python__;
- DROP FUNCTION handler();
- DROP FUNCTION validator(oid);
- DROP FUNCTION inline(internal);
- RESET search_path;
- DROP SCHEMA __python__;
-
-With those steps complete, the language has been renamed, and the new language
-may be installed using the steps documented in `Compilation`_ and
-`Database Installation`_.
-
-Using a Custom Name for the New Language
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Using a custom name for the new language is the proper choice when necessary
-functionality is exclusively available in a past version of Python. Such cases
-are likely transient, but when they occur, they are best handled as an
-exception.
-
-Using a custom name for the language is significantly easier renaming an
-existing language. All that is required is that the built ``python.so``
-file be manually into the ``$PREFIX/lib/postgresql`` directory under a new
-name::
-
- cp python.so $PREFIX/lib/postgresql/python31.so
-
-Once complete, database installation can then be performed with a slight
-modification::
-
- BEGIN;
- CREATE SCHEMA __python31__;
- SET search_path = __python31__;
- CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
-  LANGUAGE C AS 'python31', 'pl_handler';
- CREATE FUNCTION validator(oid) RETURNS VOID
-  LANGUAGE C AS 'python31', 'pl_validator';
- COMMIT;
- 
- -- For 9.0 and greater
- BEGIN;
- CREATE FUNCTION inline(INTERNAL) RETURNS VOID
-  LANGUAGE C AS 'python31', 'pl_inline';
- CREATE LANGUAGE python31
-  HANDLER handler INLINE inline VALIDATOR validator;
- COMMIT;
- 
- -- For versions before 9.0
- BEGIN;
- CREATE LANGUAGE python31
-  HANDLER handler VALIDATOR validator;
- COMMIT;
-
-Complete. The ``python31`` language will be ready for use alongside any others.
+   The term "Python function" is often used in reference to an SQL function
+   object whose language is ``python``.
 
 .. _programming_builtins:
 
@@ -1163,3 +922,238 @@ identifying the Postgres function that raised the exception. The
 ``ereport`` interface allows this information to be
 suppressed in order to provide the programmer with greater control over the
 reported error message.
+
+
+Advanced Extension Management
+=============================
+
+Script Based Installation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For 9.0 and later the ``src/install_inline.sql`` file should be executed using
+``psql`` in order to include the inline handler::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i src/install_inline.sql
+
+For 8.4 and earlier, the ``src/install_no_inline.sql`` file should be executed::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i src/install_no_inline.sql
+
+Or, relative to the installation after ``make install``::
+
+	CREATE SCHEMA __python__;
+	SET search_path TO __python__;
+	\i $PREFIX/share/postgresql/extension/python--$VERSION.sql
+
+Manual Installation
+~~~~~~~~~~~~~~~~~~~
+
+Installation into a database is the last necessary step before a Python
+``FUNCTION`` can be created. This is normally done by executing the following
+commands::
+
+ BEGIN;
+ CREATE SCHEMA __python__;
+ SET search_path TO __python__;
+ CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+  LANGUAGE C AS 'python', 'pl_handler';
+ CREATE FUNCTION validator(oid) RETURNS VOID
+  LANGUAGE C AS 'python', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater.
+ BEGIN;
+ SET search_path TO __python__;
+ CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+  LANGUAGE C AS 'python', 'pl_inline';
+ CREATE LANGUAGE python
+  HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0.
+ BEGIN;
+ SET search_path TO __python__;
+ CREATE LANGUAGE python
+  HANDLER handler VALIDATOR validator;
+ COMMIT;
+
+The distinct schema is used hold the functions and for future expansion.
+
+.. tip::
+   If a language is installed into ``template1``, all subsequently
+   created databases will have the language installed automatically.
+
+The above commands will only work if the extension module is installed into
+PostgreSQL's library directory. Normally, ``$PREFIX/lib/postgresql``. In cases
+where the extension does not exist in the default location, a full path to the
+library will need to be given to the ``CREATE FUNCTION`` commands::
+
+ CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+  LANGUAGE C AS '/full/path/to/python', 'pl_handler';
+ CREATE FUNCTION validator(oid) RETURNS VOID
+  LANGUAGE C AS '/full/path/to/python', 'pl_validator';
+ CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+  LANGUAGE C AS '/full/path/to/python', 'pl_inline';
+
+Configuration
+-------------
+
+pg-python does not require any additional configuration once installed.
+However, much initialization overhead can be eliminated by preloading
+the extension using the ``shared_preload_libraries`` configuration parameter.
+
+Specifically::
+
+ shared_preload_libraries = 'python'
+
+Using this will cause Python to be initialized when Postgres is started.
+
+Local Initialization
+~~~~~~~~~~~~~~~~~~~~
+
+When Python is loaded, the ``init.py`` file in the data directory will be executed if it
+exists. The contents of this file will be executed in a new module named
+``__pg_init__``. The module is stored in ``sys.modules``, but primarily for
+identifying that an ``init.py`` file was loaded.
+
+The primary purpose of the initialization file is to allow modules to be
+preloaded when the server is started. Writing functions that
+depend on objects created by ``init.py`` should be avoided.
+
+For ``init.py`` to provide any savings, it should be used
+in conjunction with the ``shared_preload_libraries`` configuration parameter.
+
+.. note:: When ``init.py`` is loaded, database access is prohibited.
+
+Managing Multiple Versions
+--------------------------
+
+.. warning::
+   This section covers advanced material, and primarily applies to version 9.0
+	and earlier of PostgreSQL.
+
+In some situations, it may be necessary to have multiple builds of pg-python
+installed in the same PostgreSQL installation for upgrade purposes. When such
+cases arise, using a distinct name for the language is necessary.
+
+There are two routes that can be taken. The first is to rename the existing
+language making room for the new one, and the second is to use a different name
+for the new version. The best path depends on the situation.
+
+Renaming the Existing Language
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Renaming the existing language is the proper choice when there is an
+incompatibility between the existing language and the new *target* language.
+This situation demands that functions be incrementally ported to the new
+version as time permits.
+
+.. note::
+   Renaming the existing language may require restart of the cluster.
+
+The first step in renaming the existing language is to copy the
+original ``python.so`` so that it's name is distinct from the
+one that is going to be installed. This can be done while the cluster is
+running::
+
+ cd $PREFIX/lib/postgresql/
+ cp python.so python31.so
+
+The second step is to create the new language object. It is recommended to name
+it after the specific version of Python being used::
+
+ BEGIN;
+ CREATE SCHEMA __python31__;
+ SET search_path = __python31__;
+ CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+  LANGUAGE C AS 'python31', 'pl_handler';
+ CREATE FUNCTION validator(oid) RETURNS VOID
+  LANGUAGE C AS 'python31', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater.
+ BEGIN;
+ SET search_path = __python31__;
+ CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+  LANGUAGE C AS 'python31', 'pl_inline';
+ CREATE LANGUAGE python31
+  HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0.
+ BEGIN;
+ SET search_path = __python31__;
+ CREATE LANGUAGE python31
+  HANDLER handler VALIDATOR validator;
+ COMMIT;
+
+Next, the existing functions need to have their language updated::
+
+ UPDATE pg_catalog.pg_proc
+ SET prolang = (SELECT oid FROM pg_language WHERE lanname = 'python31')
+ WHERE prolang = (SELECT oid FROM pg_language WHERE lanname = 'python');
+
+.. warning::
+   It is best not to have other backends running while the above command is
+   running.
+
+And finally, the old language should be removed in order to make room for the
+new default::
+
+ SET search_path = __python__;
+ DROP FUNCTION handler();
+ DROP FUNCTION validator(oid);
+ DROP FUNCTION inline(internal);
+ RESET search_path;
+ DROP SCHEMA __python__;
+
+With those steps complete, the language has been renamed, and the new language
+may be installed using the steps documented in `Compilation`_ and
+`Database Installation`_.
+
+Using a Custom Name for the New Language
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using a custom name for the new language is the proper choice when necessary
+functionality is exclusively available in a past version of Python. Such cases
+are likely transient, but when they occur, they are best handled as an
+exception.
+
+Using a custom name for the language is significantly easier renaming an
+existing language. All that is required is that the built ``python.so``
+file be manually into the ``$PREFIX/lib/postgresql`` directory under a new
+name::
+
+ cp python.so $PREFIX/lib/postgresql/python31.so
+
+Once complete, database installation can then be performed with a slight
+modification::
+
+ BEGIN;
+ CREATE SCHEMA __python31__;
+ SET search_path = __python31__;
+ CREATE FUNCTION handler() RETURNS LANGUAGE_HANDLER
+  LANGUAGE C AS 'python31', 'pl_handler';
+ CREATE FUNCTION validator(oid) RETURNS VOID
+  LANGUAGE C AS 'python31', 'pl_validator';
+ COMMIT;
+ 
+ -- For 9.0 and greater
+ BEGIN;
+ CREATE FUNCTION inline(INTERNAL) RETURNS VOID
+  LANGUAGE C AS 'python31', 'pl_inline';
+ CREATE LANGUAGE python31
+  HANDLER handler INLINE inline VALIDATOR validator;
+ COMMIT;
+ 
+ -- For versions before 9.0
+ BEGIN;
+ CREATE LANGUAGE python31
+  HANDLER handler VALIDATOR validator;
+ COMMIT;
+
+Complete. The ``python31`` language will be ready for use alongside any others.

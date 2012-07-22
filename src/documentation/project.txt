@@ -28,8 +28,10 @@ It's not supported. So in such cases::
 
 Will be necessary.
 
-Changes v1.1
-============
+Changes
+=======
+
+Version 1.1 introduced the following changes:
 
  Deprecations
   Removed Support for PostgreSQL 8.3

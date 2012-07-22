@@ -14,3 +14,4 @@ Contents
    project
    usage
    reference
+   mechanics
