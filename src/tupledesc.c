@@ -43,27 +43,7 @@
  * XXX: Is there a better way to get the pg_attribute fields? :(
  * (This is for instantiating a pg_attribute instance by __getitem__)
  */
-#if PG_VERSION_NUM < 80400
-#define FormData_pg_attribute_Fields(...) \
-	FIELD(attrelid, 1, ObjectIdGetDatum) \
-	FIELD(attname, 2, GetNAME) \
-	FIELD(atttypid, 3, ObjectIdGetDatum) \
-	FIELD(attstattarget, 4, Int32GetDatum) \
-	FIELD(attlen, 5, Int16GetDatum) \
-	FIELD(attnum, 6, Int16GetDatum) \
-	FIELD(attndims, 7, Int32GetDatum) \
-	FIELD(attcacheoff, 8, Int32GetDatum) \
-	FIELD(atttypmod, 9, Int32GetDatum) \
-	FIELD(attbyval, 10, BoolGetDatum) \
-	FIELD(attstorage, 11, CharGetDatum) \
-	FIELD(attalign, 12, CharGetDatum) \
-	FIELD(attnotnull, 13, BoolGetDatum) \
-	FIELD(atthasdef, 14, BoolGetDatum) \
-	FIELD(attisdropped, 15, BoolGetDatum) \
-	FIELD(attislocal, 16, BoolGetDatum) \
-	FIELD(attinhcount, 17, Int32GetDatum) \
-	__VA_ARGS__
-#elif PG_VERSION_NUM < 80500
+#if PG_VERSION_NUM < 80500
 #define FormData_pg_attribute_Fields(...) \
 	FIELD(attrelid, 1, ObjectIdGetDatum) \
 	FIELD(attname, 2, GetNAME) \

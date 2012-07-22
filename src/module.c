@@ -12,9 +12,7 @@
 #include "access/heapam.h"
 #include "access/htup.h"
 #include "access/hio.h"
-#if (PG_VERSION_NUM >= 80400)
 #include "access/sysattr.h"
-#endif
 #include "access/xact.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_namespace.h"

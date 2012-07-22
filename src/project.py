@@ -14,7 +14,6 @@ license = 'bsd,mit,attribution'
 bugtracker = "http://github.com/jwp/pg-python/issues/"
 
 systems = {
-	'pg_8_3': 'PostgreSQL 8.3',
 	'pg_8_4': 'PostgreSQL 8.4',
 	'pg_9_0': 'PostgreSQL 9.0',
 	'pg_9_1': 'PostgreSQL 9.1',

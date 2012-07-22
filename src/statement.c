@@ -13,9 +13,7 @@
 #include "executor/executor.h"
 #include "utils/palloc.h"
 #include "utils/memutils.h"
-#if PG_VERSION_NUM >= 80400
 #include "utils/snapmgr.h"
-#endif
 #include "tcop/tcopprot.h"
 #include "tcop/utility.h"
 #include "executor/spi_priv.h"
