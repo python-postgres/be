@@ -42,6 +42,7 @@
 #include "pypg/python.h"
 #include "pypg/postgres.h"
 #include "pypg/extension.h"
+#include "pypg/pl.h"
 #include "pypg/error.h"
 #include "pypg/tupledesc.h"
 #include "pypg/type/type.h"
@@ -1874,7 +1875,27 @@ type_check_constraints(PyObj self, PyObj ob)
 	return(Py_None);
 }
 
+static PyObj
+type_from_relation_id(PyObj subtype, PyObj oid_ob)
+{
+	Oid oid;
+
+	if (Oid_FromPyObject(oid_ob, &oid))
+		return(NULL);
+
+	return(PyPgType_FromTableOid(oid));
+}
+
 static PyMethodDef PyPgType_Methods[] = {
+	{"from_relation_id", (PyCFunction) type_from_relation_id, METH_O|METH_CLASS,
+		PyDoc_STR(
+"Postgres.Type.from_relation_id(oid)\n\n"
+":param oid: The Oid of the relation to lookup.\n"
+":type oid: An object suitable for use as an :py:class:`Postgres.types.oid`.\n"
+":returns: The corresponding Postgres.Type instance.\n"
+":rtype: :py:class:`Postgres.Type`\n\n"
+"Construct a type instance from the given table Oid."
+)},
 	{"typinput", (PyCFunction) PyPgType_typinput_method, METH_VARARGS,
 	PyDoc_STR("create an instance of the type using the given string data")},
 	{"typoutput", (PyCFunction) PyPgType_typoutput, METH_O,

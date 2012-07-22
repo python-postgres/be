@@ -628,6 +628,10 @@ tupd_item(PyObj self, Py_ssize_t i)
 		pg_att_nulls[Anum_pg_attribute_attacl-1] = true;
 #endif
 
+#ifdef Anum_pg_attribute_attoptions
+		pg_att_nulls[Anum_pg_attribute_attoptions-1] = true;
+#endif
+
 		/*
 		 * XXX: Need a better way to construct a pg_attribute Datum.
 		 */

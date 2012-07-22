@@ -119,3 +119,16 @@ def main(oid):
 $python$;
 
 SELECT check_typisdefined((SELECT oid FROM pg_type WHERE typname = 'shell_check' LIMIT 1));
+
+-- Lookup the Type using the table's oid
+DROP TABLE IF EXISTS explicit_lookup;
+CREATE TABLE explicit_lookup (i int, t text);
+CREATE OR REPLACE FUNCTION lookup_tables_type(oid) RETURNS TEXT LANGUAGE python AS
+$$
+import Postgres
+
+def main(oid):
+	return str(list(Postgres.Type.from_relation_id(oid).descriptor))
+$$;
+
+SELECT lookup_tables_type('explicit_lookup'::regclass);
