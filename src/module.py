@@ -6,12 +6,15 @@ import sys
 import io
 import functools
 import warnings
+import importlib
+import types
+
+FDW = ModuleType("Postgres.FDW")
 
 class StringModule(object):
 	"""
 	Used represent the pure-Python Postgres and Postgres.project modules.
 	"""
-	from types import ModuleType
 
 	def __init__(self, name, src):
 		self.name = name
@@ -26,7 +29,7 @@ class StringModule(object):
 	def load_module(self, *args, eval = __builtins__.eval):
 		if self.name in sys.modules:
 			return sys.modules[self.name]
-		module = self.ModuleType('<' + self.name + '>')
+		module = types.ModuleType('<' + self.name + '>')
 		module.__builtins__ = __builtins__
 		module.__name__ = self.name
 		module.__file__ = '[' + self.name + ']'
@@ -113,7 +116,6 @@ class InlineExecutor(object):
 	"""
 	Used to execute code from DO-statements.
 	"""
-	from types import ModuleType
 	_current_id = 0
 
 	def __init__(self, src):
@@ -128,7 +130,7 @@ class InlineExecutor(object):
 
 	def load_module(self, *args, eval = __builtins__.eval):
 		if not hasattr(self, 'module'):
-			self.module = self.ModuleType('<DO-statement-block>')
+			self.module = types.ModuleType('<DO-statement-block>')
 			self.module.__builtins__ = __builtins__
 			self.module.__loader__ = self
 			eval(self.get_code(), self.module.__dict__, self.module.__dict__)
@@ -507,9 +509,38 @@ class LargeObject(io.IOBase):
 			self.close()
 		_lo_unlink(self.oid)
 
+
+class Wrapper(object):
+	@classmethod
+	def validate(typ, options):
+		pass
+
+	def __init__(self, type, version, **options):
+		pass
+
+	# iterate over returned object
+	def scan(self, quals):
+		pass
+
+	def explain(self):
+		pass
+
+	def sample(self):
+		return (sample_rows, total_est)
+
+	def analyze(self):
+		pass
+
 ##
 # Internal functions.
 ##
+
+_fdw_cache = {}
+
+import importlib
+def _fdw(typ, options, _cache = _fdw_cache, impmod = importlib.import_module):
+	pass
+del importlib
 
 def _clearfunccache():
 	import sys
@@ -523,20 +554,19 @@ def _clearfunccache():
 	for k in rm:
 		del sys.modules[k]
 
-def clearcache():
+def clearcache(fdw_cache = _fdw_cache):
+	"""
+	Clear the function and type caches.
+	"""
 	_clearfunccache()
 	_cleartypecache()
+	fdw_cache.clear()
 	try:
 		import linecache
 		linecache.clearcache()
 	except ImportError:
 		# It's unlikely, but Python's stdlib... :(
 		pass
-
-# used by _pl_reload() to identify modules
-# that should not be removed from sys.modules on reloads
-_original_modules = set(sys.modules.keys())
-_original_modules.add('Postgres')
 
 # called the first time the language is invoked to finalize the module/env
 def _entry():
@@ -572,7 +602,6 @@ def _entry():
 
 # execute the init.py file relative to the cluster
 def _init(module, initfile = "init.py", eval = __builtins__.eval):
-	from types import ModuleType
 	import os.path
 
 	# Run the init.py file.
@@ -580,7 +609,7 @@ def _init(module, initfile = "init.py", eval = __builtins__.eval):
 		# XXX: Do permission check on init.py
 		with open(initfile) as init_file:
 			bc = compile(init_file.read(), initfile, 'exec')
-			module = ModuleType('__pg_init__')
+			module = types.ModuleType('__pg_init__')
 			module.__file__ = initfile
 			module.__builtins__ = __builtins__
 			eval(bc, module.__dict__, module.__dict__)
@@ -590,6 +619,9 @@ def _init(module, initfile = "init.py", eval = __builtins__.eval):
 	# Install this module into the sys.modules dictionary.
 	sys.modules['Postgres'] = module
 
+	# When I first thought of doing this, I hated the idea.
+	# But seeing how easy it makes getting all these objects
+	# into C pointers is far too compelling.
 	import linecache
 	return (
 		Exception,

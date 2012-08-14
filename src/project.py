@@ -2,7 +2,7 @@
 # project.py - project information
 ##
 name = 'pg-python'
-abstract = 'PostgreSQL procedural language extension embedding Python 3'
+abstract = 'PostgreSQL extension providing a Procedural Language and Foreign Data Wrapper accessing Python 3'
 
 identity = 'http://python.projects.postgresql.org/backend'
 
@@ -14,7 +14,6 @@ license = 'bsd,mit,attribution'
 bugtracker = "http://github.com/jwp/pg-python/issues/"
 
 systems = {
-	'pg_8_4': 'PostgreSQL 8.4',
 	'pg_9_0': 'PostgreSQL 9.0',
 	'pg_9_1': 'PostgreSQL 9.1',
 	'pg_9_2': 'PostgreSQL 9.2',

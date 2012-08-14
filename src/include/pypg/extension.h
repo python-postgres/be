@@ -42,13 +42,6 @@ typedef enum {
 	xact_failed = 1,
 
 	/*
-	 * Execution is occurring in a Foreign Data Wrapper.
-	 *
-	 * This state prohibits database calls.
-	 */
-	fdw_exec = 2,
-
-	/*
 	 * An unnatural state used to indicate two things:
 	 *  1. on_proc_exit handler has been called
 	 *  2. the PL's internal state cannot be trusted.

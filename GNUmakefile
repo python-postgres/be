@@ -9,6 +9,7 @@ DATA := python--$(project_version).sql
 
 OBJS = src/extension.o \
 src/pl.o src/do.o src/stateful.o \
+src/fdw.o \
 src/python.o src/postgres.o \
 src/module.o \
 src/errordata.o src/triggerdata.o \
@@ -26,7 +27,7 @@ src/type/numeric.o \
 src/type/timewise.o \
 src/type/bitwise.o
 
-REGRESS = init io srf function trigger xact error domain enum ifmod array composite spi polymorphic materialize_cursor lo bytea pytypes timewise stateful type typmod do preload tupledesc corners environment oid cache
+REGRESS = init io srf function trigger xact error domain enum ifmod array composite spi polymorphic materialize_cursor lo bytea pytypes timewise stateful type typmod do preload tupledesc corners environment oid cache fdw
 
 # PGXS built by the configure script
 include build/cache/postgres.mk

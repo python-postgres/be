@@ -11,7 +11,7 @@ data = {
    "abstract": project.abstract,
    "description": "",
    "version": project.version,
-   "maintainer": [project.author],
+   "maintainer": [project.meaculpa],
    "license": "bsd",
    "provides": {
       "python": {

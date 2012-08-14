@@ -1,38 +1,25 @@
-BEGIN;
-CREATE SCHEMA __python__;
-SET search_path = __python__;
+-- PL Support
 
 CREATE FUNCTION
- "handler"()
-RETURNS LANGUAGE_HANDLER LANGUAGE C AS 'python', 'pl_handler';
+"pl_handler" ()
+RETURNS LANGUAGE_HANDLER LANGUAGE C AS 'python';
 
 CREATE FUNCTION
- "validator"(oid)
-RETURNS VOID LANGUAGE C AS 'python', 'pl_validator';
-COMMIT;
+"pl_validator" (OID)
+RETURNS VOID LANGUAGE C AS 'python';
 
-BEGIN;
-SET search_path = __python__;
--- It's okay if this fails on versions before 9.0.
 CREATE FUNCTION
- "inline"(INTERNAL)
-RETURNS VOID LANGUAGE C AS 'python', 'pl_inline';
+"pl_inline" (INTERNAL)
+RETURNS VOID LANGUAGE C AS 'python';
 
-CREATE LANGUAGE python HANDLER "handler" INLINE "inline" VALIDATOR "validator";
-COMMIT;
+CREATE LANGUAGE python HANDLER "pl_handler" INLINE "pl_inline" VALIDATOR "pl_validator";
 
--- This should not fail if the one above does.
-CREATE LANGUAGE python HANDLER "handler" VALIDATOR "validator";
+-- FDW Support
 
--- Finish with an explicit check.
-BEGIN;
-CREATE OR REPLACE FUNCTION test_python() RETURNS text LANGUAGE 'python' AS
-$$
-import Postgres
-import sys
-def main():
-	return "Python " + sys.version + "\n\nLanguage installed successfully."
-$$;
-SELECT test_python();
--- Don't want these changes.
-ABORT;
+CREATE OR REPLACE FUNCTION
+"fdw_handler" ()
+RETURNS FDW_HANDLER LANGUAGE C AS 'python';
+
+CREATE FUNCTION
+"fdw_validator" (TEXT[], OID)
+RETURNS BOOL LANGUAGE C AS 'python';
