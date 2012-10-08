@@ -12,22 +12,6 @@ Requirements
 
 .. include:: requirements.itxt
 
-Gotchas
-=======
-
-In some cases, describing a more glaring issue in its native narrative or
-reference context doesn't provide the highlighting the issue deserves.
-This chapter is dedicated to such issues.
-
-PostgreSQL 8.3 Composite Equality
----------------------------------
-
-It's not supported. So in such cases::
-
- tuple(composite_a) == tuple(composite_b)
-
-Will be necessary.
-
 Changes
 =======
 
@@ -38,4 +22,3 @@ Version 1.1 introduced the following changes:
 
  Internal
   Refactor pl.c into pl.c and extension.c.
-  Preparation for fdw.c.

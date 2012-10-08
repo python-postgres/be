@@ -9,8 +9,6 @@ import warnings
 import importlib
 import types
 
-FDW = ModuleType("Postgres.FDW")
-
 class StringModule(object):
 	"""
 	Used represent the pure-Python Postgres and Postgres.project modules.
@@ -535,13 +533,6 @@ class Wrapper(object):
 # Internal functions.
 ##
 
-_fdw_cache = {}
-
-import importlib
-def _fdw(typ, options, _cache = _fdw_cache, impmod = importlib.import_module):
-	pass
-del importlib
-
 def _clearfunccache():
 	import sys
 	rm = []
@@ -554,13 +545,12 @@ def _clearfunccache():
 	for k in rm:
 		del sys.modules[k]
 
-def clearcache(fdw_cache = _fdw_cache):
+def clearcache():
 	"""
 	Clear the function and type caches.
 	"""
 	_clearfunccache()
 	_cleartypecache()
-	fdw_cache.clear()
 	try:
 		import linecache
 		linecache.clearcache()

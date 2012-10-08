@@ -13,13 +13,3 @@ CREATE FUNCTION
 RETURNS VOID LANGUAGE C AS 'python';
 
 CREATE LANGUAGE python HANDLER "pl_handler" INLINE "pl_inline" VALIDATOR "pl_validator";
-
--- FDW Support
-
-CREATE OR REPLACE FUNCTION
-"fdw_handler" ()
-RETURNS FDW_HANDLER LANGUAGE C AS 'python';
-
-CREATE FUNCTION
-"fdw_validator" (TEXT[], OID)
-RETURNS BOOL LANGUAGE C AS 'python';
