@@ -6,8 +6,7 @@ import sys
 import io
 import functools
 import warnings
-import importlib
-import types
+import types as py_types
 
 class StringModule(object):
 	"""
@@ -24,10 +23,10 @@ class StringModule(object):
 	def get_code(self, *args, compile = __builtins__.compile):
 		return compile(self.source(), '['+ self.name +']', 'exec')
 
-	def load_module(self, *args, eval = __builtins__.eval):
+	def load_module(self, *args, eval = __builtins__.eval, ModuleType = py_types.ModuleType):
 		if self.name in sys.modules:
 			return sys.modules[self.name]
-		module = types.ModuleType('<' + self.name + '>')
+		module = ModuleType('<' + self.name + '>')
 		module.__builtins__ = __builtins__
 		module.__name__ = self.name
 		module.__file__ = '[' + self.name + ']'
@@ -126,9 +125,9 @@ class InlineExecutor(object):
 	def get_code(self, *args, compile = __builtins__.compile):
 		return compile(self.source, '[do-block-%d]' % self.id, 'exec')
 
-	def load_module(self, *args, eval = __builtins__.eval):
+	def load_module(self, *args, eval = __builtins__.eval, ModuleType = py_types.ModuleType):
 		if not hasattr(self, 'module'):
-			self.module = types.ModuleType('<DO-statement-block>')
+			self.module = ModuleType('<DO-statement-block>')
 			self.module.__builtins__ = __builtins__
 			self.module.__loader__ = self
 			eval(self.get_code(), self.module.__dict__, self.module.__dict__)
@@ -591,7 +590,7 @@ def _entry():
 	__builtins__.sqlexec = execute
 
 # execute the init.py file relative to the cluster
-def _init(module, initfile = "init.py", eval = __builtins__.eval):
+def _init(module, initfile = "init.py", eval = __builtins__.eval, ModuleType = py_types.ModuleType):
 	import os.path
 
 	# Run the init.py file.
@@ -599,7 +598,7 @@ def _init(module, initfile = "init.py", eval = __builtins__.eval):
 		# XXX: Do permission check on init.py
 		with open(initfile) as init_file:
 			bc = compile(init_file.read(), initfile, 'exec')
-			module = types.ModuleType('__pg_init__')
+			module = ModuleType('__pg_init__')
 			module.__file__ = initfile
 			module.__builtins__ = __builtins__
 			eval(bc, module.__dict__, module.__dict__)
@@ -653,3 +652,4 @@ def _exit():
 	except ImportError:
 		# nothing to do...
 		pass
+del py_types # Used to reference ModuleType

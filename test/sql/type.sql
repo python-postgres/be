@@ -128,7 +128,7 @@ $$
 import Postgres
 
 def main(oid):
-	return str(list(Postgres.Type.from_relation_id(oid).descriptor))
+	return str([x[1:] for x in Postgres.Type.from_relation_id(oid).descriptor])
 $$;
 
 SELECT lookup_tables_type('explicit_lookup'::regclass);

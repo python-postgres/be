@@ -201,7 +201,6 @@ import Postgres
 keys = (
 	'code',
 	'message',
-	'details',
 	'errno',
 	'severity',
 )
@@ -218,9 +217,11 @@ def main():
 	except Postgres.Exception as e:
 		err = e
 	# attribute checks
-	return (
+	d = list(err.details.items())
+	d.sort(key=lambda x: x[0])
+	return tuple((
 		x + ':' + str(getattr(err, x)) for x in keys
-	)
+	)) + tuple(d)
 $python$;
 SELECT check_exc_access();
 
