@@ -715,7 +715,7 @@ obj_new(PyTypeObject *subtype, PyObj args, PyObj kw)
 {
 	static char *words[] = {"source", "mod", NULL};
 	PyObj src = NULL, mod = NULL, rob = NULL, typmodin_ob = NULL;
-	Datum d;
+	Datum d = 0;
 	bool isnull = true;
 	int32 typmod = -1;
 
