@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+struct pl_exec_state;
+
 void error_init_tracebacks(void);
 
 extern PyObj PYSTR(pg_errordata);

@@ -29,7 +29,5 @@ languages = {
 	'py_3_3': 'Python 3.3',
 }
 
-date = None
-tags = set(('features',))
 version_info = (1, 1, 0)
-version = '.'.join(map(str, version_info)) + (date is None and 'dev' or '')
+version = '.'.join(map(str, version_info))

@@ -742,7 +742,7 @@ array_subscript(PyObj self, PyObj arg)
 		Py_ssize_t start, stop, step, slicelength;
 		int r;
 
-		r = PySlice_GetIndicesEx((PySliceObject *) arg, len,
+		r = PySlice_GetIndicesEx(arg, len,
 			&start, &stop, &step, &slicelength);
 		if (r < 0)
 		  return(NULL);

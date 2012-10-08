@@ -205,9 +205,9 @@ fdw_handler(PG_FUNCTION_ARGS)
 	 * However, there's no access to the actual FDW object here;
 	 * so leave it empty for the time being.
 	 */
-	nodeTag(fdwr) = T_FdwRoutine;
+	/*nodeTag(fdwr) = T_FdwRoutine;*/
 
-	fdwr->node.PlanForeignScan = init;
+	/*fdwr->node.PlanForeignScan = init;*/
 	fdwr->node.ExplainForeignScan = explain;
 	fdwr->node.BeginForeignScan = begin;
 	fdwr->node.IterateForeignScan = iterate;

@@ -77,6 +77,7 @@ struct pl_exec_state {
 	MemoryContext return_memory_context;
 	const char *description; /* what was the PL doing? */
 };
+
 extern struct pl_exec_state *pl_execution_context;
 #define PL_CONTEXT() \
 	(pl_execution_context)

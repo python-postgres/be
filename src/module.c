@@ -37,6 +37,7 @@
 #include "utils/relcache.h"
 #include "utils/typcache.h"
 #include "utils/plancache.h"
+#include "utils/timestamp.h"
 #include "storage/backendid.h"
 #include "storage/large_object.h"
 #include "executor/spi.h"

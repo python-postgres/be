@@ -56,7 +56,7 @@ def main():
 	return Postgres.backend_start
 $python$;
 SELECT get_backend_start() = (SELECT backend_start FROM pg_stat_activity WHERE procpid = pg_backend_pid()) AS backend_start_comparison;
-
+SELECT get_backend_start() = (SELECT backend_start FROM pg_stat_activity WHERE pid = pg_backend_pid()) AS backend_start_comparison;
 
 CREATE OR REPLACE FUNCTION check_types() RETURNS text LANGUAGE python AS
 $python$

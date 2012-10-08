@@ -16,6 +16,7 @@
 #include "utils/snapmgr.h"
 #include "tcop/tcopprot.h"
 #include "tcop/utility.h"
+#include "tcop/pquery.h"
 #include "executor/spi_priv.h"
 #include "parser/analyze.h"
 #include "mb/pg_wchar.h"
@@ -33,6 +34,45 @@
 
 #include "pypg/statement.h"
 #include "pypg/cursor.h"
+
+/*
+ * In 9.2, this function became static
+ */
+#if PG_VERSION_NUM >= 90200
+static TupleDesc
+compute_result_tupledesc(List *stmt_list)
+{
+   Query    *query;
+
+   switch (ChoosePortalStrategy(stmt_list))
+   {
+      case PORTAL_ONE_SELECT:
+      case PORTAL_ONE_MOD_WITH:
+         query = (Query *) linitial(stmt_list);
+         Assert(IsA(query, Query));
+         return ExecCleanTypeFromTL(query->targetList, false);
+
+      case PORTAL_ONE_RETURNING:
+         query = (Query *) PortalListGetPrimaryStmt(stmt_list);
+         Assert(IsA(query, Query));
+         Assert(query->returningList);
+         return ExecCleanTypeFromTL(query->returningList, false);
+
+      case PORTAL_UTIL_SELECT:
+         query = (Query *) linitial(stmt_list);
+         Assert(IsA(query, Query));
+         Assert(query->utilityStmt);
+         return UtilityTupleDescriptor(query->utilityStmt);
+
+      case PORTAL_MULTI_QUERY:
+         /* will not return tuples */
+         break;
+   }
+   return NULL;
+}
+#else
+#define compute_result_tupledesc PlanCacheComputeResultDesc
+#endif
 
 /*
  * resolve_parameters - do some *args checks
@@ -393,7 +433,7 @@ static int
 load_rows(PyObj self, PyObj row_iter, uint32 *total)
 {
 	MemoryContext former = CurrentMemoryContext;
-	volatile PyObj row;
+	volatile PyObj row = NULL;
 	Datum *datums;
 	bool *nulls;
 	char *cnulls;
@@ -915,7 +955,7 @@ statement_get_metadata(const char *src, int *num_params,
 	query = parse_analyze_varparams(rpt, src, param_types, num_params);
 
 	*commandTag = CreateCommandTag(rpt);
-	*resultDesc = PlanCacheComputeResultDesc(list_make1(query));
+	*resultDesc = compute_result_tupledesc(list_make1(query));
 
 	error_context_stack = errccb.previous;
 }

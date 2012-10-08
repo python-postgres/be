@@ -10,6 +10,7 @@
 
 #include "postgres.h"
 #include "commands/trigger.h"
+#include "utils/rel.h"
 #include "mb/pg_wchar.h"
 
 #include "pypg/python.h"

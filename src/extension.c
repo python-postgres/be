@@ -50,6 +50,7 @@
 #include "utils/syscache.h"
 #include "utils/relcache.h"
 #include "utils/typcache.h"
+#include "utils/timestamp.h"
 #include "mb/pg_wchar.h"
 #include "storage/itemptr.h"
 

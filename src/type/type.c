@@ -32,6 +32,7 @@
 #include "utils/array.h"
 #include "utils/datum.h"
 #include "utils/memutils.h"
+#include "utils/rel.h"
 #include "utils/relcache.h"
 #include "utils/syscache.h"
 #include "utils/lsyscache.h"
@@ -1618,7 +1619,7 @@ PyPgType_typreceive(PyObj self, PyObj args)
 {
 	MemoryContext former = CurrentMemoryContext;
 	volatile PyObj rob = NULL;
-	volatile Datum rdatum;
+	volatile Datum rdatum = PointerGetDatum(NULL);
 	volatile bool isnull = true;
 	PyObj bufob;
 	int32 typmod = -1;
@@ -1675,7 +1676,7 @@ static PyObj
 PyPgType_typinput_method(PyObj self, PyObj args)
 {
 	volatile PyObj rob = NULL;
-	volatile Datum rdatum;
+	volatile Datum rdatum = PointerGetDatum(NULL);
 	volatile bool isnull = true;
 	PyObj strob;
 	int32 typmod = -1;

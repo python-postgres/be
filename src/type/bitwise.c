@@ -324,7 +324,6 @@ bytea_subscript(PyObj self, PyObj sub)
 
 	if (PySlice_Check(sub))
 	{
-		PySliceObject *slice = (PySliceObject *) sub;
 		Py_ssize_t start, stop, step, slicelength;
 
 		if (!PyPg_bytea_Check(self))
@@ -333,7 +332,7 @@ bytea_subscript(PyObj self, PyObj sub)
 			return(NULL);
 		}
 
-		if (PySlice_GetIndicesEx(slice, len, &start, &stop, &step, &slicelength))
+		if (PySlice_GetIndicesEx(sub, len, &start, &stop, &step, &slicelength))
 			return(NULL);
 
 		PG_TRY();
