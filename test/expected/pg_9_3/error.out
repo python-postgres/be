@@ -1,0 +1,565 @@
+SET standard_conforming_strings TO ON;
+SET client_encoding TO 'UTF-8';
+CREATE OR REPLACE FUNCTION pysyntaxerror() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+# missing ':'
+def main()
+	pass
+$python$;
+ERROR:  cannot compile Python function
+CONTEXT:  [exception from Python]
+  File "public.pysyntaxerror()", line 5
+     def main()
+              ^
+ SyntaxError: invalid syntax
+
+SELECT pysyntaxerror();
+ERROR:  function pysyntaxerror() does not exist
+LINE 1: SELECT pysyntaxerror();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CREATE OR REPLACE FUNCTION py_load_failure() RETURNS VOID LANGUAGE python AS
+$python$
+# raise an exception while loading the module
+raise RuntimeError("doa")
+
+def main():
+	pass
+$python$;
+SELECT py_load_failure();
+ERROR:  could not load Python function's module object
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_load_failure()", line 3, in <module>
+    raise RuntimeError("doa")
+ RuntimeError: doa
+
+[public.py_load_failure() while loading function module]
+CREATE OR REPLACE FUNCTION py_failure() RETURNS VOID LANGUAGE python AS
+$python$
+
+def main():
+	# raise an exception on execution
+	raise RuntimeError("doa")
+$python$;
+SELECT py_failure();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.py_failure()", line 5, in main
+    raise RuntimeError("doa")
+ RuntimeError: doa
+
+[public.py_failure()]
+-- raises a pg error on load
+CREATE OR REPLACE FUNCTION pg_load_failure() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+fun = rp('nosuchfunc(int17,zzz)')
+
+def main():
+	pass
+$python$;
+SELECT pg_load_failure();
+ERROR:  type "int17" does not exist
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.pg_load_failure()", line 5, in <module>
+    fun = rp('nosuchfunc(int17,zzz)')
+ Postgres.Exception
+
+[public.pg_load_failure() while loading function module]
+-- raises a pg error on exec
+CREATE OR REPLACE FUNCTION pg_failure() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+
+def main():
+	fun = rp('nosuchfunc(int17,zzz)')
+$python$;
+SELECT pg_failure();
+ERROR:  type "int17" does not exist
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.pg_failure()", line 7, in main
+    fun = rp('nosuchfunc(int17,zzz)')
+ Postgres.Exception
+
+[public.pg_failure()]
+-- suffocates a pg error on load; should see PL complaint
+CREATE OR REPLACE FUNCTION pg_load_failure_suf() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+try:
+	fun = rp('nosuchfunc(int17,zzz)')
+except:
+	pass
+
+def main():
+	raise RuntimeError("should never see this")
+$python$;
+SELECT pg_load_failure_suf();
+ERROR:  function failed to propagate error state
+HINT:  A subtransaction can be used to recover from database errors.
+-- suffocates a pg error on exec; should see PL complaint
+CREATE OR REPLACE FUNCTION pg_failure_suf() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+
+def main():
+	try:
+		fun = rp('nosuchfunc(int17,zzz)')
+	except:
+		pass
+$python$;
+SELECT pg_failure_suf();
+ERROR:  function failed to propagate error state
+HINT:  A subtransaction can be used to recover from database errors.
+-- suffocates a pg error, and leaves an open xact on load
+CREATE OR REPLACE FUNCTION pg_x_load_failure_suf() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+x=xact()
+x.__enter__()
+try:
+	fun = rp('nosuchfunc(int17,zzz)')
+except:
+	pass
+
+def main():
+	raise RuntimeError("should never see this")
+$python$;
+SELECT pg_x_load_failure_suf();
+WARNING:  function failed to propagate error state
+ERROR:  function failed to exit all subtransactions
+DETAIL:  The 1 remaining subtransactions have been aborted.
+-- suffocates a pg error, and leaves an open xact 
+CREATE OR REPLACE FUNCTION pg_x_failure_suf() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+
+def main():
+	x=xact()
+	x.__enter__()
+	try:
+		fun = rp('nosuchfunc(int17,zzz)')
+	except:
+		pass
+$python$;
+SELECT pg_x_failure_suf();
+WARNING:  function failed to propagate error state
+ERROR:  function failed to exit all subtransactions
+DETAIL:  The 1 remaining subtransactions have been aborted.
+-- suffocates a pg error, and attempts to enter a protected area
+CREATE OR REPLACE FUNCTION pg_failure_suf_IFTE() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+
+def main():
+	try:
+		fun = rp('nosuchfunc(int17,zzz)')
+	except:
+		# Should be valid, but the protection of
+		# PL_DB_IN_ERROR should keep it from getting called.
+		rp('pg_x_failure_suf()')
+$python$;
+SELECT pg_failure_suf_IFTE();
+ERROR:  database action attempted while in failed transaction
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.pg_failure_suf_ifte()", line 8, in main
+    fun = rp('nosuchfunc(int17,zzz)')
+ Postgres.Exception: type "int17" does not exist
+CODE: 42704
+ 
+During handling of the above exception, another exception occurred:
+
+ Traceback (most recent call last):
+   File "public.pg_failure_suf_ifte()", line 12, in main
+    rp('pg_x_failure_suf()')
+ Postgres.Exception
+
+[public.pg_failure_suf_ifte()]
+-- suffocates a pg error, and leaves an open xact, attempts to enter a protected area
+CREATE OR REPLACE FUNCTION pg_x_failure_suf_IFTE() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+
+def main():
+	x=xact()
+	x.__enter__()
+	try:
+		fun = rp('nosuchfunc(int17,zzz)')
+	except:
+		# Should be valid, but the protection of
+		# PL_DB_IN_ERROR should keep it from getting called.
+		rp('pg_x_failure_suf()')
+$python$;
+SELECT pg_x_failure_suf_IFTE();
+WARNING:  function failed to exit all subtransactions
+DETAIL:  The 1 remaining subtransactions have been aborted.
+ERROR:  database action attempted while in failed transaction
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.pg_x_failure_suf_ifte()", line 10, in main
+    fun = rp('nosuchfunc(int17,zzz)')
+ Postgres.Exception: type "int17" does not exist
+CODE: 42704
+ 
+During handling of the above exception, another exception occurred:
+
+ Traceback (most recent call last):
+   File "public.pg_x_failure_suf_ifte()", line 14, in main
+    rp('pg_x_failure_suf()')
+ Postgres.Exception
+
+[public.pg_x_failure_suf_ifte()]
+CREATE OR REPLACE FUNCTION check_errordata_access() RETURNS SETOF text LANGUAGE python AS
+$python$
+import Postgres
+
+rp = Postgres.Type(Postgres.CONST['REGPROCEDUREOID'])
+keys = (
+	'message',
+	'detail',
+	'detail_log',
+	'context',
+	'elevel',
+	'sqlerrcode',
+	'code',
+	'severity',
+)
+
+def main():
+	try:
+		with xact():
+			rp('nosuchfunc(int17,zzz)')
+	except Postgres.Exception as e:
+		errdata = e.pg_errordata
+	# attribute checks
+	errdata.internalpos
+	errdata.cursorpos
+	errdata.lineno
+	errdata.funcname
+	errdata.saved_errno
+	errdata.domain
+	return (
+		x + ':' + str(getattr(errdata, x)) for x in keys
+	)
+$python$;
+SELECT check_errordata_access();
+       check_errordata_access        
+-------------------------------------
+ message:type "int17" does not exist
+ detail:None
+ detail_log:None
+ context:None
+ elevel:20
+ sqlerrcode:205
+ code:42704
+ severity:ERROR
+(8 rows)
+
+-- check the attributes available on Postgres.Exception
+CREATE OR REPLACE FUNCTION check_exc_access() RETURNS SETOF text LANGUAGE python AS
+$python$
+import Postgres
+
+keys = (
+	'code',
+	'message',
+	'errno',
+	'severity',
+)
+
+def main():
+	try:
+		with xact():
+			Postgres.ERROR(
+				code = '22331',
+				message = 'message',
+				context = 'context',
+				detail = 'detail'
+			)
+	except Postgres.Exception as e:
+		err = e
+	# attribute checks
+	d = list(err.details.items())
+	d.sort(key=lambda x: x[0])
+	return tuple((
+		x + ':' + str(getattr(err, x)) for x in keys
+	)) + tuple(d)
+$python$;
+SELECT check_exc_access();
+          check_exc_access          
+------------------------------------
+ code:22331
+ message:message
+ errno:0
+ severity:ERROR
+ ('context', 'context')
+ ('detail', 'detail')
+ ('filename', 'module.c')
+ ('function', '<Postgres.ereport>')
+ ('line', 1)
+(9 rows)
+
+-- __func__ must exist
+CREATE OR REPLACE FUNCTION silly_function() RETURNS VOID LANGUAGE python AS
+$python$
+del __func__
+def main():
+	raise Exception("haha")
+$python$;
+-- raised the 'haha' exception.. module is known
+SELECT silly_function();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.silly_function()", line 4, in main
+    raise Exception("haha")
+ Exception: haha
+
+[public.silly_function()]
+-- raise an Attribute error; we need __func__.
+SELECT silly_function();
+ERROR:  could not find Python function
+CONTEXT:  [exception from Python]
+AttributeError: 'module' object has no attribute '__func__'
+
+[loading Python function]
+-- __func__ must be a Postgres.Function
+CREATE OR REPLACE FUNCTION evil_function() RETURNS VOID LANGUAGE python AS
+$python$
+__func__ = None
+def main():
+	raise Exception("muahahahhaha")
+$python$;
+-- The Exception in main gets raised as we grabbed the reference from
+-- our own call to load_module().
+SELECT evil_function();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.evil_function()", line 4, in main
+    raise Exception("muahahahhaha")
+ Exception: muahahahhaha
+
+[public.evil_function()]
+-- This time, fn_extra is NULL and there's a module in sys.modules.
+-- Validate that __func__ is actually a Postgres.Function object.
+-- This will fail with a TypeError
+SELECT evil_function();
+ERROR:  could not find Python function
+CONTEXT:  [exception from Python]
+TypeError: module's '__func__' attribute is not a Postgres.Function object
+
+[loading Python function]
+-- __func__ must be a Postgres.Function with the Oid of the called function
+CREATE OR REPLACE FUNCTION more_evil_function() RETURNS VOID LANGUAGE python AS
+$python$
+__func__ = proc('evil_function()')
+def main():
+	raise Exception("muahahahhahaHAHAHAHA")
+$python$;
+-- same as before, we already have the module object
+SELECT more_evil_function();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.more_evil_function()", line 4, in main
+    raise Exception("muahahahhahaHAHAHAHA")
+ Exception: muahahahhahaHAHAHAHA
+
+[public.more_evil_function()]
+-- It's a function object, but the wrong function object.
+-- Raise a value error this time...
+SELECT more_evil_function();
+ERROR:  could not find Python function
+CONTEXT:  [exception from Python]
+ValueError: module's '__func__' attribute does not have the expected object identifier
+
+[loading Python function]
+CREATE OR REPLACE FUNCTION custom_error(bool) RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+def main(with_tb):
+	Postgres.ERROR(
+		code = 'AAAAA',
+		message = 'message',
+		context = 'context',
+		detail = 'detail',
+		hint = 'hint',
+		inhibit_pl_context = not bool(with_tb),
+	)
+$python$;
+\set VERBOSITY verbose
+SELECT custom_error(true);
+ERROR:  AAAAA: message
+DETAIL:  detail
+HINT:  hint
+CONTEXT:  context
+[exception from Python]
+Traceback (most recent call last):
+   File "public.custom_error(boolean)", line 11, in main
+    inhibit_pl_context = not bool(with_tb),
+   File "[Postgres]", line 85, in ERROR
+    return _report(_sev, *args, **kw)
+ Postgres.Exception
+
+[public.custom_error(boolean)]
+LOCATION:  <Postgres.ereport>, module.c:1
+SELECT custom_error(false);
+ERROR:  AAAAA: message
+DETAIL:  detail
+HINT:  hint
+CONTEXT:  context
+LOCATION:  <Postgres.ereport>, module.c:1
+\set VERBOSITY default
+-- Ignore the inhibit_pl_context setting when it's not a Postgres.Exception.
+CREATE OR REPLACE FUNCTION inhibited_pl_context_pyerr() RETURNS VOID LANGUAGE python AS
+$python$
+import Postgres
+
+def main():
+	ve = ValueError("show this traceback")
+	ve.inhibit_pl_context = True
+	raise ve
+$python$;
+SELECT inhibited_pl_context_pyerr();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.inhibited_pl_context_pyerr()", line 7, in main
+    raise ve
+ ValueError: show this traceback
+
+[public.inhibited_pl_context_pyerr()]
+-- exercise a relayed exception
+-- probably better categorized relative to "bool", but there isn't a place..
+CREATE OR REPLACE FUNCTION boolean_blowup() RETURNS bool LANGUAGE python AS
+$python$
+class foo(object):
+	def __bool__(self):
+		raise ValueError("bad nonzero implementation, relay this exception")
+
+def main():
+	return foo()
+$python$;
+SELECT boolean_blowup();
+ERROR:  function raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.boolean_blowup()", line 4, in __bool__
+    raise ValueError("bad nonzero implementation, relay this exception")
+ ValueError: bad nonzero implementation, relay this exception
+
+[public.boolean_blowup() while creating result]
+-- test direct function execution while "in" a Python exception --
+-- (no database error hath occurred)
+-- XXX: Not the desired effect for CONTEXT
+--
+-- The following function shows the effect of Python's __context__.
+-- For plpython, the global __context__ needs to be stored and restored
+-- every time the plhandler is entered. This is necessary to ensure that
+-- the traceback print out is not redundant.
+--
+-- There are a couple ways this could be hacked:
+--
+--  1. setting an exception on entry to identify the context and
+--     breaking the context chain at that point iff an exception occurs
+--  2. storing and restoring the context from the thread state.
+--     (currently a bit too "dangerous", so we'll have to poll the capi sig)
+--
+CREATE OR REPLACE FUNCTION check_dfc_in_exc(bool) RETURNS VOID LANGUAGE python AS
+$python$
+from Postgres import WARNING
+def main(cont):
+	try:
+		if cont:
+			raise TypeError("lame")
+		else:
+			raise ValueError("err")
+	except ValueError as exc:
+		__func__(True)
+$python$;
+SELECT check_dfc_in_exc(FALSE);
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.check_dfc_in_exc(boolean)", line 8, in main
+    raise ValueError("err")
+ ValueError: err
+ 
+During handling of the above exception, another exception occurred:
+
+ Traceback (most recent call last):
+   File "public.check_dfc_in_exc(boolean)", line 6, in main
+    raise TypeError("lame")
+ TypeError: lame
+
+[public.check_dfc_in_exc(boolean)]
+[exception from Python]
+Traceback (most recent call last):
+   File "public.check_dfc_in_exc(boolean)", line 8, in main
+    raise ValueError("err")
+ ValueError: err
+ 
+During handling of the above exception, another exception occurred:
+
+ Traceback (most recent call last):
+   File "public.check_dfc_in_exc(boolean)", line 10, in main
+    __func__(True)
+ Postgres.Exception
+
+[public.check_dfc_in_exc(boolean)]
+-- make sure the linecache is getting cleared
+CREATE OR REPLACE FUNCTION check_linecache_clear() RETURNS VOID LANGUAGE python AS
+$python$
+def main():
+	raise ValueError
+$python$;
+SELECT check_linecache_clear();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.check_linecache_clear()", line 3, in main
+    raise ValueError
+ ValueError
+
+[public.check_linecache_clear()]
+-- should show the "raise TypeError" in the traceback string.
+-- adjust Postgres._pl_eox to *not* clear the linecache to see how it operated before
+CREATE OR REPLACE FUNCTION check_linecache_clear() RETURNS VOID LANGUAGE python AS
+$python$
+def main():
+	raise TypeError
+$python$;
+SELECT check_linecache_clear();
+ERROR:  function's "main" raised a Python exception
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.check_linecache_clear()", line 3, in main
+    raise TypeError
+ TypeError
+
+[public.check_linecache_clear()]

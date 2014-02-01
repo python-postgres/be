@@ -362,6 +362,7 @@ pl_validator(PG_FUNCTION_ARGS)
 {
 	Oid fn_oid = PG_GETARG_OID(0);
 	PyObj func, code;
+	PyGILState_STATE gs;
 	struct pl_exec_state pl_ctx = {NULL, NULL, NULL,};
 
 	Assert(fn_oid != InvalidOid);
@@ -370,44 +371,56 @@ pl_validator(PG_FUNCTION_ARGS)
 	if (ext_state == init_pending)
 		ext_entry();
 
-	func = PyPgFunction_FromOid(fn_oid);
-	if (func == NULL)
+	gs = PyGILState_Ensure();
+	PG_TRY();
 	{
-		PyErr_ThrowPostgresErrorWithContext(
-			ERRCODE_PYTHON_ERROR,
-			"could not create Postgres.Function from Oid",
-			&pl_ctx);
-	}
+		func = PyPgFunction_FromOid(fn_oid);
+		if (func == NULL)
+		{
+			PyErr_ThrowPostgresErrorWithContext(
+				ERRCODE_PYTHON_ERROR,
+				"could not create Postgres.Function from Oid",
+				&pl_ctx);
+		}
 
-	code = PyPgFunction_get_code(func);
-	if (code == NULL)
-	{
-		Py_DECREF(func);
-		PyErr_ThrowPostgresErrorWithContext(
-			ERRCODE_PYTHON_ERROR,
-			"cannot compile Python function",
-			&pl_ctx);
-	}
-	Py_DECREF(code);
+		code = PyPgFunction_get_code(func);
+		if (code == NULL)
+		{
+			Py_DECREF(func);
+			PyErr_ThrowPostgresErrorWithContext(
+				ERRCODE_PYTHON_ERROR,
+				"cannot compile Python function",
+				&pl_ctx);
+		}
+		Py_DECREF(code);
 
-	/*
-	 * All functions that are looked up are cached. This is mere validation,
-	 * so there's no need to actually keep it around.
-	 */
-	if (PyPgFunction_RemoveModule(func))
-	{
+		/*
+		 * All functions that are looked up are cached. This is mere validation,
+		 * so there's no need to actually keep it around.
+		 */
+		if (PyPgFunction_RemoveModule(func))
+		{
+			Py_DECREF(func);
+			PyErr_ThrowPostgresErrorWithContext(
+				ERRCODE_PYTHON_ERROR,
+				"could not remove of function module from sys.modules",
+				&pl_ctx);
+		}
 		Py_DECREF(func);
-		PyErr_ThrowPostgresErrorWithContext(
-			ERRCODE_PYTHON_ERROR,
-			"could not remove of function module from sys.modules",
-			&pl_ctx);
 	}
-	Py_DECREF(func);
+	PG_CATCH();
+	{
+		PyGILState_Release(gs);
+		PG_RE_THROW();
+	}
+	PG_END_TRY();
 
 	/*
 	 * If a Python error occurred, it should have been raised by now.
 	 */
 	Assert(!PyErr_Occurred());
+	PyGILState_Release(gs);
+
 	return(0);
 }
 
@@ -1594,6 +1607,8 @@ pl_handler(PG_FUNCTION_ARGS)
 		NULL, CurrentMemoryContext, NULL,
 	};
 
+	PyGILState_STATE gs = NULL;
+
 	/*
 	 * This stored count is used to identify that all
 	 * opened subtransactions have been closed on handler exit.
@@ -1601,6 +1616,8 @@ pl_handler(PG_FUNCTION_ARGS)
 	stored_ist_count = ist_count;
 	pl_execution_context = &current_exec_state;
 	SXD("entering Python handler");
+
+	gs = PyGILState_Ensure();
 
 	Py_ALLOCATE_OWNER();
 	{
@@ -1724,6 +1741,8 @@ pl_handler(PG_FUNCTION_ARGS)
 				 */
 				FlushErrorState();
 
+				PyGILState_Release(gs);
+
 				/* Restore the caller's memory context. */
 				PyErr_ThrowPostgresErrorWithContext(
 					ERRCODE_PYTHON_EXCEPTION,
@@ -1743,6 +1762,7 @@ pl_handler(PG_FUNCTION_ARGS)
 			 */
 			Assert(!PyErr_Occurred());
 
+			PyGILState_Release(gs);
 			PG_RE_THROW();
 		}
 		PG_END_TRY();
@@ -1762,6 +1782,7 @@ pl_handler(PG_FUNCTION_ARGS)
 	 * If there are any open ISTs or ext_state != ext_ready,
 	 * raise an exception.
 	 */
+	PyGILState_Release(gs);
 	ext_check_state(ERROR, stored_ist_count);
 
 	return(rd);

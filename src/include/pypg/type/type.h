@@ -109,7 +109,7 @@ typedef struct PyPgTypeInfo {
 
 	char typtype, typcategory, typalign;
 	bool typbyval;
-	int2 typlen;
+	int16_t typlen;
 
 	PyObj typoid_PyLong, typnamespace_PyLong;
 	PyObj typname_PyUnicode, nspname_PyUnicode;

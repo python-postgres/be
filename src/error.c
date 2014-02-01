@@ -1,5 +1,5 @@
 /*
- * Postgres elog/ereport support functions 
+ * Postgres elog/ereport support functions
  */
 #include <setjmp.h>
 
@@ -499,7 +499,7 @@ PyErr_ThrowPostgresError(const char *errstr)
 
 /*
  * This will emit the Python error as a WARNING.
- * 
+ *
  * Primarily, this is used in type dealloc functions
  * where some strange failure happened while
  * freeing memory.
@@ -525,8 +525,8 @@ PyErr_EmitPostgresWarning(const char *errstr)
 /*
  * PyErr_SetPgError() - Set the current Postgres error as the Python exception.
  *
- * Also, mark the DB as being in error(keeps track that we pulled and flushed
- * the error data).
+ * Also, mark the DB as being in error.
+ * (keeps track that we pulled and flushed the error data)
  */
 void
 PyErr_SetPgError(bool inhibit_warning)

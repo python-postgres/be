@@ -54,7 +54,7 @@ static PyObj
 int2_float(PyObj self)
 {
 	PyObj rob;
-	int2 src;
+	int16_t src;
 	src = DatumGetInt16(PyPgObject_GetDatum(self));
 	rob = PyFloat_FromDouble((double) src);
 	return(rob);
@@ -170,7 +170,7 @@ static PyObj
 int4_float(PyObj self)
 {
 	PyObj rob;
-	int4 src;
+	int32_t src;
 	src = DatumGetInt32(PyPgObject_GetDatum(self));
 	rob = PyFloat_FromDouble((double) src);
 	return(rob);

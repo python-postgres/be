@@ -1,0 +1,143 @@
+-- ENUMs aren't very special.
+-- They just need the typoid as the second argument.
+DROP DOMAIN IF EXISTS dfoo;
+NOTICE:  type "dfoo" does not exist, skipping
+DROP TYPE IF EXISTS foo;
+NOTICE:  type "foo" does not exist, skipping
+CREATE TYPE foo AS ENUM (
+	'zero',
+	'one',
+	'two',
+	'three',
+	'four'
+);
+CREATE DOMAIN dfoo AS foo;
+CREATE OR REPLACE FUNCTION enummy(e foo) RETURNS foo LANGUAGE python AS
+$python$
+def main(e):
+	return 'zero'
+$python$;
+SELECT enummy('two'::foo);
+ enummy 
+--------
+ zero
+(1 row)
+
+SELECT enummy('zero'::foo);
+ enummy 
+--------
+ zero
+(1 row)
+
+SELECT enummy('three'::foo);
+ enummy 
+--------
+ zero
+(1 row)
+
+-- Check instantiation about some comparisons.
+CREATE OR REPLACE FUNCTION enum_ops(e foo) RETURNS foo LANGUAGE python AS
+$python$
+def main(e):
+	et = type(e)
+	zero = et('zero')
+	one = et('one')
+	two = et('two')
+	assert zero == zero
+	assert zero < one
+	assert one < two
+	assert zero < two
+	assert not (zero > two)
+	assert not (zero > one)
+	return et('three')
+$python$;
+SELECT enum_ops('one'::foo);
+ enum_ops 
+----------
+ three
+(1 row)
+
+SELECT enum_ops('two'::foo);
+ enum_ops 
+----------
+ three
+(1 row)
+
+SELECT enum_ops('zero'::foo);
+ enum_ops 
+----------
+ three
+(1 row)
+
+-- same code, but now the domain
+CREATE OR REPLACE FUNCTION enummy(e dfoo) RETURNS foo LANGUAGE python AS
+$python$
+def main(e):
+	return 'zero'
+$python$;
+SELECT enummy('two'::dfoo);
+ enummy 
+--------
+ zero
+(1 row)
+
+SELECT enummy('zero'::dfoo);
+ enummy 
+--------
+ zero
+(1 row)
+
+SELECT enummy('three'::dfoo);
+ enummy 
+--------
+ zero
+(1 row)
+
+-- Check instantiation about some comparisons.
+CREATE OR REPLACE FUNCTION enum_ops(e dfoo) RETURNS foo LANGUAGE python AS
+$python$
+import Postgres
+
+def main(e):
+	et = type(e)
+	zero = et('zero')
+	one = et('one')
+	two = et('two')
+	assert zero == zero
+	assert zero < one
+	assert one < two
+	assert zero < two
+	assert not (zero > two)
+	assert not (zero > one)
+	return et('three')
+$python$;
+SELECT enum_ops('one'::dfoo);
+ERROR:  operator does not exist: dfoo = dfoo
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.enum_ops(dfoo)", line 9, in main
+    assert zero == zero
+ Postgres.Exception
+
+[public.enum_ops(dfoo)]
+SELECT enum_ops('two'::dfoo);
+ERROR:  operator does not exist: dfoo = dfoo
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.enum_ops(dfoo)", line 9, in main
+    assert zero == zero
+ Postgres.Exception
+
+[public.enum_ops(dfoo)]
+SELECT enum_ops('zero'::dfoo);
+ERROR:  operator does not exist: dfoo = dfoo
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+CONTEXT:  [exception from Python]
+Traceback (most recent call last):
+   File "public.enum_ops(dfoo)", line 9, in main
+    assert zero == zero
+ Postgres.Exception
+
+[public.enum_ops(dfoo)]

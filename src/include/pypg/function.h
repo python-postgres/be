@@ -58,7 +58,7 @@ PyObj PyPgFunction_get_code(PyObj func);
 PyObj PyPgFunction_load_module(PyObj func);
 
 TupleDesc TupleDesc_From_proargtypes_proargnames(
-	int2 nargs, Datum argtypes, Datum argnames
+	int16_t nargs, Datum argtypes, Datum argnames
 );
 TupleDesc TupleDesc_From_pg_proc_arginfo(HeapTuple);
 

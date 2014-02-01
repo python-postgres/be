@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+#if (PG_VERSION_NUM >= 90300)
+/*
+ * GETSTRUCT is common throughout, and rather then throw this if cpp conditional
+ * in every dependent, just include it here.
+ */
+#include <access/htup_details.h>
+#include <access/heapam_xlog.h>
+#endif
+
 #if !(PG_VERSION_NUM < 80500)
 #define PG_HAS_INLINE_CODE_BLOCK
 #endif

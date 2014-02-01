@@ -1,0 +1,256 @@
+SET standard_conforming_strings TO ON;
+CREATE OR REPLACE FUNCTION nothing() RETURNS VOID LANGUAGE python AS
+$python$
+def main():
+	pass
+$python$;
+SELECT nothing();
+ nothing 
+---------
+ 
+(1 row)
+
+CREATE OR REPLACE FUNCTION return(int) RETURNS int LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT return(-3);
+ return 
+--------
+     -3
+(1 row)
+
+SELECT return(3);
+ return 
+--------
+      3
+(1 row)
+
+SELECT return(0);
+ return 
+--------
+      0
+(1 row)
+
+SELECT return(NULL);
+ return 
+--------
+       
+(1 row)
+
+CREATE OR REPLACE FUNCTION return(bigint) RETURNS bigint
+LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT return(-12839128482::bigint);
+    return    
+--------------
+ -12839128482
+(1 row)
+
+SELECT return(12839128482::bigint);
+   return    
+-------------
+ 12839128482
+(1 row)
+
+SELECT return(NULL::bigint);
+ return 
+--------
+       
+(1 row)
+
+CREATE OR REPLACE FUNCTION return(text) RETURNS text
+LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT return(E'\nfoo bar feh   \t\t\n\n');
+          return          
+--------------------------
+                         +
+ foo bar feh             +
+                         +
+ 
+(1 row)
+
+SELECT return(NULL::text);
+ return 
+--------
+ 
+(1 row)
+
+CREATE OR REPLACE FUNCTION return(bytea) RETURNS bytea
+LANGUAGE python AS
+$python$
+def main(d):
+	return d
+$python$;
+SELECT return('\020foo\011\000\001'::bytea);
+      return      
+------------------
+ \x10666f6f090001
+(1 row)
+
+CREATE OR REPLACE FUNCTION return(bigint[])
+RETURNS bigint[]
+LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT return(ARRAY[1::bigint,2,3]);
+ return  
+---------
+ {1,2,3}
+(1 row)
+
+SELECT return(ARRAY[3::bigint,2,1]);
+ return  
+---------
+ {3,2,1}
+(1 row)
+
+SELECT return(ARRAY[[3::bigint],[2],[1]]);
+    return     
+---------------
+ {{3},{2},{1}}
+(1 row)
+
+DROP TYPE IF EXISTS composite CASCADE;
+NOTICE:  type "composite" does not exist, skipping
+CREATE TYPE composite AS (foo text, bar int);
+CREATE OR REPLACE FUNCTION return(composite) RETURNS composite
+LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT return(CAST(ROW('foo', 321) AS composite));
+  return   
+-----------
+ (foo,321)
+(1 row)
+
+-- Test pl's "explicit" cast
+CREATE OR REPLACE FUNCTION outonly(OUT foo int)
+LANGUAGE python AS
+$python$
+def main():
+	return 2
+$python$;
+SELECT outonly();
+ outonly 
+---------
+       2
+(1 row)
+
+CREATE OR REPLACE FUNCTION inoutonly(INOUT foo int)
+LANGUAGE python AS
+$python$
+def main(n):
+	return n
+$python$;
+SELECT inoutonly(2);
+ inoutonly 
+-----------
+         2
+(1 row)
+
+SELECT inoutonly(3);
+ inoutonly 
+-----------
+         3
+(1 row)
+
+SELECT inoutonly(-3);
+ inoutonly 
+-----------
+        -3
+(1 row)
+
+SELECT inoutonly(NULL);
+ inoutonly 
+-----------
+          
+(1 row)
+
+CREATE OR REPLACE FUNCTION multiple_outs(OUT foo int, OUT bar int)
+LANGUAGE python AS
+$python$
+def main():
+	return (1, 2)
+$python$;
+SELECT multiple_outs();
+ multiple_outs 
+---------------
+ (1,2)
+(1 row)
+
+CREATE OR REPLACE FUNCTION
+in_multiple_outs(INOUT foo int, OUT bar int)
+LANGUAGE python AS
+$python$
+def main(n):
+	return (n, 2)
+$python$;
+SELECT in_multiple_outs(1);
+ in_multiple_outs 
+------------------
+ (1,2)
+(1 row)
+
+SELECT in_multiple_outs(-11);
+ in_multiple_outs 
+------------------
+ (-11,2)
+(1 row)
+
+SELECT in_multiple_outs(1982);
+ in_multiple_outs 
+------------------
+ (1982,2)
+(1 row)
+
+-- Validate that the function cache is invalidated when a new one
+-- is created in the same session.
+CREATE OR REPLACE FUNCTION changing() RETURNS text
+LANGUAGE python AS
+$python$
+def main():
+	return "foo"
+$python$;
+SELECT changing();
+ changing 
+----------
+ foo
+(1 row)
+
+CREATE OR REPLACE FUNCTION changing() RETURNS text
+LANGUAGE python AS
+$python$
+def main():
+	return "foobar"
+$python$;
+SELECT changing();
+ changing 
+----------
+ foobar
+(1 row)
+
+CREATE OR REPLACE FUNCTION changing() RETURNS text
+LANGUAGE python AS
+$python$
+def main():
+	return "bar"
+$python$;
+SELECT changing();
+ changing 
+----------
+ bar
+(1 row)
+

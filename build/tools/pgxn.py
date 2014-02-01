@@ -35,7 +35,7 @@ data = {
    "tags": [
       "python", "pl", "procedural language", "awesome"
    ],
-   "meta-spec": {"version": "1.0.0", "url": "http://pgxn.org/meta/spec.txt"},
+   "meta-spec": {"version": "1.1.1", "url": "http://pgxn.org/meta/spec.txt"},
 }
 
 json.dump(data, sys.stdout)

@@ -404,6 +404,8 @@ _PG_init(void)
 	if (!Py_IsInitialized())
 		elog(ERROR, "could not initialize Python");
 
+	PyEval_InitThreads();
+
 	Py_XDECREF(TransactionScope);
 	TransactionScope = PySet_New(NULL);
 	if (TransactionScope == NULL)
