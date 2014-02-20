@@ -7,7 +7,7 @@ abstract = 'PostgreSQL extension providing a Procedural Language and Foreign Dat
 identity = 'http://python.projects.postgresql.org/backend'
 
 meaculpa = 'James William Pye'
-contact = 'mailto:x@jwp.io'
+contact = 'mailto:james.pye@gmail.com'
 
 license = 'bsd,mit,attribution'
 
